@@ -4,6 +4,7 @@
 //! credit purchase/redemption flow, and internal transfers.
 
 use ledger::{Ledger, MemoryStorage, FileStorage, Storage};
+use ledger::event::ReasonCode;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🏦 Toka Credit Ledger Example");
@@ -25,7 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tx.mint(
         "user123", 
         1000, 
-        "credit_purchase".to_string(), 
+        ReasonCode::CreditPurchase, 
         Some("User purchased $10 worth of credits".to_string())
     )?;
     println!("\n✅ Staged credit purchase: 1000 credits to user123");
@@ -36,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "user123", 
         "creator456", 
         250, 
-        "content_unlock".to_string(),
+        ReasonCode::ContentUnlock,
         Some("Premium article unlock".to_string())
     )?;
     println!("✅ Staged content unlock: 250 credits from user123 to creator456");
@@ -46,7 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tx.burn(
         "creator456", 
         100, 
-        "creator_payout".to_string(),
+        ReasonCode::CreatorCashout,
         Some("Creator cashing out $1 worth of credits".to_string())
     )?;
     println!("✅ Staged creator payout: 100 credits from creator456");

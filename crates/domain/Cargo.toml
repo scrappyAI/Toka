@@ -10,7 +10,3 @@ rust_decimal = { version = "1.32", features = ["serde"] }
 rust_decimal_macros = "1.32"
 serde = { version = "1.0", features = ["derive"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
-
-[[example]]
-name = "content_unlock_flow"
-path = "examples/content_unlock_flow.rs"

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use uuid::Uuid;
 use serde::{Serialize, Deserialize};
-use crate::event::{LedgerEvent, LedgerEventKind, LedgerEntry, EntryType, WALEntry};
+use crate::event::{LedgerEvent, LedgerEventKind, LedgerEntry, EntryType, WALEntry, ReasonCode};
 use crate::storage::{Storage, WALStorage};
 use domain::account::{Account, PLATFORM_RESERVE_ACCOUNT, PLATFORM_REVENUE_ACCOUNT};
 
@@ -263,7 +263,7 @@ impl<'a, S: WALStorage> Transaction<'a, S> {
     
     /// Mints new credits into an account (e.g., credit purchase by user).
     /// This is a credit to the target account and a debit from the platform reserve.
-    pub fn mint(&mut self, account_id: &str, credits_to_mint: u64, reason: String, memo: Option<String>) -> Result<()> {
+    pub fn mint(&mut self, account_id: &str, credits_to_mint: u64, reason: ReasonCode, memo: Option<String>) -> Result<()> {
         if credits_to_mint == 0 {
             return Err(LedgerError::TransactionFailed("Cannot mint zero credits".to_string()));
         }
@@ -323,7 +323,7 @@ impl<'a, S: WALStorage> Transaction<'a, S> {
 
     /// Burns credits from an account (e.g., creator cashout).
     /// This is a debit from the target account and a credit to the platform reserve.
-    pub fn burn(&mut self, account_id: &str, credits_to_cashout: u64, reason: String, memo: Option<String>) -> Result<()> {
+    pub fn burn(&mut self, account_id: &str, credits_to_cashout: u64, reason: ReasonCode, memo: Option<String>) -> Result<()> {
         if credits_to_cashout == 0 {
             return Err(LedgerError::TransactionFailed("Cannot burn zero credits".to_string()));
         }
@@ -380,7 +380,7 @@ impl<'a, S: WALStorage> Transaction<'a, S> {
     }
 
     /// Transfers credits between two accounts.
-    pub fn transfer(&mut self, from: &str, to: &str, credits_to_transfer: u64, reason: String, memo: Option<String>) -> Result<()> {
+    pub fn transfer(&mut self, from: &str, to: &str, credits_to_transfer: u64, reason: ReasonCode, memo: Option<String>) -> Result<()> {
         if from == to {
             return Err(LedgerError::TransactionFailed("Cannot transfer to the same account".to_string()));
         }

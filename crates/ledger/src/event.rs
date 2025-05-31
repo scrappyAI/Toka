@@ -7,19 +7,41 @@ use uuid::Uuid;
 use chrono::{DateTime, Utc};
 use serde::{Serialize, Deserialize};
 
+/// Standardized reason codes for ledger events, with extensibility.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(tag = "type", content = "value")]
+pub enum ReasonCode {
+    /// User purchased credits with real money (server-authoritative)
+    CreditPurchase,
+    /// User unlocked content from a creator (most common operation)
+    ContentUnlock,
+    /// Creator cashed out credits for real money (server-authoritative)
+    CreatorCashout,
+    /// Platform fee collection (automatic)
+    PlatformFee,
+    /// Creator Empowerment Fund allocation (automatic)
+    EmpowermentFundAllocation,
+    /// Bonus credits awarded (server-authoritative)
+    BonusCredits,
+    /// Refund or reversal (server-authoritative)
+    Refund,
+    /// Custom or future reason (extensible)
+    Custom(String),
+}
+
 /// The kind of event that can occur in the ledger.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum LedgerEventKind {
     /// Credits are minted to an account.
     Mint {
         credits: u64,
-        reason: String,
+        reason: ReasonCode,
         memo: Option<String>,
     },
     /// Credits are burned from an account.
     Burn {
         credits: u64,
-        reason: String,
+        reason: ReasonCode,
         memo: Option<String>,
     },
     /// Credits are transferred between accounts.
@@ -27,7 +49,7 @@ pub enum LedgerEventKind {
         from: String,
         to: String,
         credits: u64,
-        reason: String,
+        reason: ReasonCode,
         memo: Option<String>,
     },
 }

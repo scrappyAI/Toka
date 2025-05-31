@@ -437,7 +437,7 @@ impl WALStorage for NoOpStorage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::event::{LedgerEvent, LedgerEventKind};
+    use crate::event::{LedgerEvent, LedgerEventKind, ReasonCode};
 
     #[test]
     fn test_memory_wal_storage() {
@@ -448,7 +448,7 @@ mod tests {
             1,
             LedgerEventKind::Mint {
                 credits: 100,
-                reason: "test".to_string(),
+                reason: ReasonCode::Custom("test".to_string()),
                 memo: None,
             },
             None,

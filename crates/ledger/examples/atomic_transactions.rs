@@ -4,6 +4,7 @@
 //! and atomic transactions with commit and rollback scenarios.
 
 use ledger::{Ledger, MemoryStorage, WALStorage, WALEntry};
+use ledger::event::ReasonCode;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🔒 Toka Ledger Atomic Transactions Example");
@@ -23,9 +24,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut tx = ledger.begin_transaction(&mut storage);
         
         // Stage multiple operations
-        tx.mint("user123", 1000, "initial_mint".to_string(), Some("First mint".to_string()))?;
-        tx.transfer("user123", "creator456", 250, "content_unlock".to_string(), None)?;
-        tx.burn("creator456", 50, "creator_payout".to_string(), None)?;
+        tx.mint("user123", 1000, ReasonCode::Custom("initial_mint".to_string()), Some("First mint".to_string()))?;
+        tx.transfer("user123", "creator456", 250, ReasonCode::ContentUnlock, None)?;
+        tx.burn("creator456", 50, ReasonCode::CreatorCashout, None)?;
         
         println!("   Staged {} operations", tx.staged_count());
         
@@ -58,8 +59,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut tx = ledger.begin_transaction(&mut storage);
         
         // Stage operations that will be rolled back
-        tx.mint("user456", 500, "test_mint".to_string(), None)?;
-        tx.transfer("user456", "creator789", 300, "test_transfer".to_string(), None)?;
+        tx.mint("user456", 500, ReasonCode::Custom("test_mint".to_string()), None)?;
+        tx.transfer("user456", "creator789", 300, ReasonCode::Custom("test_transfer".to_string()), None)?;
         
         println!("   Staged {} operations for rollback test", tx.staged_count());
         
@@ -84,7 +85,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a new event using transaction, then add to WAL manually for simulation
     {
         let mut tx = ledger.begin_transaction(&mut storage);
-        tx.mint("recovery_account", 100, "recovery_test".to_string(), None)?;
+        tx.mint("recovery_account", 100, ReasonCode::Custom("recovery_test".to_string()), None)?;
         // Don't commit or use the staged event, just drop tx
         tx.rollback()?;
     }
@@ -94,7 +95,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         recovery_sequence,
         LedgerEventKind::Mint {
             credits: 100,
-            reason: "recovery_test".to_string(),
+            reason: ReasonCode::Custom("recovery_test".to_string()),
             memo: None,
         },
         None,
@@ -130,7 +131,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         let mut tx = ledger.begin_transaction(&mut storage);
         
-        match tx.transfer("user123", "creator456", 10000, "impossible_transfer".to_string(), None) {
+        match tx.transfer("user123", "creator456", 10000, ReasonCode::Custom("impossible_transfer".to_string()), None) {
             Ok(()) => println!("   Unexpected success"),
             Err(e) => println!("   ✅ Correctly caught error: {}", e),
         }
