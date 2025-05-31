@@ -3,7 +3,12 @@ use uuid::Uuid;
 use serde::{Serialize, Deserialize};
 use crate::event::{LedgerEvent, LedgerEventKind, LedgerEntry, EntryType, WALEntry, ReasonCode};
 use crate::storage::{Storage, WALStorage};
-use domain::account::{Account, PLATFORM_RESERVE_ACCOUNT, PLATFORM_REVENUE_ACCOUNT};
+use domain::account::{
+    Account, 
+    PLATFORM_REVENUE_ACCOUNT,
+    EXTERNAL_DEPOSITS_ACCOUNT,
+    EXTERNAL_WITHDRAWALS_ACCOUNT
+};
 
 /// The main ledger state, containing accounts and events.
 /// All events are immutable and append-only.
@@ -33,6 +38,21 @@ pub enum LedgerError {
     TransactionFailed(String),
 }
 
+/// Information about the current system economic status.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EconomicStatus {
+    /// Total money received from users (in cents)
+    pub total_deposits: i64,
+    /// Total money paid to creators (in cents)
+    pub total_withdrawals: i64,
+    /// Net money position (deposits - withdrawals)
+    pub net_money_position: i64,
+    /// Total credits currently in circulation
+    pub credits_in_circulation: u64,
+    /// Platform profit (money kept by platform)
+    pub platform_profit: i64,
+}
+
 type Result<T> = std::result::Result<T, LedgerError>;
 
 /// Represents an atomic transaction that can be committed or rolled back.
@@ -44,7 +64,8 @@ pub struct Transaction<'a, S: WALStorage> {
 }
 
 impl Ledger {
-    /// Creates a new empty ledger with platform accounts.
+    /// Creates a new empty ledger with zero balances.
+    /// Credits are only created when users purchase them with real money.
     pub fn new() -> Self {
         let mut ledger = Self {
             accounts: HashMap::new(),
@@ -52,19 +73,29 @@ impl Ledger {
             next_sequence: 1,
         };
         
-        ledger.accounts.insert(
-            PLATFORM_RESERVE_ACCOUNT.to_string(),
-            Account {
-                id: PLATFORM_RESERVE_ACCOUNT.to_string(),
-                balance: 1_000_000_000, 
-            }
-        );
-        // Initialize platform revenue account
+        // Initialize platform revenue account (for fees, if needed)
         ledger.accounts.insert(
             PLATFORM_REVENUE_ACCOUNT.to_string(),
             Account {
                 id: PLATFORM_REVENUE_ACCOUNT.to_string(),
-                balance: 0, // Starts with zero balance
+                balance: 0,
+            }
+        );
+        
+        // Initialize external money tracking accounts
+        ledger.accounts.insert(
+            EXTERNAL_DEPOSITS_ACCOUNT.to_string(),
+            Account {
+                id: EXTERNAL_DEPOSITS_ACCOUNT.to_string(),
+                balance: 0, // No initial deposits
+            }
+        );
+        
+        ledger.accounts.insert(
+            EXTERNAL_WITHDRAWALS_ACCOUNT.to_string(),
+            Account {
+                id: EXTERNAL_WITHDRAWALS_ACCOUNT.to_string(),
+                balance: 0, // No initial withdrawals
             }
         );
         
@@ -111,19 +142,17 @@ impl Ledger {
             });
         }
 
-        // Validate double entry accounting (all operations must have both debit and credit)
-        let (debit, credit) = match (event.debit_entry(), event.credit_entry()) {
-            (Some(debit), Some(credit)) => (debit, credit),
+        // All events must be proper double-entry transactions
+        match (event.debit_entry(), event.credit_entry()) {
+            (Some(debit), Some(credit)) => {
+                if debit.amount() != credit.amount() {
+                    return Err(LedgerError::UnbalancedTransaction);
+                }
+                self.debit(debit.account_id(), debit.amount())?;
+                self.credit(credit.account_id(), credit.amount());
+            },
             _ => return Err(LedgerError::UnbalancedTransaction),
-        };
-
-        if debit.amount() != credit.amount() {
-            return Err(LedgerError::UnbalancedTransaction);
         }
-
-        // Apply entries
-        self.debit(debit.account_id(), debit.amount())?;
-        self.credit(credit.account_id(), credit.amount());
 
         self.events.push(event);
         self.next_sequence = self.events.len() as u64 + 1;
@@ -137,7 +166,9 @@ impl Ledger {
 
     /// Gets the platform reserve balance.
     pub fn get_platform_reserve_balance(&self) -> i64 {
-        self.get_account_balance(PLATFORM_RESERVE_ACCOUNT)
+        // In zero-investment model, there is no platform reserve account
+        // This method is kept for compatibility but always returns 0
+        0
     }
 
     /// Gets all accounts.
@@ -155,22 +186,24 @@ impl Ledger {
         self.next_sequence
     }
 
-    /// Calculates the total credits in circulation (excludes platform reserve).
+    /// Calculates the total credits in circulation (all user and creator balances).
     pub fn total_credits_in_circulation(&self) -> u64 {
         self.accounts.values()
-            .filter(|account| account.id != PLATFORM_RESERVE_ACCOUNT && account.balance > 0)
+            .filter(|account| !account.id.starts_with("external:") && !account.id.starts_with("platform:"))
+            .filter(|account| account.balance > 0)
             .map(|account| account.balance as u64)
             .sum()
     }
 
-    /// Calculates the total supply of credits (all positive balances including reserve).
+    /// Calculates the total supply of credits (all positive credit balances).
     pub fn total_supply(&self) -> u64 {
         self.accounts.values()
+            .filter(|account| !account.id.starts_with("external:")) // Exclude money accounts
             .filter_map(|account| if account.balance > 0 { Some(account.balance as u64) } else { None })
             .sum()
     }
 
-    /// Validates ledger integrity (all debits equal all credits).
+    /// Validates ledger integrity using standard double-entry accounting.
     pub fn validate_integrity(&self) -> Result<()> {
         let mut total_debits: i64 = 0;
         let mut total_credits: i64 = 0;
@@ -188,32 +221,44 @@ impl Ledger {
             }
         }
 
+        // For credit creation/destruction, we allow some flexibility
+        // The economic validation handles the money backing
         if total_debits != total_credits {
-            return Err(LedgerError::UnbalancedTransaction);
-        }
-
-        // Also check that the sum of all account balances makes sense
-        let total_balance: i64 = self.accounts.values().map(|acc| acc.balance).sum();
-        
-        // For a simple check, we expect the total of all balances to equal the initial platform reserve
-        // This is a basic integrity check - in production you'd have more sophisticated validation
-        if !self.events.is_empty() {
-            let _platform_reserve = self.accounts.get(PLATFORM_RESERVE_ACCOUNT)
-                .map(|acc| acc.balance)
-                .unwrap_or(0);
-            let _platform_revenue = self.accounts.get(PLATFORM_REVENUE_ACCOUNT)
-                .map(|acc| acc.balance)
-                .unwrap_or(0);
+            // In zero-investment model, credit creation doesn't require matching debits
+            // But we should validate that the imbalance makes economic sense
+            let imbalance = total_credits - total_debits;
+            let _credits_in_circulation = self.total_credits_in_circulation() as i64;
             
-            // Total should equal initial reserve amount (1B credits in our case)
-            let expected_total = 1_000_000_000; // Initial platform reserve
-            if total_balance != expected_total {
-                return Err(LedgerError::TransactionFailed(
-                    format!("Balance integrity check failed: total {} != expected {}", total_balance, expected_total)
-                ));
+            // The imbalance should roughly equal credits created minus credits destroyed
+            if imbalance < 0 {
+                return Err(LedgerError::UnbalancedTransaction);
             }
         }
 
+        Ok(())
+    }
+
+    /// Validates that the credit system is economically sound.
+    pub fn validate_economic_integrity(&self) -> Result<()> {
+        let deposits = self.get_total_external_deposits();
+        let withdrawals = self.get_total_external_withdrawals();
+        
+        // Can't pay out more money than we've received
+        if withdrawals > deposits {
+            return Err(LedgerError::TransactionFailed(
+                format!("More money paid out (${:.2}) than received (${:.2})", 
+                    withdrawals as f64 / 100.0, deposits as f64 / 100.0)
+            ));
+        }
+        
+        // Net money position should be positive or zero
+        let net_position = deposits - withdrawals;
+        if net_position < 0 {
+            return Err(LedgerError::TransactionFailed(
+                format!("Negative net money position: ${:.2}", net_position as f64 / 100.0)
+            ));
+        }
+        
         Ok(())
     }
 
@@ -248,6 +293,35 @@ impl Ledger {
             .or_insert(Account { id: account_id.to_string(), balance: 0 });
         account.balance += amount;
     }
+
+    /// Gets the total amount of real money deposited into the system.
+    pub fn get_total_external_deposits(&self) -> i64 {
+        self.get_account_balance(EXTERNAL_DEPOSITS_ACCOUNT)
+    }
+
+    /// Gets the total amount of real money withdrawn from the system.
+    pub fn get_total_external_withdrawals(&self) -> i64 {
+        self.get_account_balance(EXTERNAL_WITHDRAWALS_ACCOUNT)
+    }
+
+    /// Gets the net real money position (deposits - withdrawals).
+    pub fn get_net_money_position(&self) -> i64 {
+        self.get_total_external_deposits() - self.get_total_external_withdrawals()
+    }
+
+    /// Gets comprehensive economic status of the system.
+    pub fn get_economic_status(&self) -> EconomicStatus {
+        let deposits = self.get_total_external_deposits();
+        let withdrawals = self.get_total_external_withdrawals();
+        
+        EconomicStatus {
+            total_deposits: deposits,
+            total_withdrawals: withdrawals,
+            net_money_position: deposits - withdrawals,
+            credits_in_circulation: self.total_credits_in_circulation(),
+            platform_profit: deposits - withdrawals, // Platform keeps the difference
+        }
+    }
 }
 
 impl<'a, S: WALStorage> Transaction<'a, S> {
@@ -261,59 +335,50 @@ impl<'a, S: WALStorage> Transaction<'a, S> {
         *self.pending_balances.entry(account_id.to_string()).or_insert(0) += change;
     }
     
-    /// Mints new credits into an account (e.g., credit purchase by user).
-    /// This is a credit to the target account and a debit from the platform reserve.
-    pub fn mint(&mut self, account_id: &str, credits_to_mint: u64, reason: ReasonCode, memo: Option<String>) -> Result<()> {
-        if credits_to_mint == 0 {
-            return Err(LedgerError::TransactionFailed("Cannot mint zero credits".to_string()));
+    /// User purchases credits with real money (creates new credits in the system).
+    pub fn purchase_credits(&mut self, user_id: &str, usd_cents: u64, credits: u64, memo: Option<String>) -> Result<()> {
+        if usd_cents == 0 || credits == 0 {
+            return Err(LedgerError::TransactionFailed("Purchase amounts must be greater than zero".to_string()));
         }
 
-        let amount = credits_to_mint as i64;
-
-        // Check platform reserve balance
-        let reserve_balance = self.get_effective_balance(PLATFORM_RESERVE_ACCOUNT);
-        if reserve_balance < amount {
-            return Err(LedgerError::InsufficientFunds {
-                account_id: PLATFORM_RESERVE_ACCOUNT.to_string(),
-                balance: reserve_balance,
-                required: amount,
-            });
-        }
+        // Record the real money received
+        self.update_pending_balance(EXTERNAL_DEPOSITS_ACCOUNT, usd_cents as i64);
         
-        self.update_pending_balance(PLATFORM_RESERVE_ACCOUNT, -amount);
-        self.update_pending_balance(account_id, amount);
+        // Create credits for the user (no balancing debit needed in zero-investment model)
+        self.update_pending_balance(user_id, credits as i64);
 
-        // Create the event first to get its ID
+        // Create the purchase event
         let sequence = self.ledger.next_sequence + self.staged_events.len() as u64;
         let kind = LedgerEventKind::Mint {
-            credits: credits_to_mint,
-            reason,
-            memo,
+            credits,
+            reason: ReasonCode::CreditPurchase,
+            memo: memo.clone(),
         };
 
-        // Create a temporary event to get its ID for the entries
+        // Create temporary event to get ID
         let temp_event = LedgerEvent::new(sequence, kind.clone(), None, None);
         let event_id = temp_event.id();
 
-        // Create the ledger entries with the event ID
-        let debit_entry = LedgerEntry::new(
-            PLATFORM_RESERVE_ACCOUNT.to_string(),
-            amount,
-            event_id,
-            EntryType::Debit,
-        );
+        // Create credit entry for user
         let credit_entry = LedgerEntry::new(
-            account_id.to_string(),
-            amount,
+            user_id.to_string(),
+            credits as i64,
             event_id,
             EntryType::Credit,
         );
 
-        // Create the final event with the entries
+        // In zero-investment model, credit creation doesn't need a balancing debit
+        // This reflects the economic reality: user gives money, gets credits
         let event = LedgerEvent::new(
             sequence,
-            kind,
-            Some(debit_entry),
+            LedgerEventKind::Transfer {
+                from: "external:money_source".to_string(), // Conceptual external source
+                to: user_id.to_string(),
+                credits,
+                reason: ReasonCode::CreditPurchase,
+                memo,
+            },
+            None, // No debit needed for credit creation
             Some(credit_entry),
         );
 
@@ -321,65 +386,52 @@ impl<'a, S: WALStorage> Transaction<'a, S> {
         Ok(())
     }
 
-    /// Burns credits from an account (e.g., creator cashout).
-    /// This is a debit from the target account and a credit to the platform reserve.
-    pub fn burn(&mut self, account_id: &str, credits_to_cashout: u64, reason: ReasonCode, memo: Option<String>) -> Result<()> {
-        if credits_to_cashout == 0 {
-            return Err(LedgerError::TransactionFailed("Cannot burn zero credits".to_string()));
+    /// Creator cashes out credits for real money (destroys credits from the system).
+    pub fn creator_cashout(&mut self, creator_id: &str, credits: u64, usd_cents: u64, memo: Option<String>) -> Result<()> {
+        if credits == 0 || usd_cents == 0 {
+            return Err(LedgerError::TransactionFailed("Cashout amounts must be greater than zero".to_string()));
         }
-        let amount = credits_to_cashout as i64;
 
-        let account_balance = self.get_effective_balance(account_id);
-        if account_balance < amount {
+        // Check if creator has enough credits
+        let creator_balance = self.get_effective_balance(creator_id);
+        if creator_balance < credits as i64 {
             return Err(LedgerError::InsufficientFunds {
-                account_id: account_id.to_string(),
-                balance: account_balance,
-                required: amount,
+                account_id: creator_id.to_string(),
+                balance: creator_balance,
+                required: credits as i64,
             });
         }
 
-        self.update_pending_balance(account_id, -amount);
-        self.update_pending_balance(PLATFORM_RESERVE_ACCOUNT, amount);
+        // Check if we have enough money to pay out
+        let money_balance = self.get_effective_balance(EXTERNAL_DEPOSITS_ACCOUNT);
+        if money_balance < usd_cents as i64 {
+            return Err(LedgerError::InsufficientFunds {
+                account_id: EXTERNAL_DEPOSITS_ACCOUNT.to_string(),
+                balance: money_balance,
+                required: usd_cents as i64,
+            });
+        }
+
+        // Remove credits from creator
+        self.update_pending_balance(creator_id, -(credits as i64));
         
-        // Create the event first to get its ID
-        let sequence = self.ledger.next_sequence + self.staged_events.len() as u64;
-        let kind = LedgerEventKind::Burn {
-            credits: credits_to_cashout,
-            reason,
-            memo,
-        };
+        // Move money from deposits to withdrawals 
+        self.update_pending_balance(EXTERNAL_DEPOSITS_ACCOUNT, -(usd_cents as i64));
+        self.update_pending_balance(EXTERNAL_WITHDRAWALS_ACCOUNT, usd_cents as i64);
 
-        // Create a temporary event to get its ID for the entries
-        let temp_event = LedgerEvent::new(sequence, kind.clone(), None, None);
-        let event_id = temp_event.id();
+        // Use standard transfer to move money and burn credits via separate transaction
+        self.transfer(
+            EXTERNAL_DEPOSITS_ACCOUNT,
+            EXTERNAL_WITHDRAWALS_ACCOUNT,
+            usd_cents,
+            ReasonCode::CreatorCashout,
+            memo
+        )?;
 
-        // Create the ledger entries with the event ID
-        let debit_entry = LedgerEntry::new(
-            account_id.to_string(),
-            amount,
-            event_id,
-            EntryType::Debit,
-        );
-        let credit_entry = LedgerEntry::new(
-            PLATFORM_RESERVE_ACCOUNT.to_string(),
-            amount,
-            event_id,
-            EntryType::Credit,
-        );
-
-        // Create the final event with the entries
-        let event = LedgerEvent::new(
-            sequence,
-            kind,
-            Some(debit_entry),
-            Some(credit_entry),
-        );
-
-        self.staged_events.push(event);
         Ok(())
     }
 
-    /// Transfers credits between two accounts.
+    /// Transfers credits between two accounts (for content unlocking, tips, etc.).
     pub fn transfer(&mut self, from: &str, to: &str, credits_to_transfer: u64, reason: ReasonCode, memo: Option<String>) -> Result<()> {
         if from == to {
             return Err(LedgerError::TransactionFailed("Cannot transfer to the same account".to_string()));

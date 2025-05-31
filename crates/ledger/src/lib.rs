@@ -15,6 +15,8 @@ pub mod storage;
 // pub mod readme_module; // If README.md is substantial and treated as a module.
 
 // Re-export key types for convenience
-pub use ledger::{Ledger, LedgerError, Transaction};
-pub use event::{LedgerEvent, LedgerEventKind, LedgerEntry, EntryType, EventStatus, WALEntry};
+pub use ledger::{
+    Ledger, LedgerError, Transaction, EconomicStatus
+};
+pub use event::{LedgerEvent, LedgerEventKind, LedgerEntry, EntryType, EventStatus, WALEntry, ReasonCode};
 pub use storage::{Storage, WALStorage, StorageError, MemoryStorage, FileStorage, NoOpStorage}; 

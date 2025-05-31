@@ -19,4 +19,4 @@ pub use pricing_model::{
 pub mod account;
 
 // Re-export key types for convenience
-pub use account::{Account, PLATFORM_RESERVE_ACCOUNT, PLATFORM_REVENUE_ACCOUNT};
+pub use account::{Account, PLATFORM_REVENUE_ACCOUNT};

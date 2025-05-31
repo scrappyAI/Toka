@@ -19,8 +19,6 @@ pub enum ReasonCode {
     CreatorCashout,
     /// Platform fee collection (automatic)
     PlatformFee,
-    /// Creator Empowerment Fund allocation (automatic)
-    EmpowermentFundAllocation,
     /// Bonus credits awarded (server-authoritative)
     BonusCredits,
     /// Refund or reversal (server-authoritative)

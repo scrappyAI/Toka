@@ -2,10 +2,12 @@
 
 use serde::{Serialize, Deserialize};
 
-/// Platform reserve account ID - used for credit issuance and redemption
-pub const PLATFORM_RESERVE_ACCOUNT: &str = "platform:reserve";
 /// Platform revenue account ID - used for collecting platform fees
 pub const PLATFORM_REVENUE_ACCOUNT: &str = "platform:revenue";
+/// External deposits account - tracks real money deposited by users
+pub const EXTERNAL_DEPOSITS_ACCOUNT: &str = "external:deposits";
+/// External withdrawals account - tracks real money paid out to creators
+pub const EXTERNAL_WITHDRAWALS_ACCOUNT: &str = "external:withdrawals";
 
 /// Represents a ledger account.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)] // Added more derives for HashMap key usage

@@ -13,13 +13,9 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"
 rust_decimal = { version = "1.32", features = ["serde"] }
-rust_decimal_macros = "1.32"
-
-# Examples should be able to use domain types
-[[example]]
-name = "basic_usage"
-path = "examples/basic_usage.rs"
+rust_decimal_macros = "1.32" 
 
 [[example]]
-name = "atomic_transactions"
-path = "examples/atomic_transactions.rs" 
+name = "zero_investment"
+path = "examples/zero_investment.rs"
+
