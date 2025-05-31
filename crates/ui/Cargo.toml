@@ -1,0 +1,8 @@
+[package]
+name = "ui"
+version = "0.1.0"
+edition = "2021"
+description = "CLI or WASM UI layer for the Toka project."
+license = "MIT OR Apache-2.0"
+
+[dependencies] 
