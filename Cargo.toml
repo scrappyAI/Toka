@@ -1,7 +1,42 @@
 [workspace]
 resolver = "2"
-members = [ "crates/domain",
-    "crates/ledger",
-    "crates/runtime",
-    "crates/ui"
-] 
+members = [
+    "crates/toka-core",
+    "crates/toka-events",    # New lightweight events crate
+    "crates/toka-runtime",
+    "crates/toka-toolkit",
+    "crates/toka-agents-core",
+    "crates/toka-auth-core",
+    "crates/toka-vault-core",
+    "crates/toka-toolkit-core",
+    "kits/minimal-cli"
+]
+
+[workspace.dependencies]
+# Core dependencies
+tokio = { version = "1.36", features = ["full"] }
+axum = { version = "0.7", features = ["macros"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+thiserror = "1.0"
+async-trait = "0.1"
+futures = "0.3"
+uuid = { version = "1.7", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json"] }
+argon2 = "0.5"
+jsonwebtoken = "9.2"
+rand = "0.8"
+dotenv = "0.15"
+config = "0.14"
+utoipa = { version = "4.1", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "5.0", features = ["axum"] }
+
+# Development dependencies
+tokio-test = "0.4"
+sqlx-test = "0.7"
