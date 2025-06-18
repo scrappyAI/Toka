@@ -42,8 +42,8 @@ Testing work is tracked separately to keep context focussed.  The high-level pha
 
 | Test Phase | Goal | Status |
 |-----------|------|--------|
-| **T-1** | Seed each crate with at least one integration test template | 🔄 in progress (primitives, agents, vault, toolkit, runtime done) |
-| **T-2** | Achieve 60 %+ line coverage via Tarpaulin | ⬜ pending |
+| **T-1** | Seed each crate with at least one integration test template | ✅ complete |
+| **T-2** | Achieve 60 %+ line coverage via Tarpaulin | 🔄 in progress |
 | **T-3** | Cross-crate integration tests (runtime end-to-end) | ⬜ pending |
 
 Detailed guidelines live in `TESTS.md`.

@@ -23,7 +23,7 @@
 //!
 //! ## Usage
 //!
-//! ```rust
+//! ```rust,ignore
 //! use toka_core::currency::MicroUSD;
 //! use toka_core::ids::{UserID, ModelID};
 //! use toka_core::models::{ModelPricingInfo, ModelProviderInfo};

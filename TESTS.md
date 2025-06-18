@@ -62,7 +62,20 @@ Gate test functions with `#[cfg(feature = "vault")]` etc. when they depend on a 
 
 ## 6. Coverage
 
-CI uses `cargo tarpaulin` on Linux to track coverage.  Aim for at least **60 %** line coverage in each crate.
+Cross-platform coverage is generated with [`cargo-llvm-cov`](https://github.com/taiki-e/cargo-llvm-cov).
+
+```
+# one-off (installs if missing)
+make coverage       # or: cargo llvm-cov --workspace --all-features --summary-only
+```
+
+Linux CI runners may continue to use Tarpaulin for comparative metrics:
+
+```
+cargo tarpaulin --workspace --all-features --engine ptrace --fail-under 60
+```
+
+Maintain at least **60 %** line coverage across every crate.
 
 ---
 

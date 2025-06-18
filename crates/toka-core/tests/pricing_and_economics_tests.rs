@@ -4,6 +4,8 @@
 //! modules. It ensures that the high-level `PricingService` correctly uses the
 //! underlying configurations to provide product information.
 
+#![cfg(all(feature = "pricing", feature = "economics", feature = "products"))]
+
 use std::collections::HashMap;
 use std::sync::Arc;
 use toka_core::currency::MicroUSD;
