@@ -1,4 +1,4 @@
-use toka_toolkit::tools::ToolParams;
+use toka_toolkit::tools::{ToolParams, ToolRegistry};
 use anyhow::Result;
 
 #[tokio::test]

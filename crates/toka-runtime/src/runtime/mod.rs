@@ -224,6 +224,11 @@ impl Runtime {
         }
         Ok(())
     }
+
+    /// Returns whether the runtime is currently running.
+    pub async fn is_running(&self) -> bool {
+        *self.is_running.lock().await
+    }
 }
 
 impl Drop for Runtime {
