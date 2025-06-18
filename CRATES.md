@@ -22,13 +22,32 @@
 
 ---
 
-## Clean-Up Roadmap (High Level)
+## Workspace Evolution
 
-1. **Phase-1 (✅ completed)** – Write this inventory file, no code changes.
-2. **Phase-2 (✅ completed)** – Consolidate thin "-core" crates into their parent crates with `core` feature-gates, perform renames.
-3. **Phase-3 (✅ completed)** – Added GitHub Action `.github/workflows/ci.yml` to build workspace (all features) and lean runtime, plus fmt/clippy/tests.
-4. **Phase-4 (skipped)** – No crates had been published to crates.io, so deprecation shims & yanks are unnecessary.
-5. **Phase-5 (✅ completed)** – Added `prelude.rs` and `SUMMARY.md` to aid LLM comprehension.
-6. **Phase-6 (YOU ARE HERE)** – Introduced `toka` meta-crate + docs deployment planning.
+The initial crate-layout cleanup (Phases 1-6) is **finished** and reflected in this file.  Future structural work will be tracked in Git commit messages rather than an ever-growing list here.
 
-Each phase ends with a `cargo check --workspace --all-features` gate. 
+Completed milestones:
+1. Inventory written (Phase-1)
+2. Thin *-core* crates consolidated & renamed (Phase-2)
+3. CI workflow added (fmt, clippy, builds, tests) (Phase-3)
+4. Deprecation shims unnecessary (Phase-4 skipped)
+5. Preludes + SUMMARY.md to aid LLM navigation (Phase-5)
+6. `toka` meta-crate introduced (Phase-6)
+
+---
+
+## Testing Roadmap
+
+Testing work is tracked separately to keep context focussed.  The high-level phases are:
+
+| Test Phase | Goal | Status |
+|-----------|------|--------|
+| **T-1** | Seed each crate with at least one integration test template | 🔄 in progress (primitives done) |
+| **T-2** | Achieve 60 %+ line coverage via Tarpaulin | ⬜ pending |
+| **T-3** | Cross-crate integration tests (runtime end-to-end) | ⬜ pending |
+
+Detailed guidelines live in `TESTS.md`.
+
+---
+
+*Each structural or testing milestone should end with `cargo check --workspace --all-features` running cleanly.*

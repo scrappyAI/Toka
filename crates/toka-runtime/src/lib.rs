@@ -2,8 +2,6 @@ pub mod events;
 #[cfg(feature = "auth")]
 pub use toka_security_auth as auth;
 #[cfg(all(feature = "toolkit", feature = "vault"))]
-pub mod cli;
-#[cfg(all(feature = "toolkit", feature = "vault"))]
 pub mod runtime;
 #[cfg(feature = "toolkit")]
 pub mod tools;
