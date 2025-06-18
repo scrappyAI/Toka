@@ -1,8 +1,5 @@
-use super::semantic_index::{SemanticIndexTool, TaggedItem, ItemMetadata};
-use super::{Tool, ToolParams, ToolResult};
-use std::collections::HashSet;
+use toka_toolkit::tools::{SemanticIndexTool, TaggedItem, ItemMetadata, ToolParams, Tool};
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use tokio::task;
 use anyhow::Result;
 

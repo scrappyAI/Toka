@@ -10,80 +10,15 @@ pub mod symbolic;
 pub use prelude::*;
 pub use symbolic::{Belief, Observation, SymbolicAgent};
 
-// -----------------------------------------------------------------------------
-//  Minimal local EventBus + AgentEvent stubs
-// -----------------------------------------------------------------------------
-// These are temporary placeholders until the unified `toka-events` crate is
-// integrated with the runtime.  They let the agent implementation compile in
-// isolation.  Downstream code can choose to ignore them or adapt as needed.
+pub use toka_events::{AgentEvent, EventBus};
 
 use anyhow::Result;
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use tokio::sync::{broadcast, RwLock};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum AgentEvent {
-    Created {
-        agent_id: String,
-        agent_type: String,
-        timestamp: u64,
-    },
-    BeliefUpdated {
-        agent_id: String,
-        belief_key: String,
-        probability: f64,
-        timestamp: u64,
-    },
-    ActionTriggered {
-        agent_id: String,
-        action: String,
-        timestamp: u64,
-    },
-    PlanGenerated {
-        agent_id: String,
-        plan: String,
-        timestamp: u64,
-    },
-    ObservationProcessed {
-        agent_id: String,
-        observation_key: String,
-        timestamp: u64,
-    },
-}
-
-#[derive(Clone, Debug)]
-pub struct EventBus {
-    sender: broadcast::Sender<AgentEvent>,
-    subscribers: Arc<RwLock<Vec<broadcast::Sender<AgentEvent>>>>,
-}
-
-impl EventBus {
-    pub fn new(buffer: usize) -> Self {
-        let (sender, _) = broadcast::channel(buffer);
-        Self {
-            sender,
-            subscribers: Arc::new(RwLock::new(Vec::new())),
-        }
-    }
-
-    pub async fn emit_agent_event(&self, ev: AgentEvent, _source: &str) -> Result<()> {
-        let _ = self.sender.send(ev.clone());
-        let subs = self.subscribers.read().await;
-        for sub in subs.iter() {
-            let _ = sub.send(ev.clone());
-        }
-        Ok(())
-    }
-
-    pub async fn subscribe(&self) -> broadcast::Receiver<AgentEvent> {
-        let rx = self.sender.subscribe();
-        let mut subs = self.subscribers.write().await;
-        subs.push(self.sender.clone());
-        rx
-    }
-}
+// -----------------------------------------------------------------------------
+//  Minimal local EventBus + AgentEvent stubs
+// -----------------------------------------------------------------------------
+// (removed; use toka_events)
 
 /// Core Agent behaviour required by `toka-runtime`.
 ///

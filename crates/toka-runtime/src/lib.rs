@@ -1,4 +1,4 @@
-pub mod events;
+pub use toka_events as events;
 #[cfg(feature = "auth")]
 pub use toka_security_auth as auth;
 #[cfg(all(feature = "toolkit", feature = "vault"))]

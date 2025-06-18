@@ -6,18 +6,18 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct TaggedItem {
-    id: String,
-    content: String,
-    tags: HashSet<String>,
-    metadata: ItemMetadata,
+pub struct TaggedItem {
+    pub id: String,
+    pub content: String,
+    pub tags: HashSet<String>,
+    pub metadata: ItemMetadata,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct ItemMetadata {
-    created_at: String,
-    last_modified: String,
-    item_type: String,
+pub struct ItemMetadata {
+    pub created_at: String,
+    pub last_modified: String,
+    pub item_type: String,
 }
 
 /// Tool for semantic indexing and querying of financial data

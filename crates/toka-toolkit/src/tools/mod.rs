@@ -17,7 +17,7 @@ pub use ingestion::IngestionTool;
 pub use ledger::LedgerTool;
 pub use reporting::ReportingTool;
 pub use scheduling::SchedulingTool;
-pub use semantic_index::SemanticIndexTool;
+pub use semantic_index::{SemanticIndexTool, TaggedItem, ItemMetadata};
 pub use coverage::{CoverageJsonTool, CoverageAnalysisTool};
 
 /// Tool execution result with metadata

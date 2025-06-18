@@ -13,7 +13,9 @@
 mod dispatcher;
 mod in_memory;
 mod models;
+pub mod rich;
 
 pub use dispatcher::{EventDispatcher, EventError, Subscriber};
 pub use in_memory::InMemoryDispatcher;
 pub use models::{Event, EventKind};
+pub use rich::*;
