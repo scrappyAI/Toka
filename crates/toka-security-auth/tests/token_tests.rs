@@ -1,4 +1,4 @@
-use toka_auth_core::CapabilityToken;
+use toka_security_auth::CapabilityToken;
 
 const SECRET: &str = "super_secret_key";
 

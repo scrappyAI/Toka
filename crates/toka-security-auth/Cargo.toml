@@ -1,5 +1,5 @@
 [package]
-name = "toka-auth-core"
+name = "toka-security-auth"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -8,4 +8,10 @@ description = "Lightweight capability-token primitives for Toka platform auth."
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
-hex = "0.4" 
+hex = "0.4"
+
+[features]
+# Default build includes core primitives
+# Downstream users can opt-in to a lean, `no_std`-friendly subset via `--no-default-features --features core`.
+ default = ["core"]
+ core = [] 

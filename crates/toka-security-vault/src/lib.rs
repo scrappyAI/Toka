@@ -14,6 +14,10 @@ use aes_gcm::{
 use rand::{rngs::OsRng, Rng};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 
+pub mod prelude;
+
+pub use prelude::*; // convenient
+
 /// Represents a vault entry with metadata and data
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct VaultEntry {

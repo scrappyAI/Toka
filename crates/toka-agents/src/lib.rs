@@ -5,8 +5,10 @@
 //! intentionally free of heavy external dependencies so the runtime can remain lean.
 
 pub mod symbolic;
+pub mod prelude;
 
 pub use symbolic::{SymbolicAgent, Observation, Belief};
+pub use prelude::*;
 
 // -----------------------------------------------------------------------------
 //  Minimal local EventBus + AgentEvent stubs

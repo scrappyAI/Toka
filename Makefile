@@ -19,7 +19,7 @@ dev-clean:
 # Test auth service
 test-auth:
 	@echo "🧪 Testing toka-auth..."
-	@cd crates/toka-auth && cargo test
+	@cd crates/toka-security-auth && cargo test
 
 # Test all services
 test:

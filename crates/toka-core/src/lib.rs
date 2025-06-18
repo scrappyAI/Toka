@@ -62,10 +62,10 @@
 // ---------------------------------------------------------------------------
 
 #[cfg(feature = "ids")]
-pub mod ids;
+pub use toka_primitives::ids as ids;
 
 #[cfg(feature = "currency")]
-pub mod currency;
+pub use toka_primitives::currency as currency;
 
 #[cfg(feature = "models")]
 pub mod models;
@@ -90,10 +90,10 @@ pub mod pricing;
 // ---------------------------------------------------------------------------
 
 #[cfg(feature = "ids")]
-pub use ids::{AgentID, ModelID, ProductID, ResourceID, TransactionID, UserID, VaultID};
+pub use toka_primitives::ids::{AgentID, ModelID, ProductID, ResourceID, TransactionID, UserID, VaultID};
 
 #[cfg(feature = "currency")]
-pub use currency::MicroUSD;
+pub use toka_primitives::currency::MicroUSD;
 
 #[cfg(feature = "models")]
 pub use models::{ModelPricingInfo, ModelProviderInfo};

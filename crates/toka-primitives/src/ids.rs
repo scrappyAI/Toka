@@ -5,14 +5,8 @@
 //! accidental misuse of one ID type for another (e.g., using a `UserID` where
 //! a `VaultID` is expected).
 //!
-//! ## Design
-//!
-//! The system is built around a generic `Id<T>` struct, where `T` is a
-//! "marker" struct that denotes the ID's type. For example, `Id<UserMarker>`
-//! becomes the `UserID`. This provides compile-time safety.
-//!
-//! Each ID is a wrapper around a `uuid::Uuid` and can be serialized to a
-//! human-readable string with a type-specific prefix (e.g., `user_...`).
+//! The implementation is copied from the original `toka-core` crate but lives
+//! here to keep `toka-primitives` agnostic to higher-level business logic.
 
 use serde::{de::Visitor, Deserializer, Serializer};
 use std::fmt;
@@ -20,7 +14,7 @@ use std::marker::PhantomData;
 use std::str::FromStr;
 use uuid::Uuid;
 
-// --- Core ID Structure ---
+// --- Core ID Structure ----------------------------------------------------
 
 /// A generic, type-safe identifier.
 ///
@@ -61,7 +55,7 @@ impl<T: IdKind> Id<T> {
     }
 }
 
-// --- Marker Structs ---
+// --- Marker Structs -------------------------------------------------------
 
 /// Marker for User IDs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -85,7 +79,7 @@ pub struct ProductMarker;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct VaultMarker;
 
-// --- ID Kind Implementations ---
+// --- ID Kind Implementations ---------------------------------------------
 
 impl IdKind for UserMarker {
     const PREFIX: &'static str = "user";
@@ -109,7 +103,7 @@ impl IdKind for VaultMarker {
     const PREFIX: &'static str = "vlt";
 }
 
-// --- Type Aliases ---
+// --- Type Aliases ---------------------------------------------------------
 
 pub type UserID = Id<UserMarker>;
 pub type AgentID = Id<AgentMarker>;
@@ -119,7 +113,7 @@ pub type ResourceID = Id<ResourceMarker>;
 pub type ProductID = Id<ProductMarker>;
 pub type VaultID = Id<VaultMarker>;
 
-// --- Boilerplate Conversions & Serialization ---
+// --- Boilerplate Conversions & Serialization -----------------------------
 
 impl<T> Default for Id<T> {
     fn default() -> Self {
@@ -158,16 +152,25 @@ impl<T: IdKind> FromStr for Id<T> {
         // Support both `prefix_uuid` and bare UUID strings for compatibility
         if let Some((prefix, uuid_part)) = s.split_once('_') {
             if prefix != T::PREFIX {
-                anyhow::bail!("Invalid prefix: expected '{}', got '{}'", T::PREFIX, prefix);
+                anyhow::bail!(
+                    "Invalid prefix: expected '{}', got '{}'",
+                    T::PREFIX,
+                    prefix
+                );
             }
             let uuid = Uuid::from_str(uuid_part)
                 .map_err(|e| anyhow::anyhow!("Invalid UUID part in ID: {}", e))?;
-            return Ok(Self { uuid, _marker: PhantomData });
+            return Ok(Self {
+                uuid,
+                _marker: PhantomData,
+            });
         }
         // Fallback: treat entire string as UUID without prefix
-        let uuid = Uuid::from_str(s)
-            .map_err(|e| anyhow::anyhow!("Invalid UUID string: {}", e))?;
-        Ok(Self { uuid, _marker: PhantomData })
+        let uuid = Uuid::from_str(s).map_err(|e| anyhow::anyhow!("Invalid UUID string: {}", e))?;
+        Ok(Self {
+            uuid,
+            _marker: PhantomData,
+        })
     }
 }
 

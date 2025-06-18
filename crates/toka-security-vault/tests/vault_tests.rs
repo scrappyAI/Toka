@@ -1,4 +1,4 @@
-use toka_vault_core::{Vault, VaultEntry};
+use toka_security_vault::{Vault, VaultEntry};
 use anyhow::Result;
 use std::path::PathBuf;
 

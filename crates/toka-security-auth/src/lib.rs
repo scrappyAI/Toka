@@ -6,4 +6,8 @@
 
 pub mod token;
 
+pub mod prelude;
+
+pub use prelude::*;
+
 pub use token::CapabilityToken; 

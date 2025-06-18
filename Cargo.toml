@@ -5,11 +5,12 @@ members = [
     "crates/toka-events",    # New lightweight events crate
     "crates/toka-runtime",
     "crates/toka-toolkit",
-    "crates/toka-agents-core",
-    "crates/toka-auth-core",
-    "crates/toka-vault-core",
+    "crates/toka-agents",
+    "crates/toka-security-auth",
+    "crates/toka-security-vault",
     "crates/toka-toolkit-core",
-    "kits/minimal-cli"
+    "crates/toka-primitives",
+    "crates/toka"
 ]
 
 [workspace.dependencies]

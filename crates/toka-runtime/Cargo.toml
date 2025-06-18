@@ -25,9 +25,9 @@ clap = { version = "4", features = ["derive"], optional = true }
 typetag = { version = "0.2", optional = true }
 # external crates
 toka-toolkit = { path = "../toka-toolkit", optional = true }
-toka-agents-core = { path = "../toka-agents-core", optional = true }
-toka-auth-core = { path = "../toka-auth-core", optional = true }
-toka-vault-core = { path = "../toka-vault-core", optional = true }
+toka-agents = { path = "../toka-agents", optional = true }
+toka-security-auth = { path = "../toka-security-auth", optional = true }
+toka-security-vault = { path = "../toka-security-vault", optional = true }
 toka-toolkit-core = { path = "../toka-toolkit-core", optional = true }
 
 [dev-dependencies]
@@ -37,8 +37,8 @@ tokio-test = "0.4"
 [features]
 default = []
 # enable full toolkit (cli + typetag + external crate)
-toolkit = ["toka-toolkit", "clap", "typetag", "toka-agents-core", "toka-toolkit-core"]
+toolkit = ["toka-toolkit", "clap", "typetag", "toka-agents", "toka-toolkit-core"]
 # secure local vault store
-vault = ["toka-vault-core"]
+vault = ["toka-security-vault"]
 # auth capability tokens utilities
-auth = ["toka-auth-core"] 
+auth = ["toka-security-auth"] 

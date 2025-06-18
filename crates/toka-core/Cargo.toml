@@ -15,6 +15,9 @@ chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"
 schemars = { version = "0.8", features = ["derive", "rust_decimal", "uuid1"], optional = true }
 anyhow = "1.0"
+# New: source-of-truth for ids & currency
+
+toka-primitives = { path = "../toka-primitives", default-features = false, features=["ids", "currency"] }
 
 [dev-dependencies]
 # Add any test-specific dependencies here if needed later
@@ -29,7 +32,7 @@ anyhow = "1.0"
 # edge builds while still allowing `toka-core` to provide a rich, fully
 #-featured API when `--all-features` is selected.
 
-default = []
+default = ["ids", "currency"]
 
 # Fundamental building-blocks ------------------------------------------------
 ids       = []                # Type-safe identifiers
