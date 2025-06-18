@@ -27,10 +27,13 @@ This file tracks **incremental architectural work** that we are performing in th
   4. Register adapters inside `toka-runtime` (simple `HashMap` keyed by URI scheme).
   5. Tools accept `uri: String` instead of raw paths; agents store blob URIs in vault.
 * Status: 🚧 in progress — trait & local adapter merged.
+* Status: ✅ complete – local adapter + runtime registry integrated.
 
 ## Phase-3 — Tool ↔ Agent bridge
-* Add `invoke_tool` helper on agents.
-* Emit `ToolEvent` via EventBus.
+* Add `invoke_tool` helper on agents. ✅
+* Emit `ToolEvent` via EventBus. ✅
+* Runtime exposes `storage()` & `tool_registry()` for agents/tools. 🚧 tests pending.
+* Next: refactor existing tools to use URI + adapter.
 
 ## Phase-4 — CLI Skeleton (`toka-cli`)
 * Basic commands: `agent new/list`, `agent observe`, `tool list/run`, `vault get/put`.
@@ -42,4 +45,4 @@ This file tracks **incremental architectural work** that we are performing in th
 
 ---
 
-_Last updated: 2025-06-18_ 
+_Last updated: 2025-06-18_

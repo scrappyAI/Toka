@@ -16,7 +16,9 @@ uuid = { version = "1", features = ["v4", "serde"] }
 toka-events = { path = "../toka-events" }
 # typetag removed – core has no dyn-serde by default 
 toka-security-vault = { path = "../toka-security-vault" }
+toka-toolkit-core = { path = "../toka-toolkit-core", optional = true }
 
 [features]
 default = ["core"]
-core = [] 
+core = []
+toolkit = ["toka-toolkit-core"] 

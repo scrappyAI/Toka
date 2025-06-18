@@ -5,6 +5,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::{AgentEvent, EventBus};
 
+#[cfg(feature = "toolkit")]
+use toka_toolkit_core::{ToolParams, ToolRegistry, ToolResult};
+
 /// Represents a belief state with probability and timestamp
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Belief {
@@ -237,5 +240,82 @@ impl SymbolicAgent {
     /// Get current planning threshold
     pub fn get_planning_threshold(&self) -> f64 {
         self.planning_threshold
+    }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Tool bridge (only compiled when toolkit feature is active)
+// ────────────────────────────────────────────────────────────────────────────
+#[cfg(feature = "toolkit")]
+impl SymbolicAgent {
+    /// Invoke a registered tool via the runtime's `ToolRegistry` and emit
+    /// appropriate `ToolEvent`s on success or error.
+    pub async fn invoke_tool(
+        &self,
+        registry: &ToolRegistry,
+        params: ToolParams,
+    ) -> anyhow::Result<ToolResult> {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        // Emit Invoked event
+        if let Some(bus) = &self.event_bus {
+            let _ = bus
+                .emit_tool_event(
+                    toka_events::ToolEvent::Invoked {
+                        tool_name: params.name.clone(),
+                        user_id: self.id.clone(),
+                        timestamp: now,
+                    },
+                    &format!("agent:{}", self.id),
+                )
+                .await;
+        }
+
+        // Execute tool
+        let result = registry.execute_tool(&params.name, &params).await;
+
+        // Emit completion/error event
+        if let Some(bus) = &self.event_bus {
+            match &result {
+                Ok(r) => {
+                    let _ = bus
+                        .emit_tool_event(
+                            toka_events::ToolEvent::Completed {
+                                tool_name: params.name.clone(),
+                                user_id: self.id.clone(),
+                                duration_ms: r.metadata.execution_time_ms,
+                                success: r.success,
+                                timestamp: SystemTime::now()
+                                    .duration_since(UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_secs(),
+                            },
+                            &format!("agent:{}", self.id),
+                        )
+                        .await;
+                }
+                Err(e) => {
+                    let _ = bus
+                        .emit_tool_event(
+                            toka_events::ToolEvent::Error {
+                                tool_name: params.name.clone(),
+                                user_id: self.id.clone(),
+                                error: e.to_string(),
+                                timestamp: SystemTime::now()
+                                    .duration_since(UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_secs(),
+                            },
+                            &format!("agent:{}", self.id),
+                        )
+                        .await;
+                }
+            }
+        }
+
+        result
     }
 }
