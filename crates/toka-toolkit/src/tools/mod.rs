@@ -11,12 +11,14 @@ mod ledger;
 mod reporting;
 mod scheduling;
 mod semantic_index;
+mod coverage;
 
 pub use ingestion::IngestionTool;
 pub use ledger::LedgerTool;
 pub use reporting::ReportingTool;
 pub use scheduling::SchedulingTool;
 pub use semantic_index::SemanticIndexTool;
+pub use coverage::{CoverageJsonTool, CoverageAnalysisTool};
 
 /// Tool execution result with metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -86,6 +88,8 @@ impl ToolRegistry {
         registry
             .register_tool(Arc::new(SemanticIndexTool::new()))
             .await?;
+        registry.register_tool(Arc::new(CoverageJsonTool::new())).await?;
+        registry.register_tool(Arc::new(CoverageAnalysisTool::new())).await?;
         registry.register_tool(Arc::new(EchoTool::new())).await?;
 
         Ok(registry)
@@ -226,6 +230,8 @@ mod tests {
         assert!(tools.contains(&"scheduling".to_string()));
         assert!(tools.contains(&"reporting".to_string()));
         assert!(tools.contains(&"semantic_index".to_string()));
+        assert!(tools.contains(&"coverage-json".to_string()));
+        assert!(tools.contains(&"coverage-analyse".to_string()));
 
         Ok(())
     }
