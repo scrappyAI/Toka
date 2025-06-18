@@ -65,6 +65,14 @@ coverage:
 	@command -v cargo-llvm-cov >/dev/null 2>&1 || (echo "Installing cargo-llvm-cov ..." && cargo install cargo-llvm-cov --locked)
 	@cargo llvm-cov --workspace --all-features --html --open 
 
+# Machine-readable JSON coverage (for agents)
+.PHONY: coverage-json
+coverage-json:
+	@echo "📈 Generating machine-readable coverage report (JSON) ..."
+	@command -v cargo-llvm-cov >/dev/null 2>&1 || (echo "Installing cargo-llvm-cov ..." && cargo install cargo-llvm-cov --locked)
+	@mkdir -p coverage
+	@cargo llvm-cov --workspace --all-features --json --output-path coverage/llvm-cov.json
+
 # -------------------------------------------------
 # Workspace-wide shortcuts (aligned with CRATES.md)
 # -------------------------------------------------
