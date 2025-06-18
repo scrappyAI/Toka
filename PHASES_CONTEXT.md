@@ -18,6 +18,16 @@ This file tracks **incremental architectural work** that we are performing in th
 * Agents implement `save_state / load_state`.
 * Runtime persist and restore agents via the adapter.
 
+### Phase-2.1 — Storage Adapter Framework *(NEW)*
+* Goal: provide pluggable blob storage (local → cloud) for tools & agents.
+* Work:
+  1. Create `toka-storage` crate with `StorageAdapter` trait.
+  2. Ship default `LocalFsAdapter` (root at `~/.toka/storage`).
+  3. Add tests (`cargo test -p toka-storage` ≥ 90 % cov).
+  4. Register adapters inside `toka-runtime` (simple `HashMap` keyed by URI scheme).
+  5. Tools accept `uri: String` instead of raw paths; agents store blob URIs in vault.
+* Status: 🚧 in progress — trait & local adapter merged.
+
 ## Phase-3 — Tool ↔ Agent bridge
 * Add `invoke_tool` helper on agents.
 * Emit `ToolEvent` via EventBus.

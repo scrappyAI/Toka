@@ -3,6 +3,7 @@
 use anyhow::Result;
 use tempfile::tempdir;
 use toka_runtime::{runtime::Runtime, runtime::RuntimeConfig};
+use dirs;
 
 #[tokio::test]
 async fn runtime_start_stop_cycle() -> Result<()> {
@@ -11,6 +12,11 @@ async fn runtime_start_stop_cycle() -> Result<()> {
         vault_path: dir.path().to_str().unwrap().to_string(),
         max_agents: 5,
         event_buffer_size: 32,
+        storage_root: dirs::home_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join(".toka/storage")
+            .to_string_lossy()
+            .into_owned(),
     };
     let runtime = Runtime::new(cfg).await?;
     runtime.start().await?;

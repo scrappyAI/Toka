@@ -31,6 +31,8 @@ toka-agents = { path = "../toka-agents", optional = true }
 toka-security-auth = { path = "../toka-security-auth", optional = true }
 toka-security-vault = { path = "../toka-security-vault", optional = true }
 toka-toolkit-core = { path = "../toka-toolkit-core", optional = true }
+toka-storage = { path = "../toka-storage" }
+dirs = "5.0"
 
 [dev-dependencies]
 tempfile = "3"

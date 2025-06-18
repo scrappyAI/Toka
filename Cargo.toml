@@ -10,7 +10,8 @@ members = [
     "crates/toka-security-vault",
     "crates/toka-toolkit-core",
     "crates/toka-primitives",
-    "crates/toka"
+    "crates/toka",
+    "crates/toka-storage"
 ]
 
 [workspace.dependencies]

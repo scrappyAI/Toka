@@ -6,6 +6,7 @@ use std::sync::Arc;
 use tokio::sync::{broadcast, Mutex, RwLock};
 use tracing::{error, info, warn};
 use uuid::Uuid;
+use toka_storage::{LocalFsAdapter, StorageAdapter};
 
 use crate::agents::Agent;
 use crate::agents::SymbolicAgent;
@@ -19,6 +20,7 @@ pub struct RuntimeConfig {
     pub vault_path: String,
     pub max_agents: usize,
     pub event_buffer_size: usize,
+    pub storage_root: String,
 }
 
 impl Default for RuntimeConfig {
@@ -27,6 +29,11 @@ impl Default for RuntimeConfig {
             vault_path: "runtime_data".to_string(),
             max_agents: 100,
             event_buffer_size: 1000,
+            storage_root: dirs::home_dir()
+                .unwrap_or_else(|| std::path::PathBuf::from("."))
+                .join(".toka/storage")
+                .to_string_lossy()
+                .into_owned(),
         }
     }
 }
@@ -41,6 +48,7 @@ pub struct Runtime {
     vault: Arc<Vault>,
     #[allow(dead_code)]
     tool_registry: Arc<ToolRegistry>,
+    storage_adapters: Arc<RwLock<HashMap<String, Arc<dyn StorageAdapter>>>>,
     is_running: Arc<Mutex<bool>>,
 }
 
@@ -55,6 +63,12 @@ impl Runtime {
 
         let tool_registry = ToolRegistry::new();
 
+        // ── Storage adapters ───────────────────────────────────────────────
+        let mut adapters: HashMap<String, Arc<dyn StorageAdapter>> = HashMap::new();
+        let local_adapter = LocalFsAdapter::new(&config.storage_root)
+            .with_context(|| format!("Failed to init local storage at {}", config.storage_root))?;
+        adapters.insert("local".into(), Arc::new(local_adapter));
+
         let runtime = Self {
             config,
             agents: Arc::new(RwLock::new(HashMap::new())),
@@ -62,6 +76,7 @@ impl Runtime {
             event_tx,
             vault: Arc::new(vault),
             tool_registry: Arc::new(tool_registry),
+            storage_adapters: Arc::new(RwLock::new(adapters)),
             is_running: Arc::new(Mutex::new(false)),
         };
 
@@ -213,6 +228,7 @@ impl Runtime {
         for agent in agents.values() {
             let _ = agent.save_state(&*self.vault).await;
         }
+        Ok(())
     }
 
     /// Load runtime state from vault
@@ -244,6 +260,11 @@ impl Runtime {
     pub async fn is_running(&self) -> bool {
         *self.is_running.lock().await
     }
+
+    /// Access a storage adapter by scheme (`local`, `s3`, …).
+    pub async fn storage(&self, scheme: &str) -> Option<Arc<dyn StorageAdapter>> {
+        self.storage_adapters.read().await.get(scheme).cloned()
+    }
 }
 
 impl Drop for Runtime {
@@ -269,6 +290,11 @@ mod tests {
             vault_path: temp_dir.path().to_str().unwrap().to_string(),
             max_agents: 10,
             event_buffer_size: 100,
+            storage_root: dirs::home_dir()
+                .unwrap_or_else(|| std::path::PathBuf::from("."))
+                .join(".toka/storage")
+                .to_string_lossy()
+                .into_owned(),
         };
 
         let runtime = Runtime::new(config).await?;
@@ -294,6 +320,11 @@ mod tests {
             vault_path: vault_path.clone(),
             max_agents: 2,
             event_buffer_size: 100,
+            storage_root: dirs::home_dir()
+                .unwrap_or_else(|| std::path::PathBuf::from("."))
+                .join(".toka/storage")
+                .to_string_lossy()
+                .into_owned(),
         };
 
         let runtime1 = Arc::new(Runtime::new(config1).await?);
@@ -318,6 +349,11 @@ mod tests {
             vault_path,
             max_agents: 2,
             event_buffer_size: 100,
+            storage_root: dirs::home_dir()
+                .unwrap_or_else(|| std::path::PathBuf::from("."))
+                .join(".toka/storage")
+                .to_string_lossy()
+                .into_owned(),
         };
 
         let runtime2 = Runtime::new(config2).await?;
