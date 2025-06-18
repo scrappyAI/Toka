@@ -1,5 +1,5 @@
-use toka_primitives::currency::MicroUSD;
 use rust_decimal::Decimal;
+use toka_primitives::currency::MicroUSD;
 
 #[test]
 fn micro_usd_from_and_to_decimal_roundtrip() {
@@ -25,5 +25,5 @@ fn micro_usd_arithmetic_saturating_ops() {
 fn micro_usd_checked_mul_div() {
     let val = MicroUSD(1_000_000); // $1
     assert_eq!(val.checked_mul_scalar(3).unwrap().0, 3_000_000);
-    assert_eq!(val.checked_div_scalar(3).unwrap().0.0, 333_333);
-} 
+    assert_eq!(val.checked_div_scalar(3).unwrap().0 .0, 333_333);
+}

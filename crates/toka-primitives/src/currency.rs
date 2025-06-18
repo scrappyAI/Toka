@@ -6,17 +6,19 @@
 //! This code is migrated from `toka-core` so that it can be used by any crate
 //! without pulling in creator-centric logic.
 
-use serde::{Serialize, Deserialize};
-use std::ops::{Add, Sub, AddAssign, SubAssign};
-use std::fmt;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 #[cfg(feature = "schema-gen")]
 use schemars::JsonSchema;
 
 /// Represents a value in micro-USD (1/1,000,000th of a USD).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
+)]
 #[serde(transparent)]
 #[cfg_attr(feature = "schema-gen", derive(JsonSchema))]
 pub struct MicroUSD(pub u64);
@@ -95,4 +97,4 @@ impl fmt::Display for MicroUSD {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "${:.6}", self.to_usd_decimal())
     }
-} 
+}

@@ -1,7 +1,7 @@
-use toka_security_vault::Vault;
 use anyhow::Result;
-use tempfile::tempdir;
 use futures::future::join_all;
+use tempfile::tempdir;
+use toka_security_vault::Vault;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn concurrent_inserts_are_visible() -> Result<()> {
@@ -17,10 +17,13 @@ async fn concurrent_inserts_are_visible() -> Result<()> {
             vault.insert(&entry).await
         }
     });
-    join_all(futures).await.into_iter().collect::<Result<()>>()?;
+    join_all(futures)
+        .await
+        .into_iter()
+        .collect::<Result<()>>()?;
 
     // Verify list length matches
     let keys = vault.list().await?;
     assert_eq!(keys.len(), 100);
     Ok(())
-} 
+}

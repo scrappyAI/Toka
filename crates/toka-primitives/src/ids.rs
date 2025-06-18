@@ -152,11 +152,7 @@ impl<T: IdKind> FromStr for Id<T> {
         // Support both `prefix_uuid` and bare UUID strings for compatibility
         if let Some((prefix, uuid_part)) = s.split_once('_') {
             if prefix != T::PREFIX {
-                anyhow::bail!(
-                    "Invalid prefix: expected '{}', got '{}'",
-                    T::PREFIX,
-                    prefix
-                );
+                anyhow::bail!("Invalid prefix: expected '{}', got '{}'", T::PREFIX, prefix);
             }
             let uuid = Uuid::from_str(uuid_part)
                 .map_err(|e| anyhow::anyhow!("Invalid UUID part in ID: {}", e))?;
@@ -207,4 +203,4 @@ impl<'de, T: IdKind> serde::Deserialize<'de> for Id<T> {
 
         deserializer.deserialize_str(IdVisitor(PhantomData))
     }
-} 
+}

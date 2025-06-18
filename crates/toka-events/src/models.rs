@@ -1,6 +1,6 @@
-use serde::{Serialize, Deserialize};
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// Enumerates high-level categories of events on the platform.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -48,4 +48,4 @@ impl From<&str> for EventKind {
     fn from(s: &str) -> Self {
         EventKind::Custom(s.to_string())
     }
-} 
+}

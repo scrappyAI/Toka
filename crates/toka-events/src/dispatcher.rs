@@ -1,6 +1,6 @@
-use async_trait::async_trait;
-use anyhow::Result;
 use crate::Event;
+use anyhow::Result;
+use async_trait::async_trait;
 
 /// Convenience alias used by subscribe.
 pub type Subscriber = tokio::sync::broadcast::Receiver<Event>;
@@ -26,4 +26,4 @@ pub trait EventDispatcher: Send + Sync {
     /// Subscribe to the stream of events (hot observable).
     /// Each subscriber receives **all** subsequent events (no backfill).
     async fn subscribe(&self) -> Result<Subscriber, EventError>;
-} 
+}

@@ -3,8 +3,8 @@
 //! This file contains tests for the `toka-core::currency` module, ensuring that
 //! `MicroUSD` calculations, conversions, and edge cases are handled correctly.
 
-use toka_core::currency::MicroUSD;
 use rust_decimal_macros::dec;
+use toka_core::currency::MicroUSD;
 
 #[test]
 fn test_from_usd_decimal_basic_conversion() {
@@ -133,11 +133,11 @@ fn test_checked_div_scalar() {
     let a = MicroUSD(100);
     let (quotient, remainder) = a.checked_div_scalar(7).unwrap();
     assert_eq!(quotient, MicroUSD(14)); // 100 / 7 = 14
-    assert_eq!(remainder, MicroUSD(2));  // 100 % 7 = 2
+    assert_eq!(remainder, MicroUSD(2)); // 100 % 7 = 2
 }
 
 #[test]
 fn test_checked_div_scalar_by_zero() {
     let a = MicroUSD(100);
     assert!(a.checked_div_scalar(0).is_none());
-} 
+}

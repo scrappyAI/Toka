@@ -10,10 +10,10 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-mod models;
 mod dispatcher;
 mod in_memory;
+mod models;
 
-pub use models::{Event, EventKind};
 pub use dispatcher::{EventDispatcher, EventError, Subscriber};
-pub use in_memory::InMemoryDispatcher; 
+pub use in_memory::InMemoryDispatcher;
+pub use models::{Event, EventKind};

@@ -2,12 +2,12 @@
 //!
 //! Defines the `Tool` trait, data structures, and a lightweight `ToolRegistry`.
 
+use anyhow::{Context, Result};
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use anyhow::{Result, Context};
-use serde::{Serialize, Deserialize};
-use async_trait::async_trait;
 use tracing::info;
 
 /// Execution metadata returned by every tool.
@@ -51,14 +51,20 @@ pub struct ToolRegistry {
 
 impl Default for ToolRegistry {
     fn default() -> Self {
-        Self { tools: Arc::new(RwLock::new(HashMap::new())) }
+        Self {
+            tools: Arc::new(RwLock::new(HashMap::new())),
+        }
     }
 }
 
 impl ToolRegistry {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
-    pub fn new_empty() -> Self { Self::default() }
+    pub fn new_empty() -> Self {
+        Self::default()
+    }
 
     pub async fn register_tool(&self, tool: Arc<dyn Tool + Send + Sync>) -> Result<()> {
         let name = tool.name().to_string();
@@ -80,11 +86,15 @@ impl ToolRegistry {
         let tool = {
             let map = self.tools.read().await;
             map.get(name).cloned()
-        }.ok_or_else(|| anyhow::anyhow!("Tool not found: {name}"))?;
+        }
+        .ok_or_else(|| anyhow::anyhow!("Tool not found: {name}"))?;
 
         tool.validate_params(params)?;
         let start = std::time::Instant::now();
-        let mut result = tool.execute(params).await.with_context(|| format!("Tool {name} failed"))?;
+        let mut result = tool
+            .execute(params)
+            .await
+            .with_context(|| format!("Tool {name} failed"))?;
         result.metadata.execution_time_ms = start.elapsed().as_millis() as u64;
         Ok(result)
     }
@@ -93,4 +103,4 @@ impl ToolRegistry {
         let map = self.tools.read().await;
         map.keys().cloned().collect()
     }
-} 
+}

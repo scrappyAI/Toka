@@ -2,9 +2,9 @@
 //!
 //! Orchestrates the overall pricing and economic configuration for the platform.
 
-use serde::{Serialize, Deserialize};
-use crate::economics::{FeeSchedule, CreatorEmpowermentFundConfig, TakeRateSlidingWindowConfig};
+use crate::economics::{CreatorEmpowermentFundConfig, FeeSchedule, TakeRateSlidingWindowConfig};
 use crate::products::CreditPackage;
+use serde::{Deserialize, Serialize};
 
 /// A single, unified configuration object for all platform pricing and economic rules.
 /// This can be loaded from a file (e.g., a TOML or JSON) to allow for dynamic adjustments
@@ -15,4 +15,4 @@ pub struct PlatformPricingConfig {
     pub empowerment_fund_config: CreatorEmpowermentFundConfig,
     pub take_rate_config: TakeRateSlidingWindowConfig,
     pub credit_packages: Vec<CreditPackage>,
-} 
+}

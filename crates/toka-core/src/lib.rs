@@ -1,8 +1,8 @@
 //! # Toka Core
 //!
 //! Central business logic and domain rules for the Toka platform.
-//! 
-//! This crate contains the core domain logic including currency definitions, 
+//!
+//! This crate contains the core domain logic including currency definitions,
 //! model/resource identification, and cost structures for those models/resources.
 //! It maintains clean separation from infrastructure concerns
 //! like accounting (ledger) and external integrations (payments, events).
@@ -49,8 +49,8 @@
 //!     notes: Some("Illustrative pricing".to_string()),
 //!     tags: vec!["example".to_string()],
 //! };
-//! println!("Model {} costs ${:.6} per 1k input tokens.", 
-//!          gpt4_model_pricing.friendly_name, 
+//! println!("Model {} costs ${:.6} per 1k input tokens.",
+//!          gpt4_model_pricing.friendly_name,
 //!          gpt4_model_pricing.input_cost_per_1k_tokens_micro_usd.to_usd_decimal());
 //! ```
 
@@ -62,10 +62,10 @@
 // ---------------------------------------------------------------------------
 
 #[cfg(feature = "ids")]
-pub use toka_primitives::ids as ids;
+pub use toka_primitives::ids;
 
 #[cfg(feature = "currency")]
-pub use toka_primitives::currency as currency;
+pub use toka_primitives::currency;
 
 #[cfg(feature = "models")]
 pub mod models;
@@ -90,7 +90,9 @@ pub mod pricing;
 // ---------------------------------------------------------------------------
 
 #[cfg(feature = "ids")]
-pub use toka_primitives::ids::{AgentID, ModelID, ProductID, ResourceID, TransactionID, UserID, VaultID};
+pub use toka_primitives::ids::{
+    AgentID, ModelID, ProductID, ResourceID, TransactionID, UserID, VaultID,
+};
 
 #[cfg(feature = "currency")]
 pub use toka_primitives::currency::MicroUSD;
@@ -115,6 +117,6 @@ pub use products::{CreditPackage, CreditPackageTier, CreditPackageView};
 
 #[cfg(feature = "pricing")]
 pub use pricing::{
-    create_standard_pricing_service, AgentPricingConfig, DefaultPricingPolicy, PlatformPricingConfig,
-    PricingPolicy, PricingService,
+    create_standard_pricing_service, AgentPricingConfig, DefaultPricingPolicy,
+    PlatformPricingConfig, PricingPolicy, PricingService,
 };

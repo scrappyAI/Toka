@@ -4,11 +4,11 @@
 //! into `toka-runtime` when the `agents-core` feature is enabled.  The implementation is
 //! intentionally free of heavy external dependencies so the runtime can remain lean.
 
-pub mod symbolic;
 pub mod prelude;
+pub mod symbolic;
 
-pub use symbolic::{SymbolicAgent, Observation, Belief};
 pub use prelude::*;
+pub use symbolic::{Belief, Observation, SymbolicAgent};
 
 // -----------------------------------------------------------------------------
 //  Minimal local EventBus + AgentEvent stubs
@@ -17,19 +17,40 @@ pub use prelude::*;
 // integrated with the runtime.  They let the agent implementation compile in
 // isolation.  Downstream code can choose to ignore them or adapt as needed.
 
-use serde::{Deserialize, Serialize};
 use anyhow::Result;
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
-use async_trait::async_trait;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AgentEvent {
-    Created { agent_id: String, agent_type: String, timestamp: u64 },
-    BeliefUpdated { agent_id: String, belief_key: String, probability: f64, timestamp: u64 },
-    ActionTriggered { agent_id: String, action: String, timestamp: u64 },
-    PlanGenerated { agent_id: String, plan: String, timestamp: u64 },
-    ObservationProcessed { agent_id: String, observation_key: String, timestamp: u64 },
+    Created {
+        agent_id: String,
+        agent_type: String,
+        timestamp: u64,
+    },
+    BeliefUpdated {
+        agent_id: String,
+        belief_key: String,
+        probability: f64,
+        timestamp: u64,
+    },
+    ActionTriggered {
+        agent_id: String,
+        action: String,
+        timestamp: u64,
+    },
+    PlanGenerated {
+        agent_id: String,
+        plan: String,
+        timestamp: u64,
+    },
+    ObservationProcessed {
+        agent_id: String,
+        observation_key: String,
+        timestamp: u64,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -41,7 +62,10 @@ pub struct EventBus {
 impl EventBus {
     pub fn new(buffer: usize) -> Self {
         let (sender, _) = broadcast::channel(buffer);
-        Self { sender, subscribers: Arc::new(RwLock::new(Vec::new())) }
+        Self {
+            sender,
+            subscribers: Arc::new(RwLock::new(Vec::new())),
+        }
     }
 
     pub async fn emit_agent_event(&self, ev: AgentEvent, _source: &str) -> Result<()> {
@@ -98,9 +122,13 @@ impl Agent for SymbolicAgent {
 
         if event_type.contains(&self.id) {
             // Self-referential event – treat as positive observation.
-            let obs = crate::Observation { key: event_type.to_string(), evidence_strength: 1.2, supports: true };
+            let obs = crate::Observation {
+                key: event_type.to_string(),
+                evidence_strength: 1.2,
+                supports: true,
+            };
             self.observe(obs).await?;
         }
         Ok(())
     }
-} 
+}

@@ -10,4 +10,4 @@ pub mod prelude;
 
 pub use prelude::*;
 
-pub use token::CapabilityToken; 
+pub use token::CapabilityToken;

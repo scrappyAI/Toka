@@ -1,5 +1,5 @@
-use super::{Tool, ToolParams, ToolResult, ToolMetadata};
-use anyhow::{Result, Context};
+use super::{Tool, ToolMetadata, ToolParams, ToolResult};
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -42,8 +42,7 @@ impl SemanticIndexTool {
     }
 
     async fn parse_item(&self, data: &str) -> Result<TaggedItem> {
-        serde_json::from_str(data)
-            .with_context(|| "Failed to parse tagged item data")
+        serde_json::from_str(data).with_context(|| "Failed to parse tagged item data")
     }
 
     async fn index_item(&self, item: TaggedItem) -> Result<()> {
@@ -70,16 +69,12 @@ impl SemanticIndexTool {
     async fn search_by_tag(&self, tag: &str) -> Result<Vec<TaggedItem>> {
         let tag_index = self.tag_index.read().await;
         let index = self.index.read().await;
-        
+
         let results = tag_index
             .get(tag)
-            .map(|ids| {
-                ids.iter()
-                    .filter_map(|id| index.get(id).cloned())
-                    .collect()
-            })
+            .map(|ids| ids.iter().filter_map(|id| index.get(id).cloned()).collect())
             .unwrap_or_default();
-            
+
         Ok(results)
     }
 
@@ -135,12 +130,16 @@ impl Tool for SemanticIndexTool {
     }
 
     async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
-        let command = params.args.get("command")
+        let command = params
+            .args
+            .get("command")
             .ok_or_else(|| anyhow::anyhow!("Missing 'command' parameter"))?;
 
         match command.as_str() {
             "index" => {
-                let data = params.args.get("data")
+                let data = params
+                    .args
+                    .get("data")
                     .ok_or_else(|| anyhow::anyhow!("Missing 'data' parameter"))?;
                 let item = self.parse_item(data).await?;
                 self.index_item(item.clone()).await?;
@@ -158,20 +157,27 @@ impl Tool for SemanticIndexTool {
                 })
             }
             "search" => {
-                let tag = params.args.get("tag")
+                let tag = params
+                    .args
+                    .get("tag")
                     .ok_or_else(|| anyhow::anyhow!("Missing 'tag' parameter"))?;
                 let results = self.search_by_tag(tag).await?;
 
                 let output = if results.is_empty() {
                     format!("No items found with tag: {}", tag)
                 } else {
-                    let mut formatted = format!("Found {} items with tag '{}':\n", results.len(), tag);
+                    let mut formatted =
+                        format!("Found {} items with tag '{}':\n", results.len(), tag);
                     for item in results {
                         formatted.push_str(&format!(
                             "\nID: {}\nContent: {}\nTags: {}\n",
                             item.id,
                             item.content,
-                            item.tags.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")
+                            item.tags
+                                .iter()
+                                .map(|s| s.as_str())
+                                .collect::<Vec<_>>()
+                                .join(", ")
                         ));
                     }
                     formatted
@@ -191,7 +197,9 @@ impl Tool for SemanticIndexTool {
                 })
             }
             "delete" => {
-                let id = params.args.get("id")
+                let id = params
+                    .args
+                    .get("id")
                     .ok_or_else(|| anyhow::anyhow!("Missing 'id' parameter"))?;
                 self.delete_item(id).await?;
                 Ok(ToolResult {
@@ -218,7 +226,11 @@ impl Tool for SemanticIndexTool {
                             "\nID: {}\nContent: {}\nTags: {}\n",
                             item.id,
                             item.content,
-                            item.tags.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")
+                            item.tags
+                                .iter()
+                                .map(|s| s.as_str())
+                                .collect::<Vec<_>>()
+                                .join(", ")
                         ));
                     }
                     formatted
@@ -256,7 +268,7 @@ mod tests {
     #[tokio::test]
     async fn test_semantic_index_tool() -> Result<()> {
         let tool = SemanticIndexTool::new();
-        
+
         // Create test item
         let test_item = TaggedItem {
             id: "1".to_string(),
@@ -280,7 +292,10 @@ mod tests {
             args: {
                 let mut map = std::collections::HashMap::new();
                 map.insert("command".to_string(), "index".to_string());
-                map.insert("data".to_string(), serde_json::to_string(&test_item).unwrap());
+                map.insert(
+                    "data".to_string(),
+                    serde_json::to_string(&test_item).unwrap(),
+                );
                 map
             },
         };
@@ -350,4 +365,4 @@ mod tests {
 
         Ok(())
     }
-} 
+}

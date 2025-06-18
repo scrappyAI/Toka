@@ -1,9 +1,9 @@
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
-use anyhow::Result;
 
-use crate::{EventBus, AgentEvent};
+use crate::{AgentEvent, EventBus};
 
 /// Represents a belief state with probability and timestamp
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -16,8 +16,8 @@ pub struct Belief {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Observation {
     pub key: String,
-    pub evidence_strength: f64,  // How strong is the observed evidence
-    pub supports: bool,          // Does it support or refute the hypothesis
+    pub evidence_strength: f64, // How strong is the observed evidence
+    pub supports: bool,         // Does it support or refute the hypothesis
 }
 
 /// Core agent structure with belief state management
@@ -39,7 +39,7 @@ impl SymbolicAgent {
             id: id.to_string(),
             beliefs: HashMap::new(),
             context: HashMap::new(),
-            action_threshold: 0.7,  // Default threshold for triggering actions
+            action_threshold: 0.7,   // Default threshold for triggering actions
             planning_threshold: 0.6, // Default threshold for planning
             event_bus: None,
         }
@@ -64,11 +64,10 @@ impl SymbolicAgent {
 
     /// Update beliefs based on new observations using Bayesian inference
     pub async fn observe(&mut self, observation: Observation) -> Result<()> {
-        let current_time = SystemTime::now()
-            .duration_since(UNIX_EPOCH)?
-            .as_secs();
-            
-        let belief = self.beliefs
+        let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+
+        let belief = self
+            .beliefs
             .entry(observation.key.clone())
             .or_insert(Belief {
                 probability: 0.5, // neutral prior
@@ -91,26 +90,30 @@ impl SymbolicAgent {
 
         // Emit belief update event
         if let Some(event_bus) = &self.event_bus {
-            let _ = event_bus.emit_agent_event(
-                AgentEvent::BeliefUpdated {
-                    agent_id: self.id.clone(),
-                    belief_key: observation.key.clone(),
-                    probability: new_prob,
-                    timestamp: current_time,
-                },
-                &format!("agent:{}", self.id)
-            ).await;
+            let _ = event_bus
+                .emit_agent_event(
+                    AgentEvent::BeliefUpdated {
+                        agent_id: self.id.clone(),
+                        belief_key: observation.key.clone(),
+                        probability: new_prob,
+                        timestamp: current_time,
+                    },
+                    &format!("agent:{}", self.id),
+                )
+                .await;
 
-            let _ = event_bus.emit_agent_event(
-                AgentEvent::ObservationProcessed {
-                    agent_id: self.id.clone(),
-                    observation_key: observation.key,
-                    timestamp: current_time,
-                },
-                &format!("agent:{}", self.id)
-            ).await;
+            let _ = event_bus
+                .emit_agent_event(
+                    AgentEvent::ObservationProcessed {
+                        agent_id: self.id.clone(),
+                        observation_key: observation.key,
+                        timestamp: current_time,
+                    },
+                    &format!("agent:{}", self.id),
+                )
+                .await;
         }
-        
+
         Ok(())
     }
 
@@ -124,7 +127,8 @@ impl SymbolicAgent {
 
     /// Generate actions based on high-confidence beliefs
     pub async fn act(&self) -> Vec<String> {
-        let actions: Vec<String> = self.beliefs
+        let actions: Vec<String> = self
+            .beliefs
             .iter()
             .filter(|(_, v)| v.probability > self.action_threshold)
             .map(|(k, _)| format!("Trigger action for hypothesis: {}", k))
@@ -138,14 +142,16 @@ impl SymbolicAgent {
                 .as_secs();
 
             for action in &actions {
-                let _ = event_bus.emit_agent_event(
-                    AgentEvent::ActionTriggered {
-                        agent_id: self.id.clone(),
-                        action: action.clone(),
-                        timestamp: current_time,
-                    },
-                    &format!("agent:{}", self.id)
-                ).await;
+                let _ = event_bus
+                    .emit_agent_event(
+                        AgentEvent::ActionTriggered {
+                            agent_id: self.id.clone(),
+                            action: action.clone(),
+                            timestamp: current_time,
+                        },
+                        &format!("agent:{}", self.id),
+                    )
+                    .await;
             }
         }
 
@@ -154,7 +160,8 @@ impl SymbolicAgent {
 
     /// Generate plans to test hypotheses
     pub async fn plan(&mut self) -> Vec<String> {
-        let plans: Vec<String> = self.hypothesize()
+        let plans: Vec<String> = self
+            .hypothesize()
             .await
             .into_iter()
             .filter(|(_, p)| *p > self.planning_threshold)
@@ -169,14 +176,16 @@ impl SymbolicAgent {
                 .as_secs();
 
             for plan in &plans {
-                let _ = event_bus.emit_agent_event(
-                    AgentEvent::PlanGenerated {
-                        agent_id: self.id.clone(),
-                        plan: plan.clone(),
-                        timestamp: current_time,
-                    },
-                    &format!("agent:{}", self.id)
-                ).await;
+                let _ = event_bus
+                    .emit_agent_event(
+                        AgentEvent::PlanGenerated {
+                            agent_id: self.id.clone(),
+                            plan: plan.clone(),
+                            timestamp: current_time,
+                        },
+                        &format!("agent:{}", self.id),
+                    )
+                    .await;
             }
         }
 
@@ -229,4 +238,4 @@ impl SymbolicAgent {
     pub fn get_planning_threshold(&self) -> f64 {
         self.planning_threshold
     }
-} 
+}

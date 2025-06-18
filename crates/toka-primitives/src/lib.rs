@@ -12,10 +12,10 @@
 // Module declarations (feature-gated)
 // ---------------------------------------------------------------------------
 
-#[cfg(feature = "ids")]
-pub mod ids;
 #[cfg(feature = "currency")]
 pub mod currency;
+#[cfg(feature = "ids")]
+pub mod ids;
 
 // ---------------------------------------------------------------------------
 // Re-exports for ergonomic downstream use
@@ -25,4 +25,4 @@ pub mod currency;
 pub use ids::{AgentID, ModelID, ProductID, ResourceID, TransactionID, UserID, VaultID};
 
 #[cfg(feature = "currency")]
-pub use currency::MicroUSD; 
+pub use currency::MicroUSD;

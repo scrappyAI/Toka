@@ -3,7 +3,7 @@
 //! Defines platform-wide economic policies and configurations, such as take rates
 //! and special funds.
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Configuration for the sliding window used to calculate the platform's take rate.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -25,4 +25,4 @@ pub struct FairnessMultiplierConfig {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CreatorEmpowermentFundConfig {
     pub contribution_percentage: f64, // e.g., 0.10 for 10% of fees
-} 
+}

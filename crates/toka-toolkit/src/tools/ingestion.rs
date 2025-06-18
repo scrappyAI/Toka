@@ -1,11 +1,11 @@
-use super::{Tool, ToolParams, ToolResult, ToolMetadata};
-use anyhow::{Result, Context};
-use tokio::fs::File;
-use tokio::io::AsyncReadExt;
+use super::{Tool, ToolMetadata, ToolParams, ToolResult};
+use anyhow::{Context, Result};
 use csv::ReaderBuilder;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_cbor;
 use std::collections::HashMap;
+use tokio::fs::File;
+use tokio::io::AsyncReadExt;
 
 /// Represents the standardized data format for all ingested data
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,9 +44,10 @@ impl IngestionTool {
 
     async fn validate_data(&self, path: &str) -> Result<()> {
         // Validate path and read metadata as bytes, avoiding assumptions about file type
-        let metadata = tokio::fs::metadata(path).await
+        let metadata = tokio::fs::metadata(path)
+            .await
             .with_context(|| format!("Failed to access file metadata: {}", path))?;
-            
+
         // Validate is regular file
         if !metadata.is_file() {
             return Err(anyhow::anyhow!("Path is not a regular file: {}", path));
@@ -57,7 +58,7 @@ impl IngestionTool {
             return Err(anyhow::anyhow!("File is empty: {}", path));
         }
         if metadata.len() > 100_000_000 {
-            return Err(anyhow::anyhow!("File exceeds 100MB limit: {}", path)); 
+            return Err(anyhow::anyhow!("File exceeds 100MB limit: {}", path));
         }
 
         // Validate file extension
@@ -70,15 +71,19 @@ impl IngestionTool {
         // Allow common financial data formats
         match extension.as_str() {
             "csv" | "tsv" | "xls" | "xlsx" | "json" => Ok(()),
-            _ => Err(anyhow::anyhow!("Unsupported file format. Supported formats: CSV, TSV, XLS, XLSX, JSON"))
+            _ => Err(anyhow::anyhow!(
+                "Unsupported file format. Supported formats: CSV, TSV, XLS, XLSX, JSON"
+            )),
         }
     }
 
     async fn read_data(&self, path: &str) -> Result<String> {
-        let mut file = File::open(path).await
+        let mut file = File::open(path)
+            .await
             .with_context(|| format!("Failed to open file: {}", path))?;
         let mut contents = String::new();
-        file.read_to_string(&mut contents).await
+        file.read_to_string(&mut contents)
+            .await
             .with_context(|| format!("Failed to read file: {}", path))?;
         Ok(contents)
     }
@@ -100,38 +105,61 @@ impl IngestionTool {
 
     fn infer_semantic_type(&self, header: &str, _sample_value: &str) -> String {
         let header_lower = header.to_lowercase();
-        
-        if header_lower.contains("date") || header_lower.contains("time") ||
-           header_lower.matches(r"(?i)(dt|timestamp|created_at|updated_at)").count() > 0 {
+
+        if header_lower.contains("date")
+            || header_lower.contains("time")
+            || header_lower
+                .matches(r"(?i)(dt|timestamp|created_at|updated_at)")
+                .count()
+                > 0
+        {
             "temporal".to_string()
-        } else if header_lower.contains("amount") || header_lower.contains("value") || 
-                  header_lower.contains("price") || header_lower.contains("cost") ||
-                  header_lower.matches(r"(?i)(qty|quantity|total|sum|balance|num\w*)").count() > 0 {
+        } else if header_lower.contains("amount")
+            || header_lower.contains("value")
+            || header_lower.contains("price")
+            || header_lower.contains("cost")
+            || header_lower
+                .matches(r"(?i)(qty|quantity|total|sum|balance|num\w*)")
+                .count()
+                > 0
+        {
             "numeric".to_string()
-        } else if header_lower.contains("desc") || header_lower.contains("description") ||
-                  header_lower.contains("name") || header_lower.contains("details") ||
-                  header_lower.contains("notes") || header_lower.contains("memo") ||
-                  header_lower.matches(r"(?i)(comment|title|label|tag|category)").count() > 0 {
+        } else if header_lower.contains("desc")
+            || header_lower.contains("description")
+            || header_lower.contains("name")
+            || header_lower.contains("details")
+            || header_lower.contains("notes")
+            || header_lower.contains("memo")
+            || header_lower
+                .matches(r"(?i)(comment|title|label|tag|category)")
+                .count()
+                > 0
+        {
             "descriptive".to_string()
         } else {
             "unknown".to_string()
         }
     }
 
-    async fn convert_to_standardized(&self, contents: &str, source_format: &str) -> Result<StandardizedData> {
+    async fn convert_to_standardized(
+        &self,
+        contents: &str,
+        source_format: &str,
+    ) -> Result<StandardizedData> {
         // Create reader and get headers
         let mut reader = ReaderBuilder::new()
             .has_headers(true)
             .from_reader(contents.as_bytes());
 
-        let headers = reader.headers()
+        let headers = reader
+            .headers()
             .with_context(|| "Failed to read CSV headers")?
             .clone(); // Clone headers to avoid borrow issues
 
         // Read all records
         let mut records = Vec::new();
         let mut first_row = None;
-        
+
         for result in reader.records() {
             let record = result.with_context(|| "Failed to read CSV record")?;
             if first_row.is_none() {
@@ -139,7 +167,10 @@ impl IngestionTool {
             }
             let mut row_data = HashMap::new();
             for (header, value) in headers.iter().zip(record.iter()) {
-                row_data.insert(header.to_string(), serde_cbor::Value::Text(value.to_string()));
+                row_data.insert(
+                    header.to_string(),
+                    serde_cbor::Value::Text(value.to_string()),
+                );
             }
             records.push(row_data);
         }
@@ -191,7 +222,9 @@ impl Tool for IngestionTool {
     }
 
     async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
-        let path = params.args.get("path")
+        let path = params
+            .args
+            .get("path")
             .ok_or_else(|| anyhow::anyhow!("Missing 'path' parameter"))?;
 
         // Validate file
@@ -208,15 +241,18 @@ impl Tool for IngestionTool {
             .to_lowercase();
 
         // Convert to standardized format
-        let standardized = self.convert_to_standardized(&contents, &source_format).await?;
+        let standardized = self
+            .convert_to_standardized(&contents, &source_format)
+            .await?;
 
         // Serialize to CBOR
-        let cbor_data = serde_cbor::to_vec(&standardized)
-            .context("Failed to serialize data to CBOR")?;
+        let cbor_data =
+            serde_cbor::to_vec(&standardized).context("Failed to serialize data to CBOR")?;
 
         // Save CBOR data to file with .cbor extension
         let output_path = std::path::Path::new(path).with_extension("cbor");
-        tokio::fs::write(&output_path, cbor_data).await
+        tokio::fs::write(&output_path, cbor_data)
+            .await
             .with_context(|| format!("Failed to write CBOR data to {}", output_path.display()))?;
 
         Ok(ToolResult {
@@ -248,9 +284,9 @@ impl Tool for IngestionTool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
-    use std::io::Write;
     use std::fs;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
 
     #[tokio::test]
     async fn test_ingestion_tool() -> Result<()> {
@@ -258,14 +294,14 @@ mod tests {
         let mut temp_file = NamedTempFile::new()?;
         let temp_path = temp_file.path().to_path_buf();
         let csv_path = temp_path.with_extension("csv");
-        
+
         // Write CSV content
         writeln!(temp_file, "date,amount,description")?;
         writeln!(temp_file, "2024-01-01,100.00,Test transaction")?;
-        
+
         // Move the file to have .csv extension
         fs::rename(temp_path, &csv_path)?;
-        
+
         let tool = IngestionTool::new();
         let params = ToolParams {
             name: "ingestion".to_string(),
@@ -288,9 +324,9 @@ mod tests {
         // Verify CBOR can be deserialized
         // Explicit type annotation prevents inference to a slice and avoids unsized-local errors.
         let cbor_data: Vec<u8> = tokio::fs::read(&cbor_path).await?;
-        let _standardized: StandardizedData = serde_cbor::from_slice(&cbor_data)
-            .context("Failed to deserialize CBOR data")?;
+        let _standardized: StandardizedData =
+            serde_cbor::from_slice(&cbor_data).context("Failed to deserialize CBOR data")?;
 
         Ok(())
     }
-} 
+}

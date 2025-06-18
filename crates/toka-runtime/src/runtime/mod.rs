@@ -1,17 +1,17 @@
-// Runtime module 
+// Runtime module
 
+use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{Mutex, RwLock, broadcast};
-use anyhow::{Result, Context};
-use tracing::{info, error, warn};
+use tokio::sync::{broadcast, Mutex, RwLock};
+use tracing::{error, info, warn};
 use uuid::Uuid;
 
 use crate::agents::Agent;
 use crate::agents::SymbolicAgent;
 use crate::events::{EventBus, EventType};
-use crate::vault::{Vault, VaultEntry};
 use crate::tools::ToolRegistry;
+use crate::vault::{Vault, VaultEntry};
 
 /// Runtime configuration
 #[derive(Debug, Clone)]
@@ -49,12 +49,12 @@ impl Runtime {
     pub async fn new(config: RuntimeConfig) -> Result<Self> {
         let vault = Vault::new(&config.vault_path)
             .with_context(|| format!("Failed to initialize vault at {}", config.vault_path))?;
-            
+
         let event_bus = EventBus::new(config.event_buffer_size);
         let (event_tx, _) = broadcast::channel(config.event_buffer_size);
-        
+
         let tool_registry = ToolRegistry::new();
-        
+
         let runtime = Self {
             config,
             agents: Arc::new(RwLock::new(HashMap::new())),
@@ -76,27 +76,31 @@ impl Runtime {
         if *is_running {
             return Ok(());
         }
-        
+
         *is_running = true;
         info!("Runtime started");
-        
+
         // Start event processing loop
         let event_tx = self.event_tx.clone();
-        let _event_bus = self.event_bus.clone();  // Keep for future use
+        let _event_bus = self.event_bus.clone(); // Keep for future use
         let agents = self.agents.clone();
         let is_running = self.is_running.clone();
-        
+
         tokio::spawn(async move {
             let mut event_rx = event_tx.subscribe();
-            
+
             while *is_running.lock().await {
                 match event_rx.recv().await {
                     Ok((event_type, event_data)) => {
                         let mut agents = agents.write().await;
                         for agent in agents.values_mut() {
                             if let Err(e) = agent.process_event(&event_type, &event_data).await {
-                                error!("Agent {} failed to process event {}: {}", 
-                                    agent.name(), event_type, e);
+                                error!(
+                                    "Agent {} failed to process event {}: {}",
+                                    agent.name(),
+                                    event_type,
+                                    e
+                                );
                             }
                         }
                     }
@@ -109,7 +113,7 @@ impl Runtime {
                 }
             }
         });
-        
+
         Ok(())
     }
 
@@ -119,7 +123,7 @@ impl Runtime {
         if !*is_running {
             return Ok(());
         }
-        
+
         *is_running = false;
         info!("Runtime stopped");
         Ok(())
@@ -129,14 +133,14 @@ impl Runtime {
     pub async fn register_agent(&self, agent: Box<dyn Agent + Send + Sync>) -> Result<String> {
         let agent_id = Uuid::new_v4().to_string();
         let mut agents = self.agents.write().await;
-        
+
         if agents.len() >= self.config.max_agents {
             return Err(anyhow::anyhow!("Maximum number of agents reached"));
         }
-        
+
         agents.insert(agent_id.clone(), agent);
         info!("Registered new agent: {}", agent_id);
-        
+
         Ok(agent_id)
     }
 
@@ -165,12 +169,12 @@ impl Runtime {
     pub async fn emit_event(&self, event_type: String, data: String) -> Result<()> {
         // Send to broadcast channel for agent processing
         self.event_tx.send((event_type.clone(), data.clone()))?;
-        
+
         // Also send to event bus for external listeners
         let event_bus = self.event_bus.lock().await;
         let generic_event = EventType::Generic { event_type, data };
         event_bus.emit(generic_event, "runtime-cli").await?;
-        
+
         Ok(())
     }
 
@@ -243,9 +247,9 @@ impl Drop for Runtime {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
     use crate::agents::SymbolicAgent;
     use std::sync::Arc;
+    use tempfile::tempdir;
 
     #[tokio::test]
     async fn test_runtime_lifecycle() -> Result<()> {
@@ -255,16 +259,16 @@ mod tests {
             max_agents: 10,
             event_buffer_size: 100,
         };
-        
+
         let runtime = Runtime::new(config).await?;
-        
+
         // Test start/stop
         runtime.start().await?;
         assert!(*runtime.is_running.lock().await);
-        
+
         runtime.stop().await?;
         assert!(!*runtime.is_running.lock().await);
-        
+
         Ok(())
     }
 
@@ -273,16 +277,16 @@ mod tests {
         // Create a temporary directory for the vault
         let temp_dir = tempdir()?;
         let vault_path = temp_dir.path().to_str().unwrap().to_string();
-        
+
         // Create first runtime instance
         let config1 = RuntimeConfig {
             vault_path: vault_path.clone(),
             max_agents: 2,
             event_buffer_size: 100,
         };
-        
+
         let runtime1 = Arc::new(Runtime::new(config1).await?);
-        
+
         // Test agent registration
         let agent = Box::new(SymbolicAgent::new("test_agent"));
         let agent_id = runtime1.register_agent(agent).await?;
@@ -290,32 +294,32 @@ mod tests {
 
         // Save state
         runtime1.save_state().await?;
-        
+
         // Stop the first runtime and drop it
         runtime1.stop().await?;
         drop(runtime1); // Explicitly drop to ensure vault is closed
-        
+
         // Small delay to ensure resources are released
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        
+
         // Create second runtime instance with the same vault path
         let config2 = RuntimeConfig {
             vault_path,
             max_agents: 2,
             event_buffer_size: 100,
         };
-        
+
         let runtime2 = Runtime::new(config2).await?;
-        
+
         // Verify the agent was loaded from the vault
         let agents = runtime2.list_agents().await;
         assert_eq!(agents.len(), 1);
         assert!(agents.contains(&agent_id));
-        
+
         // Test agent removal
         runtime2.remove_agent(&agent_id).await?;
         assert_eq!(runtime2.list_agents().await.len(), 0);
-        
+
         Ok(())
     }
 }

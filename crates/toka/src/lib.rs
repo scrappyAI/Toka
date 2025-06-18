@@ -10,16 +10,23 @@
 // -----------------------------------------------------------------------------
 #[allow(unused_imports)]
 pub mod prelude {
-    #[cfg(feature = "auth")]  pub use toka_security_auth::prelude::*;
-    #[cfg(feature = "vault")] pub use toka_security_vault::prelude::*;
-    #[cfg(feature = "agents")] pub use toka_agents::prelude::*;
+    #[cfg(feature = "agents")]
+    pub use toka_agents::prelude::*;
+    #[cfg(feature = "auth")]
+    pub use toka_security_auth::prelude::*;
+    #[cfg(feature = "vault")]
+    pub use toka_security_vault::prelude::*;
     // Future: add toolkit prelude when available.
 }
 
 // -----------------------------------------------------------------------------
 // Re-export entire crates behind feature flags so users can access full APIs.
 // -----------------------------------------------------------------------------
-#[cfg(feature = "auth")]  pub use toka_security_auth  as auth;
-#[cfg(feature = "vault")] pub use toka_security_vault as vault;
-#[cfg(feature = "agents")] pub use toka_agents         as agents;
-#[cfg(feature = "toolkit")] pub use toka_toolkit       as toolkit; 
+#[cfg(feature = "agents")]
+pub use toka_agents as agents;
+#[cfg(feature = "auth")]
+pub use toka_security_auth as auth;
+#[cfg(feature = "vault")]
+pub use toka_security_vault as vault;
+#[cfg(feature = "toolkit")]
+pub use toka_toolkit as toolkit;

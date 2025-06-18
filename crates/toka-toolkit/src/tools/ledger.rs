@@ -1,5 +1,5 @@
-use super::{Tool, ToolParams, ToolResult, ToolMetadata};
-use anyhow::{Result, Context};
+use super::{Tool, ToolMetadata, ToolParams, ToolResult};
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -23,17 +23,20 @@ impl LedgerTool {
     pub fn new() -> Self {
         Self {
             name: "ledger".to_string(),
-            description: "Match and reconcile credits and debits in financial transactions".to_string(),
+            description: "Match and reconcile credits and debits in financial transactions"
+                .to_string(),
             version: "1.0.0".to_string(),
         }
     }
 
     fn parse_transactions(&self, data: &str) -> Result<Vec<Transaction>> {
-        serde_json::from_str(data)
-            .with_context(|| "Failed to parse transaction data")
+        serde_json::from_str(data).with_context(|| "Failed to parse transaction data")
     }
 
-    fn match_transactions(&self, transactions: Vec<Transaction>) -> Vec<(Transaction, Transaction)> {
+    fn match_transactions(
+        &self,
+        transactions: Vec<Transaction>,
+    ) -> Vec<(Transaction, Transaction)> {
         let mut matches = Vec::new();
         let mut credits: HashMap<String, Transaction> = HashMap::new();
         let mut debits: HashMap<String, Transaction> = HashMap::new();
@@ -41,8 +44,12 @@ impl LedgerTool {
         // Sort transactions into credits and debits
         for tx in transactions {
             match tx.transaction_type.as_str() {
-                "credit" => { credits.insert(tx.id.clone(), tx); }
-                "debit" => { debits.insert(tx.id.clone(), tx); }
+                "credit" => {
+                    credits.insert(tx.id.clone(), tx);
+                }
+                "debit" => {
+                    debits.insert(tx.id.clone(), tx);
+                }
                 _ => continue,
             }
         }
@@ -76,7 +83,9 @@ impl Tool for LedgerTool {
     }
 
     async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
-        let data = params.args.get("data")
+        let data = params
+            .args
+            .get("data")
             .ok_or_else(|| anyhow::anyhow!("Missing 'data' parameter"))?;
 
         // Parse transactions
@@ -86,10 +95,7 @@ impl Tool for LedgerTool {
         let matches = self.match_transactions(transactions);
 
         // Generate summary
-        let summary = format!(
-            "Found {} matching pairs of transactions",
-            matches.len()
-        );
+        let summary = format!("Found {} matching pairs of transactions", matches.len());
 
         Ok(ToolResult {
             success: true,
@@ -120,7 +126,7 @@ mod tests {
     #[tokio::test]
     async fn test_ledger_tool() -> Result<()> {
         let tool = LedgerTool::new();
-        
+
         // Test data with matching credit and debit
         let test_data = r#"[
             {
@@ -154,4 +160,4 @@ mod tests {
 
         Ok(())
     }
-} 
+}

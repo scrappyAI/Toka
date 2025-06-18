@@ -1,7 +1,7 @@
-use serde::{Serialize, Deserialize};
-use std::collections::HashMap;
-use chrono::{DateTime, Utc};
 use crate::ids::ResourceID;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 // Model-specific info has been moved to models.rs
 
 /// Represents the type of a resource managed or tracked by the platform.
@@ -28,4 +28,4 @@ pub struct ResourceDescriptor {
     pub tags: Vec<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-} 
+}

@@ -2,8 +2,8 @@
 //!
 //! Defines settings and supported methods for creator payouts.
 
-use serde::{Serialize, Deserialize};
 use crate::currency::MicroUSD;
+use serde::{Deserialize, Serialize};
 
 /// Supported payout methods.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -19,4 +19,4 @@ pub struct PayoutSettings {
     pub min_payout_threshold_micro_usd: MicroUSD,
     pub supported_payout_types: Vec<PayoutType>,
     // Could include KYC requirements, etc.
-} 
+}

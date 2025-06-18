@@ -1,6 +1,6 @@
-use toka_security_vault::Vault;
 use anyhow::Result;
 use std::path::PathBuf;
+use toka_security_vault::Vault;
 
 /// Generate a unique path inside the system temp directory.
 fn tmp_vault_path() -> PathBuf {
@@ -40,4 +40,4 @@ async fn test_basic_crud_flow() -> Result<()> {
     assert!(vault.get("my_key").await?.is_none());
 
     Ok(())
-} 
+}

@@ -10,8 +10,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use toka_core::currency::MicroUSD;
 use toka_core::economics::{
-    CashoutFeeConfig, ContentUnlockFeeConfig, CreatorTier, FeeSchedule,
-    CreatorEmpowermentFundConfig, TakeRateSlidingWindowConfig,
+    CashoutFeeConfig, ContentUnlockFeeConfig, CreatorEmpowermentFundConfig, CreatorTier,
+    FeeSchedule, TakeRateSlidingWindowConfig,
 };
 use toka_core::ids::ProductID;
 use toka_core::pricing::{
@@ -147,4 +147,4 @@ fn test_pricing_service_with_arc_policy() {
 
     let packages_view = pricing_service.get_available_packages();
     assert_eq!(packages_view.len(), 2);
-} 
+}

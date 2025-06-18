@@ -1,6 +1,6 @@
-use tokio::sync::broadcast;
 use super::{Event, EventDispatcher, EventError, Subscriber};
 use async_trait::async_trait;
+use tokio::sync::broadcast;
 
 const CHANNEL_CAPACITY: usize = 1024;
 
@@ -30,4 +30,4 @@ impl EventDispatcher for InMemoryDispatcher {
     async fn subscribe(&self) -> Result<Subscriber, EventError> {
         Ok(self.sender.subscribe())
     }
-} 
+}

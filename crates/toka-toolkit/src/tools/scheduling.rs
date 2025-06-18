@@ -1,6 +1,6 @@
-use super::{Tool, ToolParams, ToolResult, ToolMetadata};
-use anyhow::{Result, Context};
-use chrono::{DateTime, Utc, Duration};
+use super::{Tool, ToolMetadata, ToolParams, ToolResult};
+use anyhow::{Context, Result};
+use chrono::{DateTime, Duration, Utc};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -36,7 +36,8 @@ impl SchedulingTool {
     pub fn new() -> Self {
         Self {
             name: "scheduling".to_string(),
-            description: "Schedule and manage financial tasks with time-based execution".to_string(),
+            description: "Schedule and manage financial tasks with time-based execution"
+                .to_string(),
             version: "1.0.0".to_string(),
             tasks: Arc::new(RwLock::new(HashMap::new())),
         }
@@ -54,7 +55,9 @@ impl SchedulingTool {
             return Err(anyhow::anyhow!("Cannot schedule task in the past"));
         }
         if time > now + Duration::days(365) {
-            return Err(anyhow::anyhow!("Cannot schedule task more than 1 year in advance"));
+            return Err(anyhow::anyhow!(
+                "Cannot schedule task more than 1 year in advance"
+            ));
         }
         Ok(())
     }
@@ -80,9 +83,13 @@ impl Tool for SchedulingTool {
     }
 
     async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
-        let task = params.args.get("task")
+        let task = params
+            .args
+            .get("task")
             .ok_or_else(|| anyhow::anyhow!("Missing 'task' parameter"))?;
-        let time = params.args.get("time")
+        let time = params
+            .args
+            .get("time")
             .ok_or_else(|| anyhow::anyhow!("Missing 'time' parameter"))?;
 
         // Parse and validate time
@@ -91,7 +98,7 @@ impl Tool for SchedulingTool {
 
         // Get next task ID
         let task_id = self.get_next_task_id().await;
-        
+
         // Create task
         let scheduled_task = ScheduledTask {
             id: task_id.clone(),
@@ -142,10 +149,10 @@ mod tests {
     #[tokio::test]
     async fn test_scheduling_tool() -> Result<()> {
         let tool = SchedulingTool::new();
-        
+
         // Schedule a task for 1 hour from now
         let future_time = (Utc::now() + Duration::hours(1)).to_rfc3339();
-        
+
         let params = ToolParams {
             name: "scheduling".to_string(),
             args: {
@@ -166,10 +173,10 @@ mod tests {
     #[tokio::test]
     async fn test_invalid_schedule_time() -> Result<()> {
         let tool = SchedulingTool::new();
-        
+
         // Try to schedule a task in the past
         let past_time = (Utc::now() - Duration::hours(1)).to_rfc3339();
-        
+
         let params = ToolParams {
             name: "scheduling".to_string(),
             args: {
@@ -186,4 +193,4 @@ mod tests {
 
         Ok(())
     }
-} 
+}

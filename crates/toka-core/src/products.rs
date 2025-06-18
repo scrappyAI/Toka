@@ -6,4 +6,4 @@
 pub mod credit_packages;
 
 // Re-export key types for convenience
-pub use self::credit_packages::{CreditPackage, CreditPackageTier, CreditPackageView}; 
+pub use self::credit_packages::{CreditPackage, CreditPackageTier, CreditPackageView};

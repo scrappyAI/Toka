@@ -2,9 +2,9 @@
 //!
 //! Defines the structure of credit packages that users can purchase.
 
-use serde::{Serialize, Deserialize};
-use crate::ids::ProductID;
 use crate::currency::MicroUSD;
+use crate::ids::ProductID;
+use serde::{Deserialize, Serialize};
 
 /// Represents the tier of a credit package.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -31,4 +31,4 @@ pub struct CreditPackageView {
     pub description: String,
     pub credits_awarded: u64,
     pub display_price: String, // e.g., "$5.00"
-} 
+}

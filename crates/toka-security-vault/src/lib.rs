@@ -2,17 +2,17 @@
 //!
 //! Lightweight, AES-GCM–encrypted key⁄value store built on `sled`.
 
-use anyhow::{Context, Result};
-use serde::{Deserialize, Serialize};
-use std::path::Path;
-use std::sync::Arc;
-use sled::Db;
 use aes_gcm::{
     aead::{Aead, KeyInit},
     Aes256Gcm, Key, Nonce,
 };
-use rand::{rngs::OsRng, Rng};
+use anyhow::{Context, Result};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use rand::{rngs::OsRng, Rng};
+use serde::{Deserialize, Serialize};
+use sled::Db;
+use std::path::Path;
+use std::sync::Arc;
 
 pub mod prelude;
 
@@ -68,7 +68,8 @@ impl Vault {
     fn get_or_create_key(db: &Db) -> Result<Key<Aes256Gcm>> {
         let tree = db.open_tree(Self::KEY_TREE)?;
         if let Some(key_data) = tree.get(Self::ENCRYPTION_KEY)? {
-            let key_bytes = BASE64.decode(key_data.as_ref())
+            let key_bytes = BASE64
+                .decode(key_data.as_ref())
                 .context("Failed to decode stored encryption key")?;
             Ok(Key::<Aes256Gcm>::from_slice(&key_bytes).clone())
         } else {
@@ -85,7 +86,9 @@ impl Vault {
         let mut nonce_bytes = [0u8; 12];
         OsRng.fill(&mut nonce_bytes);
         let nonce = Nonce::from_slice(&nonce_bytes);
-        let ciphertext = self.cipher.encrypt(nonce, data)
+        let ciphertext = self
+            .cipher
+            .encrypt(nonce, data)
             .map_err(|e| anyhow::anyhow!("Failed to encrypt data: {:?}", e))?;
         let mut result = Vec::with_capacity(12 + ciphertext.len());
         result.extend_from_slice(&nonce_bytes);
@@ -99,7 +102,8 @@ impl Vault {
         }
         let (nonce_bytes, ciphertext) = data.split_at(12);
         let nonce = Nonce::from_slice(nonce_bytes);
-        self.cipher.decrypt(nonce, ciphertext)
+        self.cipher
+            .decrypt(nonce, ciphertext)
             .map_err(|e| anyhow::anyhow!("Failed to decrypt data: {:?}", e))
     }
 
@@ -115,7 +119,8 @@ impl Vault {
     pub async fn get(&self, key: &str) -> Result<Option<VaultEntry>> {
         if let Some(encrypted) = self.db.get(key.as_bytes())? {
             let decrypted = self.decrypt(&encrypted)?;
-            let entry = serde_json::from_slice(&decrypted).context("Failed to deserialize entry")?;
+            let entry =
+                serde_json::from_slice(&decrypted).context("Failed to deserialize entry")?;
             Ok(Some(entry))
         } else {
             Ok(None)
@@ -124,7 +129,9 @@ impl Vault {
 
     /// List user (non-internal) keys
     pub async fn list(&self) -> Result<Vec<String>> {
-        Ok(self.db.iter()
+        Ok(self
+            .db
+            .iter()
             .filter_map(|res| res.ok())
             .filter_map(|(k, _)| String::from_utf8(k.to_vec()).ok())
             .filter(|k| !k.starts_with("__"))
@@ -144,12 +151,19 @@ impl Vault {
         VaultEntry {
             key: key.to_string(),
             data: data.to_string(),
-            metadata: VaultMetadata { created_at: now, updated_at: now, version: 1 },
+            metadata: VaultMetadata {
+                created_at: now,
+                updated_at: now,
+                version: 1,
+            },
         }
     }
 
     pub async fn update_entry(&self, key: &str, data: &str) -> Result<()> {
-        let mut entry = self.get(key).await?.ok_or_else(|| anyhow::anyhow!("Entry not found"))?;
+        let mut entry = self
+            .get(key)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Entry not found"))?;
         entry.data = data.to_string();
         entry.metadata.updated_at = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -164,4 +178,4 @@ impl Drop for Vault {
     fn drop(&mut self) {
         let _ = self.db.flush();
     }
-} 
+}

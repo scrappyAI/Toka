@@ -1,5 +1,5 @@
-use toka_events::{InMemoryDispatcher, Event, EventKind, EventDispatcher};
 use anyhow::Result;
+use toka_events::{Event, EventDispatcher, EventKind, InMemoryDispatcher};
 
 #[tokio::test]
 async fn test_publish_subscribe_flow() -> Result<()> {
@@ -19,4 +19,4 @@ async fn test_publish_subscribe_flow() -> Result<()> {
     assert_eq!(received.payload, payload);
 
     Ok(())
-} 
+}

@@ -13,8 +13,17 @@ pub struct CapabilityToken {
 }
 
 impl CapabilityToken {
-    pub fn new(subject: &str, vault_id: &str, permissions: Vec<String>, secret: &str, ttl_secs: u64) -> Self {
-        let issued_at = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+    pub fn new(
+        subject: &str,
+        vault_id: &str,
+        permissions: Vec<String>,
+        secret: &str,
+        ttl_secs: u64,
+    ) -> Self {
+        let issued_at = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
         let expires_at = issued_at + ttl_secs;
         let mut token = CapabilityToken {
             subject: subject.to_string(),
@@ -40,7 +49,11 @@ impl CapabilityToken {
     }
 
     pub fn is_valid(&self, secret: &str) -> bool {
-        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() < self.expires_at
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            < self.expires_at
             && self.signature == self.compute_signature(secret)
     }
-} 
+}

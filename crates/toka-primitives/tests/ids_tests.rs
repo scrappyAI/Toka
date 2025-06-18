@@ -1,5 +1,5 @@
-use toka_primitives::ids::UserID;
 use std::str::FromStr;
+use toka_primitives::ids::UserID;
 
 #[test]
 fn user_id_string_roundtrip() {
@@ -16,4 +16,4 @@ fn user_id_from_bare_uuid() {
     let uuid_str = id1.as_uuid().to_string();
     let parsed = UserID::from_str(&uuid_str).expect("parse bare uuid");
     assert_eq!(id1.as_uuid(), parsed.as_uuid());
-} 
+}

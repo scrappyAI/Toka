@@ -1,7 +1,7 @@
-use serde::{Serialize, Deserialize};
-use chrono::{DateTime, Utc};
-use crate::ids::ModelID;
 use crate::currency::MicroUSD;
+use crate::ids::ModelID;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// Information about an LLM provider.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -17,7 +17,7 @@ pub struct ModelPricingInfo {
     pub model_id: ModelID, // Unique identifier for the model (e.g., "gpt-4-turbo-2024-04-09")
     pub friendly_name: String, // e.g., "GPT-4 Turbo (2024-04-09)"
     pub provider_info: ModelProviderInfo,
-    pub input_cost_per_1k_tokens_micro_usd: MicroUSD,  // Cost for 1000 input tokens
+    pub input_cost_per_1k_tokens_micro_usd: MicroUSD, // Cost for 1000 input tokens
     pub output_cost_per_1k_tokens_micro_usd: MicroUSD, // Cost for 1000 output tokens
     pub request_fixed_cost_micro_usd: Option<MicroUSD>,
     pub unit_of_measure_is_tokens: bool, // True if costs are per token, false if per character or other unit.
@@ -27,4 +27,4 @@ pub struct ModelPricingInfo {
     pub notes: Option<String>,
     #[serde(default)]
     pub tags: Vec<String>, // e.g., ["text-generation", "summarization", "experimental"]
-} 
+}

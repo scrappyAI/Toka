@@ -1,5 +1,5 @@
-use super::{Tool, ToolParams, ToolResult, ToolMetadata};
-use anyhow::{Result, Context};
+use super::{Tool, ToolMetadata, ToolParams, ToolResult};
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -35,14 +35,14 @@ impl ReportingTool {
     pub fn new() -> Self {
         Self {
             name: "reporting".to_string(),
-            description: "Generate financial reports and summaries from transaction data".to_string(),
+            description: "Generate financial reports and summaries from transaction data"
+                .to_string(),
             version: "1.0.0".to_string(),
         }
     }
 
     fn parse_data(&self, data: &str) -> Result<FinancialData> {
-        serde_json::from_str(data)
-            .with_context(|| "Failed to parse financial data")
+        serde_json::from_str(data).with_context(|| "Failed to parse financial data")
     }
 
     fn generate_summary(&self, data: &FinancialData) -> String {
@@ -99,7 +99,9 @@ impl Tool for ReportingTool {
     }
 
     async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
-        let data = params.args.get("data")
+        let data = params
+            .args
+            .get("data")
             .ok_or_else(|| anyhow::anyhow!("Missing 'data' parameter"))?;
 
         // Parse financial data
@@ -137,7 +139,7 @@ mod tests {
     #[tokio::test]
     async fn test_reporting_tool() -> Result<()> {
         let tool = ReportingTool::new();
-        
+
         // Test data
         let test_data = r#"{
             "transactions": [
@@ -178,4 +180,4 @@ mod tests {
 
         Ok(())
     }
-} 
+}

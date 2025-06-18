@@ -43,4 +43,4 @@ pub struct Vault {
 
     /// The timestamp of the last update to the vault.
     pub updated_at: DateTime<Utc>,
-} 
+}

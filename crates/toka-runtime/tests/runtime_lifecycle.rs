@@ -1,8 +1,8 @@
 #![cfg(all(feature = "toolkit", feature = "vault"))]
 
-use toka_runtime::{runtime::RuntimeConfig, runtime::Runtime};
 use anyhow::Result;
 use tempfile::tempdir;
+use toka_runtime::{runtime::Runtime, runtime::RuntimeConfig};
 
 #[tokio::test]
 async fn runtime_start_stop_cycle() -> Result<()> {
@@ -18,4 +18,4 @@ async fn runtime_start_stop_cycle() -> Result<()> {
     runtime.stop().await?;
     assert!(!runtime.is_running().await);
     Ok(())
-} 
+}

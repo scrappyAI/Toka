@@ -11,4 +11,6 @@ pub mod policies;
 // Re-export key types for convenience
 pub use self::agent_pricing::AgentPricingConfig;
 pub use self::config::PlatformPricingConfig;
-pub use self::policies::{PricingPolicy, DefaultPricingPolicy, PricingService, create_standard_pricing_service}; 
+pub use self::policies::{
+    create_standard_pricing_service, DefaultPricingPolicy, PricingPolicy, PricingService,
+};
