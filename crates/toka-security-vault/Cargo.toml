@@ -18,7 +18,9 @@ base64 = "0.21"
 # Async runtime for integration tests
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 anyhow = "1"
-rand = "0.8" 
+rand = "0.8"
+futures = "0.3"
+tempfile = "3"
 
 [features]
 # Default build includes all std deps. Lean builds can opt-in to `core` only.
