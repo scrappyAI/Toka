@@ -206,7 +206,13 @@ impl Runtime {
             },
         };
 
-        self.vault.insert(&entry).await
+        self.vault.insert(&entry).await?;
+
+        // Persist each agent full state.
+        let agents = self.agents.read().await;
+        for agent in agents.values() {
+            let _ = agent.save_state(&*self.vault).await;
+        }
     }
 
     /// Load runtime state from vault
@@ -225,6 +231,11 @@ impl Runtime {
             }
 
             info!("Loaded {} agent placeholders from vault", agent_map.len());
+
+            // attempt to load full state for each
+            for (id, agent) in agent_map.iter_mut() {
+                let _ = agent.load_state(&*self.vault).await;
+            }
         }
         Ok(())
     }

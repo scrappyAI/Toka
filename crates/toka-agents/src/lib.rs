@@ -14,6 +14,8 @@ pub use toka_events::{AgentEvent, EventBus};
 
 use anyhow::Result;
 use async_trait::async_trait;
+use toka_security_vault::MemoryAdapter;
+use serde_json;
 
 // -----------------------------------------------------------------------------
 //  Minimal local EventBus + AgentEvent stubs
@@ -37,6 +39,12 @@ pub trait Agent: Send + Sync {
     /// panic.  A returned `Err` will be bubbled up to the runtime manager
     /// for centralised handling.
     async fn process_event(&mut self, event_type: &str, event_data: &str) -> Result<()>;
+
+    /// Persist internal state via provided adapter.
+    async fn save_state(&self, adapter: &dyn MemoryAdapter) -> Result<()>;
+
+    /// Restore internal state from adapter (if exists).
+    async fn load_state(&mut self, adapter: &dyn MemoryAdapter) -> Result<()>;
 }
 
 // -----------------------------------------------------------------------------
@@ -63,6 +71,25 @@ impl Agent for SymbolicAgent {
                 supports: true,
             };
             self.observe(obs).await?;
+        }
+        Ok(())
+    }
+
+    async fn save_state(&self, adapter: &dyn MemoryAdapter) -> Result<()> {
+        let key = format!("agent:{}", self.id);
+        let json = serde_json::to_string(self)?;
+        adapter.save_json(&key, &json)
+    }
+
+    async fn load_state(&mut self, adapter: &dyn MemoryAdapter) -> Result<()> {
+        let key = format!("agent:{}", self.id);
+        if let Some(json) = adapter.load_json(&key)? {
+            if let Ok(saved) = serde_json::from_str::<SymbolicAgent>(&json) {
+                self.beliefs = saved.beliefs;
+                self.context = saved.context;
+                self.action_threshold = saved.action_threshold;
+                self.planning_threshold = saved.planning_threshold;
+            }
         }
         Ok(())
     }

@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use sled::Db;
 use std::path::Path;
 use std::sync::Arc;
+use serde::de::DeserializeOwned;
 
 pub mod prelude;
 
@@ -177,5 +178,42 @@ impl Vault {
 impl Drop for Vault {
     fn drop(&mut self) {
         let _ = self.db.flush();
+    }
+}
+
+/// Adapter trait for persisting raw JSON payloads under string keys.
+///
+/// Keeping the interface string-based makes the trait *object-safe* so we
+/// can use `&dyn MemoryAdapter` inside agents and runtimes without hitting
+/// Rust's vtable restrictions.
+pub trait MemoryAdapter: Send + Sync {
+    /// Persist a JSON blob under the given key (upsert).
+    fn save_json(&self, key: &str, json: &str) -> Result<()>;
+
+    /// Load a JSON blob if the key exists.
+    fn load_json(&self, key: &str) -> Result<Option<String>>;
+}
+
+impl MemoryAdapter for Vault {
+    fn save_json(&self, key: &str, json: &str) -> Result<()> {
+        let entry = VaultEntry {
+            key: key.to_string(),
+            data: json.to_string(),
+            metadata: VaultMetadata {
+                created_at: 0,
+                updated_at: 0,
+                version: 1,
+            },
+        };
+        // Vault is sync; block for simplicity inside async callers.
+        futures::executor::block_on(self.insert(&entry))
+    }
+
+    fn load_json(&self, key: &str) -> Result<Option<String>> {
+        if let Some(entry) = futures::executor::block_on(self.get(key))? {
+            Ok(Some(entry.data))
+        } else {
+            Ok(None)
+        }
     }
 }

@@ -15,6 +15,7 @@ tracing = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }
 toka-events = { path = "../toka-events" }
 # typetag removed – core has no dyn-serde by default 
+toka-security-vault = { path = "../toka-security-vault" }
 
 [features]
 default = ["core"]
