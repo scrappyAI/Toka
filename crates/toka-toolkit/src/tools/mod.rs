@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
+use std::path::PathBuf;
 
 mod ingestion;
 mod ledger;
@@ -234,5 +235,21 @@ mod tests {
         assert!(tools.contains(&"coverage-analyse".to_string()));
 
         Ok(())
+    }
+}
+
+/// Resolve a URI to a concrete filesystem path.
+///
+/// Currently supports only the `local://` scheme which maps to
+/// `~/.toka/storage/…`.  For backwards-compatibility any string **without** a
+/// scheme is treated as an absolute/relative path untouched.
+pub fn resolve_uri_to_path(uri: &str) -> PathBuf {
+    if let Some(path) = uri.strip_prefix("local://") {
+        let root = directories::BaseDirs::new()
+            .map(|d| d.home_dir().join(".toka/storage"))
+            .unwrap_or_else(|| PathBuf::from(".toka/storage"));
+        root.join(path)
+    } else {
+        PathBuf::from(uri)
     }
 }

@@ -41,7 +41,7 @@ tokio-test = "0.4"
 [features]
 default = []
 # enable full toolkit (cli + typetag + external crate)
-toolkit = ["toka-toolkit", "clap", "typetag", "toka-agents", "toka-toolkit-core"]
+toolkit = ["toka-toolkit", "clap", "typetag", "toka-agents", "toka-agents/toolkit", "toka-toolkit-core"]
 # secure local vault store
 vault = ["toka-security-vault"]
 # auth capability tokens utilities

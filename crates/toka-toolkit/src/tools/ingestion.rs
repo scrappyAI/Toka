@@ -6,6 +6,7 @@ use serde_cbor;
 use std::collections::HashMap;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
+use crate::tools::resolve_uri_to_path;
 
 /// Represents the standardized data format for all ingested data
 #[derive(Debug, Serialize, Deserialize)]
@@ -42,27 +43,27 @@ impl IngestionTool {
         }
     }
 
-    async fn validate_data(&self, path: &str) -> Result<()> {
+    async fn validate_data(&self, path: &std::path::Path) -> Result<()> {
         // Validate path and read metadata as bytes, avoiding assumptions about file type
         let metadata = tokio::fs::metadata(path)
             .await
-            .with_context(|| format!("Failed to access file metadata: {}", path))?;
+            .with_context(|| format!("Failed to access file metadata: {}", path.display()))?;
 
         // Validate is regular file
         if !metadata.is_file() {
-            return Err(anyhow::anyhow!("Path is not a regular file: {}", path));
+            return Err(anyhow::anyhow!("Path is not a regular file: {}", path.display()));
         }
 
         // Check file size isn't empty or too large (100MB limit)
         if metadata.len() == 0 {
-            return Err(anyhow::anyhow!("File is empty: {}", path));
+            return Err(anyhow::anyhow!("File is empty: {}", path.display()));
         }
         if metadata.len() > 100_000_000 {
-            return Err(anyhow::anyhow!("File exceeds 100MB limit: {}", path));
+            return Err(anyhow::anyhow!("File exceeds 100MB limit: {}", path.display()));
         }
 
         // Validate file extension
-        let extension = std::path::Path::new(path)
+        let extension = path
             .extension()
             .and_then(|ext| ext.to_str())
             .ok_or_else(|| anyhow::anyhow!("Invalid file extension"))?
@@ -77,14 +78,14 @@ impl IngestionTool {
         }
     }
 
-    async fn read_data(&self, path: &str) -> Result<String> {
+    async fn read_data(&self, path: &std::path::Path) -> Result<String> {
         let mut file = File::open(path)
             .await
-            .with_context(|| format!("Failed to open file: {}", path))?;
+            .with_context(|| format!("Failed to open file: {}", path.display()))?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)
             .await
-            .with_context(|| format!("Failed to read file: {}", path))?;
+            .with_context(|| format!("Failed to read file: {}", path.display()))?;
         Ok(contents)
     }
 
@@ -222,19 +223,13 @@ impl Tool for IngestionTool {
     }
 
     async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
-        let path = params
-            .args
-            .get("path")
-            .ok_or_else(|| anyhow::anyhow!("Missing 'path' parameter"))?;
-
-        // Validate file
-        self.validate_data(path).await?;
-
-        // Read file contents
-        let contents = self.read_data(path).await?;
+        let raw_path = params.args.get("path").ok_or_else(|| anyhow::anyhow!("'path' arg required"))?;
+        let path_buf = resolve_uri_to_path(raw_path);
+        self.validate_data(&path_buf).await?;
+        let data = self.read_data(&path_buf).await?;
 
         // Get file extension for source format
-        let source_format = std::path::Path::new(path)
+        let source_format = path_buf
             .extension()
             .and_then(|ext| ext.to_str())
             .unwrap_or("unknown")
@@ -242,7 +237,7 @@ impl Tool for IngestionTool {
 
         // Convert to standardized format
         let standardized = self
-            .convert_to_standardized(&contents, &source_format)
+            .convert_to_standardized(&data, &source_format)
             .await?;
 
         // Serialize to CBOR
@@ -250,7 +245,7 @@ impl Tool for IngestionTool {
             serde_cbor::to_vec(&standardized).context("Failed to serialize data to CBOR")?;
 
         // Save CBOR data to file with .cbor extension
-        let output_path = std::path::Path::new(path).with_extension("cbor");
+        let output_path = path_buf.with_extension("cbor");
         tokio::fs::write(&output_path, cbor_data)
             .await
             .with_context(|| format!("Failed to write CBOR data to {}", output_path.display()))?;
@@ -259,7 +254,7 @@ impl Tool for IngestionTool {
             success: true,
             output: format!(
                 "Successfully converted {} to standardized CBOR format. Output: {}",
-                path,
+                path_buf.display(),
                 output_path.display()
             ),
             metadata: ToolMetadata {

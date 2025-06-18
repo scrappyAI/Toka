@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use std::process::Command;
+use crate::tools::resolve_uri_to_path;
 
 // -----------------------------------------------------------------------------
 // CoverageJsonTool
@@ -104,7 +105,8 @@ impl Tool for CoverageAnalysisTool {
             .get("path")
             .map(String::as_str)
             .unwrap_or("coverage/llvm-cov.json");
-        let summary = Self::parse_json(Path::new(path_str))?;
+        let path = resolve_uri_to_path(path_str);
+        let summary = Self::parse_json(path.as_path())?;
         let output = serde_json::to_string_pretty(&summary)?;
         Ok(ToolResult {
             success: true,
