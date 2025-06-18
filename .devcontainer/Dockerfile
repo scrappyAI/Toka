@@ -1,4 +1,4 @@
-FROM rust:1.81-slim
+FROM rust:1.86-slim
 
 # Install build essentials and common tools
 RUN apt-get update \
