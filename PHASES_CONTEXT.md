@@ -32,11 +32,20 @@ This file tracks **incremental architectural work** that we are performing in th
 ## Phase-3 — Tool ↔ Agent bridge
 * Add `invoke_tool` helper on agents. ✅
 * Emit `ToolEvent` via EventBus. ✅
-* Runtime exposes `storage()` & `tool_registry()` for agents/tools. 🚧 tests pending.
-* Next: refactor existing tools to use URI + adapter.
+* Runtime exposes `storage()` & `tool_registry()` for agents/tools. ✅ tests pass
+* Refactor existing tools to use URI + adapter. ✅
+*Status: **✅ complete** – integration tests (`tool_storage_integration`) green.*
 
-## Phase-4 — CLI Skeleton (`toka-cli`)
+## Phase-4 — CLI Skeleton (`toka-cli`) *(Current)*
 * Basic commands: `agent new/list`, `agent observe`, `tool list/run`, `vault get/put`.
+
+### Phase-4 Tasks
+1. Create `toka-cli` crate in workspace. ✅ skeleton created.
+2. Expose commands via `clap` with placeholders. ✅
+3. Wire-up to runtime (next).
+4. Add integration tests (`cargo test -p toka-cli`) ≥ 60 % cov. ⬜ pending.
+
+*Status: 🚧 in progress — CLI skeleton merged; runtime wiring & tests next.*
 
 ## Guidelines
 * Follow testing conventions in `TESTS.md` (integration tests per crate, coverage ≥ 60 %).

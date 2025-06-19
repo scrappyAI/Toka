@@ -6,9 +6,13 @@
 
 pub mod prelude;
 pub mod symbolic;
+pub mod metadata;
+pub mod reasoning;
 
 pub use prelude::*;
 pub use symbolic::{Belief, Observation, SymbolicAgent};
+pub use metadata::{AgentMetadata, Capability};
+pub use reasoning::{AgentContext, ReasonOutcome, ReasoningEngine, NoOpReasoner};
 
 pub use toka_events::{AgentEvent, EventBus};
 

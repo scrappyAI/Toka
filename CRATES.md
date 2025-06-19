@@ -13,6 +13,7 @@
 | `toka-toolkit-core`     | (keep)                    | ① light, reusable    | Tool trait & registry abstractions (no heavy deps). |
 | `toka-toolkit`          | (keep)                    | ② heavy deps         | Batteries-included tool implementations (CSV, CBOR, etc.). |
 | `toka-runtime`          | (keep)                    | ② heavy deps         | Async host for agents, event bus, toolkit. |
+| `toka-cli`              | (keep)                    | ② heavy deps         | Command-line interface for agents, tools & vault. |
 | `toka`                  | (new meta-crate)          | – aggregate crate    | Re-exports common preludes for easy onboarding. |
 
 *Rule-of-Thumb Keys*

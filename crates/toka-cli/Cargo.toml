@@ -1,0 +1,15 @@
+[package]
+name = "toka-cli"
+version = "0.1.0"
+edition = "2021"
+
+# The CLI crate is intentionally lightweight and relies on existing workspace deps.
+
+[dependencies]
+# Use workspace-managed dependencies where possible.
+clap = { workspace = true, features = ["derive"] }
+anyhow = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+
+# Re-export runtime & toolkit for internal use (future work)
+toka-runtime = { path = "../toka-runtime", version = "0.1.0", optional = true } 
