@@ -18,6 +18,9 @@ pub enum EventError {
 }
 
 /// Abstraction over an event delivery mechanism.
+#[deprecated(
+    note = "Use the richer `EventBus` in `toka_events::rich` instead. This legacy trait will be removed in a future release."
+)]
 #[async_trait]
 pub trait EventDispatcher: Send + Sync {
     /// Broadcast an event to all subscribers.

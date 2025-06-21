@@ -7,6 +7,7 @@ use tokio::sync::{broadcast, Mutex, RwLock};
 use tracing::{error, info, warn};
 use uuid::Uuid;
 use toka_storage::{LocalFsAdapter, StorageAdapter};
+use toka_security_vault::blob_adapter::VaultBlobAdapter;
 
 use crate::agents::Agent;
 use crate::agents::SymbolicAgent;
@@ -44,7 +45,6 @@ pub struct Runtime {
     agents: Arc<RwLock<HashMap<String, Box<dyn Agent + Send + Sync>>>>,
     event_bus: Arc<Mutex<EventBus>>,
     event_tx: broadcast::Sender<(String, String)>,
-    #[allow(dead_code)]
     vault: Arc<Vault>,
     #[allow(dead_code)]
     tool_registry: Arc<ToolRegistry>,
@@ -57,6 +57,7 @@ impl Runtime {
     pub async fn new(config: RuntimeConfig) -> Result<Self> {
         let vault = Vault::new(&config.vault_path)
             .with_context(|| format!("Failed to initialize vault at {}", config.vault_path))?;
+        let vault = Arc::new(vault);
 
         let event_bus = EventBus::new(config.event_buffer_size);
         let (event_tx, _) = broadcast::channel(config.event_buffer_size);
@@ -65,6 +66,10 @@ impl Runtime {
 
         // ── Storage adapters ───────────────────────────────────────────────
         let mut adapters: HashMap<String, Arc<dyn StorageAdapter>> = HashMap::new();
+        let blob_adapter = VaultBlobAdapter::new(vault.clone());
+        adapters.insert("vault".into(), Arc::new(blob_adapter));
+
+        // Legacy local filesystem adapter for backwards-compat
         let local_adapter = LocalFsAdapter::new(&config.storage_root)
             .with_context(|| format!("Failed to init local storage at {}", config.storage_root))?;
         adapters.insert("local".into(), Arc::new(local_adapter));
@@ -74,7 +79,7 @@ impl Runtime {
             agents: Arc::new(RwLock::new(HashMap::new())),
             event_bus: Arc::new(Mutex::new(event_bus)),
             event_tx,
-            vault: Arc::new(vault),
+            vault: vault.clone(),
             tool_registry: Arc::new(tool_registry),
             storage_adapters: Arc::new(RwLock::new(adapters)),
             is_running: Arc::new(Mutex::new(false)),

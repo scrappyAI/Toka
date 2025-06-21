@@ -6,6 +6,9 @@ const CHANNEL_CAPACITY: usize = 1024;
 
 /// Simple in-process dispatcher leveraging `tokio::sync::broadcast`.
 /// Suitable for unit tests, local development, and embedded deployments.
+#[deprecated(
+    note = "Use `EventBus::new_default()` from `toka_events::rich` instead. This legacy struct will be removed in a future release."
+)]
 #[derive(Debug, Clone)]
 pub struct InMemoryDispatcher {
     sender: broadcast::Sender<Event>,

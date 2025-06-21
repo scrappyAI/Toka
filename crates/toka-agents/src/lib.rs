@@ -8,11 +8,15 @@ pub mod prelude;
 pub mod agent;
 pub mod metadata;
 pub mod reasoning;
+pub mod bundle;
+pub mod system;
 
 pub use prelude::*;
 pub use agent::{Belief, Observation, BaseAgent, SymbolicAgent};
 pub use metadata::{AgentMetadata, Capability};
 pub use reasoning::{AgentContext, ReasonOutcome, ReasoningEngine, NoOpReasoner};
+pub use bundle::{AgentBundle, ToolSpec};
+pub use system::{SystemAgent, SystemAgentKind};
 
 pub use toka_events::{AgentEvent, EventBus};
 

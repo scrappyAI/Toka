@@ -16,6 +16,7 @@ use std::sync::Arc;
 use serde::de::DeserializeOwned;
 
 pub mod prelude;
+pub mod blob_adapter;
 
 pub use prelude::*; // convenient
 

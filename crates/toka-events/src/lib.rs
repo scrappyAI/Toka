@@ -19,3 +19,8 @@ pub use dispatcher::{EventDispatcher, EventError, Subscriber};
 pub use in_memory::InMemoryDispatcher;
 pub use models::{Event, EventKind};
 pub use rich::*;
+
+// ## Deprecation Notice
+// The original `EventDispatcher` trait and `InMemoryDispatcher` have been marked
+// as *deprecated* and will be removed in a future release.  Downstream code
+// should migrate to the richer `rich::EventBus` API exposed by this crate.

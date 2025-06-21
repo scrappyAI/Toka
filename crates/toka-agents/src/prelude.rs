@@ -6,3 +6,5 @@ pub use crate::{Belief, Observation, BaseAgent};
 
 // Re-export the core Agent trait so consumers only need one glob import.
 pub use crate::Agent as AgentTrait;
+
+pub use crate::{AgentBundle, ToolSpec, SystemAgent, SystemAgentKind};
