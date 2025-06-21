@@ -1,5 +1,5 @@
 use anyhow::Result;
-use toka_agents::{EventBus, Observation, SymbolicAgent};
+use toka_agents::{EventBus, Observation, SymbolicAgent}; // alias still works
 
 #[tokio::test]
 async fn belief_update_moves_probability() -> Result<()> {
@@ -14,7 +14,7 @@ async fn belief_update_moves_probability() -> Result<()> {
         supports: true,
     };
     agent.observe(obs).await?;
-    let prob = agent.beliefs.get("sky_is_blue").unwrap().probability;
+    let prob = agent.beliefs().get("sky_is_blue").unwrap().probability;
     assert!(prob > 0.5);
     Ok(())
 }

@@ -43,4 +43,6 @@ impl ReasoningEngine for NoOpReasoner {
     async fn reason(&self, _ctx: &AgentContext<'_>) -> Result<ReasonOutcome> {
         Ok(ReasonOutcome::NoOp)
     }
-} 
+}
+
+pub mod symbolic; 

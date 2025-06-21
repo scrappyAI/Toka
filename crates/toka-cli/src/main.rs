@@ -23,7 +23,7 @@ use anyhow::Result;
 #[command(
     name = "toka",
     version = env!("CARGO_PKG_VERSION"),
-    author = "Toka Contributors <opensource@toka.io>",
+    author = "Toka Contributors <opensource@toka.sh>",
     about = "Toka – unified CLI for agents, tools & vaults",
     propagate_version = true,
 )]

@@ -5,12 +5,12 @@
 //! intentionally free of heavy external dependencies so the runtime can remain lean.
 
 pub mod prelude;
-pub mod symbolic;
+pub mod agent;
 pub mod metadata;
 pub mod reasoning;
 
 pub use prelude::*;
-pub use symbolic::{Belief, Observation, SymbolicAgent};
+pub use agent::{Belief, Observation, BaseAgent, SymbolicAgent};
 pub use metadata::{AgentMetadata, Capability};
 pub use reasoning::{AgentContext, ReasonOutcome, ReasoningEngine, NoOpReasoner};
 
@@ -56,7 +56,7 @@ pub trait Agent: Send + Sync {
 // -----------------------------------------------------------------------------
 
 #[async_trait]
-impl Agent for SymbolicAgent {
+impl Agent for BaseAgent {
     fn name(&self) -> &str {
         &self.id
     }
@@ -88,11 +88,9 @@ impl Agent for SymbolicAgent {
     async fn load_state(&mut self, adapter: &dyn MemoryAdapter) -> Result<()> {
         let key = format!("agent:{}", self.id);
         if let Some(json) = adapter.load_json(&key)? {
-            if let Ok(saved) = serde_json::from_str::<SymbolicAgent>(&json) {
-                self.beliefs = saved.beliefs;
+            if let Ok(saved) = serde_json::from_str::<BaseAgent>(&json) {
                 self.context = saved.context;
-                self.action_threshold = saved.action_threshold;
-                self.planning_threshold = saved.planning_threshold;
+                self.reasoner = saved.reasoner;
             }
         }
         Ok(())
