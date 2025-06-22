@@ -1,0 +1,12 @@
+[package]
+name = "vault-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Canonical event types and primitives for the Toka Vault OS layer."
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+smallvec = "1.13"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.7", features = ["v4", "serde"] } 

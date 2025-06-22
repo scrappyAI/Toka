@@ -12,7 +12,12 @@ members = [
     "crates/toka-primitives",
     "crates/toka",
     "crates/toka-storage",
-    "crates/toka-cli"
+    "crates/toka-cli",
+    "crates/vault-core",
+    "crates/vault-hash",
+    "crates/vault-intent",
+    "crates/vault-bus",
+    "crates/smart-embedder"
 ]
 
 [workspace.dependencies]

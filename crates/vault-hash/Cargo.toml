@@ -1,0 +1,10 @@
+[package]
+name = "vault-hash"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Causal hashing utilities for the Toka Vault OS layer."
+
+[dependencies]
+blake3 = "1.5"
+vault-core = { path = "../vault-core", version = "0.1.0" } 
