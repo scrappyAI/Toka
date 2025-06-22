@@ -1,11 +1,4 @@
-//! Vault Intent – online clustering of event embeddings to discover high-level intents.
-//!
-//! This is a lightweight, lock-free (parking_lot) implementation that keeps
-//! centroids in-memory.  It is **not** persisted across runs; callers are
-//! expected to checkpoint or derive intent IDs as needed.
-
-#![forbid(unsafe_code)]
-#![warn(missing_docs)]
+//! Online intent clustering for semantic event grouping.
 
 use ndarray::Array1;
 use parking_lot::RwLock;
@@ -16,7 +9,7 @@ pub const D: usize = 768;
 /// Cosine similarity threshold at which two embeddings are considered the same intent.
 const THRESH: f32 = 0.82;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct Centroid {
     vec:   Array1<f32>,
     count: usize,
@@ -24,18 +17,23 @@ struct Centroid {
 }
 
 /// Thread-safe store of centroids representing discovered intents.
-#[derive(Default)]
+///
+/// This implementation keeps centroids in-memory and uses simple online
+/// clustering with cosine similarity. For production use, you may want
+/// to persist centroids or use more sophisticated clustering algorithms.
+#[derive(Debug, Default)]
 pub struct IntentStore {
     centroids: RwLock<Vec<Centroid>>,
 }
 
 impl IntentStore {
-    /// Create a fresh store.
+    /// Create a fresh intent store.
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Assign an embedding to the closest centroid above `THRESH`.
+    ///
     /// Returns the assigned `IntentId` and a flag indicating whether a new
     /// centroid was created.
     pub fn assign(&self, embed: &Array1<f32>) -> (Uuid, bool) {
@@ -65,9 +63,20 @@ impl IntentStore {
         });
         (id, true)
     }
+
+    /// Get the number of discovered intent clusters.
+    pub fn cluster_count(&self) -> usize {
+        self.centroids.read().len()
+    }
 }
 
 fn cosine(a: &Array1<f32>, b: &Array1<f32>) -> f32 {
     let dot = a.dot(b);
-    dot / (a.norm_l2() * b.norm_l2() + 1e-12)
+    let norm_a = dot_self(a).sqrt();
+    let norm_b = dot_self(b).sqrt();
+    dot / (norm_a * norm_b + 1e-12)
+}
+
+fn dot_self(v: &Array1<f32>) -> f32 {
+    v.dot(v)
 } 

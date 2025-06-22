@@ -1,7 +1,7 @@
 use anyhow::Result;
 use futures::future::join_all;
 use tempfile::tempdir;
-use toka_security_vault::Vault;
+use toka_secrets::Vault;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn concurrent_inserts_are_visible() -> Result<()> {

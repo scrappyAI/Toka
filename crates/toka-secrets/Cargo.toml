@@ -1,9 +1,9 @@
 [package]
-name = "toka-security-vault"
+name = "toka-secrets"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-description = "Secure encrypted key/value store for Toka runtime."
+description = "Encrypted secrets vault for Toka platform"
 
 [dependencies]
 aes-gcm = "0.10"

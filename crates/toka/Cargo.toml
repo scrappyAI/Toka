@@ -11,7 +11,7 @@ description = "Top-level meta-crate that re-exports the most commonly used parts
 default = ["auth", "vault", "agents", "toolkit"]
 
 auth = ["dep:toka-security-auth"]
-vault = ["dep:toka-security-vault"]
+vault = ["dep:toka-secrets"]
 agents = ["dep:toka-agents"]
 # toolkit implies toolkit-core automatically via toka-toolkit's own deps.
 toolkit = ["dep:toka-toolkit"]
@@ -19,6 +19,6 @@ toolkit = ["dep:toka-toolkit"]
 [dependencies]
 # All dependencies are optional and tied to features above.
 toka-security-auth  = { path = "../toka-security-auth", optional = true }
-toka-security-vault = { path = "../toka-security-vault", optional = true }
+toka-secrets        = { path = "../toka-secrets",        optional = true }
 toka-agents         = { path = "../toka-agents",         optional = true }
 toka-toolkit        = { path = "../toka-toolkit",        optional = true } 

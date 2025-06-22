@@ -23,7 +23,7 @@ pub use toka_events::{AgentEvent, EventBus};
 use anyhow::Result;
 use async_trait::async_trait;
 use serde_json;
-use toka_security_vault::MemoryAdapter;
+use toka_secrets::MemoryAdapter;
 
 // -----------------------------------------------------------------------------
 //  Minimal local EventBus + AgentEvent stubs

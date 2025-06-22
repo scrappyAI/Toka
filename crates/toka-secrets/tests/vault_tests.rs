@@ -1,6 +1,6 @@
 use anyhow::Result;
 use std::path::PathBuf;
-use toka_security_vault::Vault;
+use toka_secrets::Vault;
 
 /// Generate a unique path inside the system temp directory.
 fn tmp_vault_path() -> PathBuf {

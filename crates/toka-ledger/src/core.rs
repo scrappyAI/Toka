@@ -1,14 +1,4 @@
-//! Vault Core – canonical event primitives for the Toka Vault OS.
-//!
-//! This crate intentionally keeps its surface minimal: just the basic types
-//! needed by the rest of the vault stack (`vault-hash`, `vault-intent`,
-//! `vault-bus`).  Higher-level business logic belongs elsewhere.
-//!
-//! ## Feature Flags
-//! No feature flags yet – this crate should stay lightweight.
-
-#![forbid(unsafe_code)]
-#![warn(missing_docs)]
+//! Core event types and primitives for the Toka Vault OS.
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

@@ -15,7 +15,7 @@ pub mod prelude {
     #[cfg(feature = "auth")]
     pub use toka_security_auth::prelude::*;
     #[cfg(feature = "vault")]
-    pub use toka_security_vault::prelude::*;
+    pub use toka_secrets::prelude::*;
     // Future: add toolkit prelude when available.
 }
 
@@ -27,6 +27,6 @@ pub use toka_agents as agents;
 #[cfg(feature = "auth")]
 pub use toka_security_auth as auth;
 #[cfg(feature = "vault")]
-pub use toka_security_vault as vault;
+pub use toka_secrets as vault;
 #[cfg(feature = "toolkit")]
 pub use toka_toolkit as toolkit;

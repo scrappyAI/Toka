@@ -97,7 +97,7 @@ Toka is organized as a workspace with multiple crates:
 - `toka-runtime`: Runtime for agents and tools
 - `toka-toolkit`: Collection of standard tools
 - `toka-security-auth`: Authentication primitives
-- `toka-security-vault`: Secure vault implementation
+- `toka-secrets`: Secure vault implementation
 - `toka-events`: Event system
 - `toka-primitives`: Basic data types
 - `toka-cli`: Command-line interface

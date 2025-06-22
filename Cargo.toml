@@ -7,16 +7,13 @@ members = [
     "crates/toka-toolkit",
     "crates/toka-agents",
     "crates/toka-security-auth",
-    "crates/toka-security-vault",
+    "crates/toka-secrets",
     "crates/toka-toolkit-core",
     "crates/toka-primitives",
     "crates/toka",
     "crates/toka-storage",
     "crates/toka-cli",
-    "crates/vault-core",
-    "crates/vault-hash",
-    "crates/vault-intent",
-    "crates/vault-bus",
+    "crates/toka-ledger",
     "crates/smart-embedder"
 ]
 

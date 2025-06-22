@@ -29,7 +29,7 @@ typetag = { version = "0.2", optional = true }
 toka-toolkit = { path = "../toka-toolkit", optional = true }
 toka-agents = { path = "../toka-agents", optional = true }
 toka-security-auth = { path = "../toka-security-auth", optional = true }
-toka-security-vault = { path = "../toka-security-vault", optional = true }
+toka-secrets = { path = "../toka-secrets", optional = true }
 toka-toolkit-core = { path = "../toka-toolkit-core", optional = true }
 toka-storage = { path = "../toka-storage" }
 dirs = "5.0"
@@ -43,6 +43,6 @@ default = []
 # enable full toolkit (cli + typetag + external crate)
 toolkit = ["toka-toolkit", "clap", "typetag", "toka-agents", "toka-agents/toolkit", "toka-toolkit-core"]
 # secure local vault store
-vault = ["toka-security-vault"]
+vault = ["dep:toka-secrets"]
 # auth capability tokens utilities
 auth = ["toka-security-auth"] 

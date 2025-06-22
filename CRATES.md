@@ -8,7 +8,7 @@
 | `toka-core`             | `toka-domain`             | ③ separate lifecycle | Higher-level domain logic built on primitives. |
 | `toka-events`           | (keep)                    | ① no_std             | Ultra-light in-memory event bus. |
 | `toka-security-auth`    | (renamed – done)          | ① + ③                | Capability-token primitives, crypto free. |
-| `toka-security-vault`   | (renamed – done)          | ② heavy deps         | Encrypted key/value vault built on sled + aes-gcm. |
+| `toka-secrets`          | (renamed – done)          | ② heavy deps         | Encrypted key/value vault built on sled + aes-gcm. |
 | `toka-agents`           | (renamed – done)          | ② optional deps      | Default agent implementations for the runtime. |
 | `toka-toolkit-core`     | (keep)                    | ① light, reusable    | Tool trait & registry abstractions (no heavy deps). |
 | `toka-toolkit`          | (keep)                    | ② heavy deps         | Batteries-included tool implementations (CSV, CBOR, etc.). |

@@ -32,7 +32,7 @@ pub trait StorageAdapter: Send + Sync {
 ///
 /// Path traversal outside `root` is prevented.
 #[deprecated(
-    note = "Prefer the encrypted `VaultBlobAdapter` in `toka-security-vault`. Local filesystem adapter will move to a separate crate."
+    note = "Prefer the encrypted `VaultBlobAdapter` in `toka-secrets`. Local filesystem adapter will move to a separate crate."
 )]
 #[derive(Debug, Clone)]
 pub struct LocalFsAdapter {

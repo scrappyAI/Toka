@@ -60,11 +60,11 @@ impl Agent for SystemAgent {
         self.inner.process_event(event_type, data).await
     }
 
-    async fn save_state(&self, adapter: &dyn toka_security_vault::MemoryAdapter) -> Result<()> {
+    async fn save_state(&self, adapter: &dyn toka_secrets::MemoryAdapter) -> Result<()> {
         self.inner.save_state(adapter).await
     }
 
-    async fn load_state(&mut self, adapter: &dyn toka_security_vault::MemoryAdapter) -> Result<()> {
+    async fn load_state(&mut self, adapter: &dyn toka_secrets::MemoryAdapter) -> Result<()> {
         self.inner.load_state(adapter).await
     }
 }
