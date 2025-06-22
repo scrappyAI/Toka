@@ -1,4 +1,4 @@
-//! Core event types and primitives for the Toka Vault OS.
+//! Core event types and primitives for the Toka Ledger Core.
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -30,6 +30,8 @@ pub struct EventHeader {
     /// Blake3 digest of the event payload and its causal parent digests.
     pub digest: CausalDigest,
     /// Semantic intent bucket this event belongs to.
+    /// For the *core* crate we don't try to cluster; callers can set it to
+    /// whatever value they need (e.g. `Uuid::nil()` when unknown).
     pub intent: IntentId,
     /// Application-defined kind, e.g. `ledger.mint` or `chat.msg`.
     pub kind: String,

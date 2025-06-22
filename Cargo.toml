@@ -13,6 +13,8 @@ members = [
     "crates/toka",
     "crates/toka-storage",
     "crates/toka-cli",
+    "crates/toka-ledger-core",
+    "crates/toka-ledger-agents",
     "crates/toka-ledger",
     "crates/toka-ledger-finance",
     "crates/smart-embedder"

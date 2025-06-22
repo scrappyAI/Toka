@@ -14,13 +14,13 @@
 //! ## Usage
 //! ```rust,no_run
 //! use toka_ledger_finance as finance;
-//! use toka_ledger::{VaultBus};
+//! use toka_ledger_core::{VaultBus};
 //! use ndarray::arr1;
 //!
 //! # async fn example(bus: &VaultBus) -> anyhow::Result<()> {
 //! let tx = finance::LedgerTx::balanced(vec![
-//!     finance::debit("acct/a", 100),
-//!     finance::credit("acct/b", 100),
+//!     finance::debit("acct/a", finance::MicroUSD(100)),
+//!     finance::credit("acct/b", finance::MicroUSD(100)),
 //! ])?;
 //!
 //! let _hdrs = tx.commit(bus, arr1(&[0.0])).await?;
@@ -32,7 +32,7 @@
 use anyhow::Result;
 use ndarray::Array1;
 use serde::{Deserialize, Serialize};
-use toka_ledger::{EventHeader, EventPayload, VaultBus};
+use toka_ledger_core::{EventHeader, EventPayload, VaultBus};
 
 /// Identifier for an account in the financial ledger.
 pub type AccountId = String;

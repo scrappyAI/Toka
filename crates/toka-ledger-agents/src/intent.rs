@@ -1,4 +1,4 @@
-//! Online intent clustering for semantic event grouping.
+//! Online intent clustering for semantic event grouping (agent layer).
 
 use ndarray::Array1;
 use parking_lot::RwLock;
@@ -19,8 +19,8 @@ struct Centroid {
 /// Thread-safe store of centroids representing discovered intents.
 ///
 /// This implementation keeps centroids in-memory and uses simple online
-/// clustering with cosine similarity. For production use, you may want
-/// to persist centroids or use more sophisticated clustering algorithms.
+/// clustering with cosine similarity.  Domain applications can replace this
+/// with a more sophisticated approach if needed.
 #[derive(Debug, Default)]
 pub struct IntentStore {
     centroids: RwLock<Vec<Centroid>>,

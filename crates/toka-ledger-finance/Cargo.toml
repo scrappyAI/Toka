@@ -11,7 +11,7 @@ anyhow = "1"
 toka-primitives = { path = "../toka-primitives" }
 serde_json = "1.0"
 ndarray = "0.15"
-toka-ledger = { path = "../toka-ledger" }
+toka-ledger-core = { path = "../toka-ledger-core" }
 
 [features]
 default = [] 
