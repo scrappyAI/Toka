@@ -4,7 +4,7 @@
 use anyhow::Result;
 use std::time::{SystemTime, UNIX_EPOCH};
 use toka_agents::{Agent, BaseAgent, EventBus, Observation};
-use toka_security_vault::Vault;
+use toka_secrets::Vault;
 use tempfile::tempdir;
 
 #[tokio::test]
@@ -122,19 +122,19 @@ async fn test_agent_event_processing_resilience() -> Result<()> {
     agent.set_event_bus(bus);
     
     // Test with various malformed event data
-    let malformed_events = vec![
-        ("", ""),
-        ("very_long_event_type".repeat(1000), "data"),
-        ("event", "very_long_data".repeat(1000)),
-        ("event\0with\0nulls", "data\0with\0nulls"),
-        ("event\nwith\nnewlines", "data\nwith\nnewlines"),
-        ("event🌍unicode", "data🌍unicode"),
-        ("event{}", r#"{"malicious": "json"}"#),
+    let malformed_events: Vec<(String, String)> = vec![
+        ("".to_string(), "".to_string()),
+        ("very_long_event_type".repeat(1000), "data".to_string()),
+        ("event".to_string(), "very_long_data".repeat(1000)),
+        ("event\0with\0nulls".to_string(), "data\0with\0nulls".to_string()),
+        ("event\nwith\nnewlines".to_string(), "data\nwith\nnewlines".to_string()),
+        ("event🌍unicode".to_string(), "data🌍unicode".to_string()),
+        ("event{}".to_string(), "{\"malicious\": \"json\"}".to_string()),
     ];
     
     for (event_type, event_data) in malformed_events {
         // Should not panic or fail catastrophically
-        let result = agent.process_event(event_type, event_data).await;
+        let result = agent.process_event(&event_type, &event_data).await;
         // May succeed or fail, but should not crash
         let _ = result;
     }

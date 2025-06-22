@@ -23,4 +23,7 @@ toka-toolkit-core = { path = "../toka-toolkit-core", optional = true }
 [features]
 default = ["core"]
 core = []
-toolkit = ["toka-toolkit-core"] 
+toolkit = ["toka-toolkit-core"]
+
+[dev-dependencies]
+tempfile = "3" 

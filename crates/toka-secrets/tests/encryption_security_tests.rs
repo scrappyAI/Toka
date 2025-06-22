@@ -4,7 +4,8 @@
 use anyhow::Result;
 use std::sync::Arc;
 use tempfile::tempdir;
-use toka_security_vault::{Vault, VaultEntry, VaultMetadata};
+use toka_secrets::{Vault, VaultEntry, VaultMetadata};
+use base64::Engine;
 
 #[tokio::test]
 async fn test_encryption_key_isolation() -> Result<()> {

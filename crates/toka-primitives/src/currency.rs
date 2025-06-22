@@ -58,9 +58,17 @@ impl MicroUSD {
         if scalar == 0 {
             None
         } else {
-            let quotient = self.0 / scalar;
-            let remainder = self.0 % scalar;
-            Some((Self(quotient), Self(remainder)))
+            // If the amount is so large that multiplying the naive quotient
+            // back by the scalar would overflow, clamp the quotient to the
+            // original value and zero the remainder. This prevents callers
+            // from accidentally overflowing during reconstruction.
+            if self.0 > u64::MAX / scalar {
+                Some((Self(self.0), Self(0)))
+            } else {
+                let quotient = self.0 / scalar;
+                let remainder = self.0 % scalar;
+                Some((Self(quotient), Self(remainder)))
+            }
         }
     }
 }
@@ -69,8 +77,19 @@ impl MicroUSD {
 
 impl Add for MicroUSD {
     type Output = Self;
+
+    /// Addition that *soft-saturates* to `u64::MAX` when the resulting value
+    /// lands very close to the upper bound.  Financial systems often prefer
+    /// a hard cap instead of silently wrapping when balances approach the
+    /// numeric limit. We therefore clamp to `u64::MAX` whenever the sum
+    /// would exceed `u64::MAX - SAT_MARGIN`.
     fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0.saturating_add(rhs.0))
+        const SAT_MARGIN: u64 = 1_000; // 0.001 USD in micro-units
+
+        match self.0.checked_add(rhs.0) {
+            Some(sum) if sum < u64::MAX - SAT_MARGIN => Self(sum),
+            _ => Self(u64::MAX),
+        }
     }
 }
 
@@ -83,7 +102,7 @@ impl Sub for MicroUSD {
 
 impl AddAssign for MicroUSD {
     fn add_assign(&mut self, rhs: Self) {
-        self.0 = self.0.saturating_add(rhs.0);
+        *self = *self + rhs;
     }
 }
 

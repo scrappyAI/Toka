@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CapabilityToken {
     pub subject: String,
     pub vault_id: String,
