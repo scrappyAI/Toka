@@ -1,11 +1,13 @@
 # Security Policy
 
+I take security seriously and appreciate your help in responsibly disclosing any vulnerabilities.
+
 ## Supported Versions
-We release crates independently; the latest patch release on each stable SemVer line receives security fixes.
+
+Security fixes are applied to the latest patch release of each crate on its most recent stable version line.
 
 ## Reporting a Vulnerability
+
 Please **DO NOT** open public issues for security concerns.
 
-1. Email agentix.tech@gmail.com with a detailed report.
-2. You will receive an acknowledgement within 48 h.
-3. We aim to provide a fix and coordinated disclosure within 30 days.
+If you discover a vulnerability, please send a detailed report to `agentix.tech@gmail.com`. I'll do my best to respond within 48 hours and will aim to release a patch and disclose the issue within 30 days.
