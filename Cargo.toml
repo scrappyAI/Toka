@@ -47,8 +47,8 @@ sqlx-test = "0.7"
 
 [workspace.package]
 version = "0.1.0"
-authors = ["Toka Team"]
+authors = ["Seb"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/Agentix/toka"
+repository = "https://github.com/ScrappyAI/toka"
 description = "Toka – modular agent and tool runtime under the Agentix organisation."
