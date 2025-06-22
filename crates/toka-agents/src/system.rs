@@ -1,6 +1,6 @@
-use async_trait::async_trait;
-use crate::{BaseAgent, Agent, EventBus};
+use crate::{Agent, BaseAgent, EventBus};
 use anyhow::Result;
+use async_trait::async_trait;
 
 /// Built-in system agent kinds managed by the runtime.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -23,14 +23,20 @@ impl SystemAgent {
         Self { inner: agent, kind }
     }
 
-    pub fn set_event_bus(&mut self, bus: EventBus) { self.inner.set_event_bus(bus); }
+    pub fn set_event_bus(&mut self, bus: EventBus) {
+        self.inner.set_event_bus(bus);
+    }
 
-    pub fn kind(&self) -> SystemAgentKind { self.kind }
+    pub fn kind(&self) -> SystemAgentKind {
+        self.kind
+    }
 }
 
 #[async_trait]
 impl Agent for SystemAgent {
-    fn name(&self) -> &str { self.inner.name() }
+    fn name(&self) -> &str {
+        self.inner.name()
+    }
 
     async fn process_event(&mut self, event_type: &str, data: &str) -> Result<()> {
         match self.kind {
@@ -61,4 +67,4 @@ impl Agent for SystemAgent {
     async fn load_state(&mut self, adapter: &dyn toka_security_vault::MemoryAdapter) -> Result<()> {
         self.inner.load_state(adapter).await
     }
-} 
+}

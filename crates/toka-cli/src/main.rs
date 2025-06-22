@@ -16,8 +16,8 @@
 //! The CLI uses `clap` derive macros and an async `main` entry-point so we can
 //! later await runtime operations.
 
-use clap::{Parser, Subcommand};
 use anyhow::Result;
+use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(
@@ -132,7 +132,10 @@ async fn handle_tool(cmd: ToolCmd) -> Result<()> {
             println!("[TODO] Listing tools…");
         }
         ToolCmd::Run { tool_id, payload } => {
-            println!("[TODO] Running tool '{}' with payload: {}", tool_id, payload);
+            println!(
+                "[TODO] Running tool '{}' with payload: {}",
+                tool_id, payload
+            );
         }
     }
     Ok(())
@@ -148,4 +151,4 @@ async fn handle_vault(cmd: VaultCmd) -> Result<()> {
         }
     }
     Ok(())
-} 
+}

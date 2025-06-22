@@ -31,7 +31,9 @@ pub trait StorageAdapter: Send + Sync {
 /// scheme or be relative paths which are resolved against `root`.
 ///
 /// Path traversal outside `root` is prevented.
-#[deprecated(note = "Prefer the encrypted `VaultBlobAdapter` in `toka-security-vault`. Local filesystem adapter will move to a separate crate.")]
+#[deprecated(
+    note = "Prefer the encrypted `VaultBlobAdapter` in `toka-security-vault`. Local filesystem adapter will move to a separate crate."
+)]
 #[derive(Debug, Clone)]
 pub struct LocalFsAdapter {
     root: PathBuf,
@@ -98,7 +100,10 @@ impl StorageAdapter for LocalFsAdapter {
             return Ok(uris);
         }
 
-        for entry in WalkDir::new(&prefix_path).into_iter().filter_map(Result::ok) {
+        for entry in WalkDir::new(&prefix_path)
+            .into_iter()
+            .filter_map(Result::ok)
+        {
             if entry.file_type().is_file() {
                 let rel = entry
                     .path()
@@ -139,4 +144,4 @@ mod tests {
 
         Ok(())
     }
-} 
+}

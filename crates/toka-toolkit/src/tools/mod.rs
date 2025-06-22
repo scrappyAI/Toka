@@ -2,24 +2,24 @@ use anyhow::{Context, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
-use std::path::PathBuf;
 
+mod coverage;
 mod ingestion;
 mod ledger;
 mod reporting;
 mod scheduling;
 mod semantic_index;
-mod coverage;
 
+pub use coverage::{CoverageAnalysisTool, CoverageJsonTool};
 pub use ingestion::IngestionTool;
 pub use ledger::LedgerTool;
 pub use reporting::ReportingTool;
 pub use scheduling::SchedulingTool;
-pub use semantic_index::{SemanticIndexTool, TaggedItem, ItemMetadata};
-pub use coverage::{CoverageJsonTool, CoverageAnalysisTool};
+pub use semantic_index::{ItemMetadata, SemanticIndexTool, TaggedItem};
 
 /// Tool execution result with metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -89,8 +89,12 @@ impl ToolRegistry {
         registry
             .register_tool(Arc::new(SemanticIndexTool::new()))
             .await?;
-        registry.register_tool(Arc::new(CoverageJsonTool::new())).await?;
-        registry.register_tool(Arc::new(CoverageAnalysisTool::new())).await?;
+        registry
+            .register_tool(Arc::new(CoverageJsonTool::new()))
+            .await?;
+        registry
+            .register_tool(Arc::new(CoverageAnalysisTool::new()))
+            .await?;
         registry.register_tool(Arc::new(EchoTool::new())).await?;
 
         Ok(registry)

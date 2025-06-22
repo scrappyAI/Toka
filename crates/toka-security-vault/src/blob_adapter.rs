@@ -1,9 +1,9 @@
+use crate::{Vault, VaultEntry};
 use anyhow::Result;
 use async_trait::async_trait;
-use std::sync::Arc;
-use crate::{Vault, VaultEntry};
-use toka_storage::StorageAdapter;
 use base64::Engine;
+use std::sync::Arc;
+use toka_storage::StorageAdapter;
 
 /// Adapter that exposes a Vault as a generic `StorageAdapter`.
 ///
@@ -15,7 +15,9 @@ pub struct VaultBlobAdapter {
 }
 
 impl VaultBlobAdapter {
-    pub fn new(vault: Arc<Vault>) -> Self { Self { vault } }
+    pub fn new(vault: Arc<Vault>) -> Self {
+        Self { vault }
+    }
 }
 
 #[async_trait]
@@ -25,7 +27,11 @@ impl StorageAdapter for VaultBlobAdapter {
         let entry = VaultEntry {
             key,
             data: base64::engine::general_purpose::STANDARD.encode(bytes),
-            metadata: crate::VaultMetadata { created_at: 0, updated_at: 0, version: 1 },
+            metadata: crate::VaultMetadata {
+                created_at: 0,
+                updated_at: 0,
+                version: 1,
+            },
         };
         self.vault.insert(&entry).await
     }
@@ -55,4 +61,4 @@ impl StorageAdapter for VaultBlobAdapter {
             .filter(|k| k.starts_with(&format!("blob://{}", prefix)))
             .collect())
     }
-} 
+}

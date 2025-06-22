@@ -1,12 +1,12 @@
-use toka_toolkit::tools::{SemanticIndexTool, TaggedItem, ItemMetadata, ToolParams, Tool};
-use std::sync::Arc;
-use tokio::task;
 use anyhow::Result;
+use std::sync::Arc;
+use toka_toolkit::tools::{ItemMetadata, SemanticIndexTool, TaggedItem, Tool, ToolParams};
+use tokio::task;
 
 #[tokio::test]
 async fn test_concurrent_indexing() -> Result<()> {
     let tool = Arc::new(SemanticIndexTool::new());
-    
+
     // Create test items
     let items = vec![
         create_test_item("1", "test1", vec!["tag1", "tag2"]),
@@ -61,7 +61,7 @@ async fn test_concurrent_indexing() -> Result<()> {
 #[tokio::test]
 async fn test_concurrent_search() -> Result<()> {
     let tool = Arc::new(SemanticIndexTool::new());
-    
+
     // Index some test items first
     let items = vec![
         create_test_item("1", "test1", vec!["tag1", "tag2"]),
@@ -85,7 +85,7 @@ async fn test_concurrent_search() -> Result<()> {
     // Spawn multiple search tasks concurrently
     let search_tags = vec!["tag1", "tag2", "tag3"];
     let mut handles = vec![];
-    
+
     for tag in search_tags {
         let tool_clone = tool.clone();
         let handle = task::spawn(async move {
@@ -116,10 +116,10 @@ async fn test_concurrent_search() -> Result<()> {
 #[tokio::test]
 async fn test_concurrent_index_and_search() -> Result<()> {
     let tool = Arc::new(SemanticIndexTool::new());
-    
+
     // Spawn tasks that both index and search concurrently
     let mut handles = vec![];
-    
+
     for i in 0..5 {
         let tool_clone = tool.clone();
         let handle = task::spawn(async move {
@@ -129,7 +129,7 @@ async fn test_concurrent_index_and_search() -> Result<()> {
                 &format!("test{}", i),
                 vec!["tag1", &format!("tag{}", i)],
             );
-            
+
             let index_params = ToolParams {
                 name: "semantic_index".to_string(),
                 args: {
@@ -139,10 +139,10 @@ async fn test_concurrent_index_and_search() -> Result<()> {
                     map
                 },
             };
-            
+
             let index_result = tool_clone.execute(&index_params).await?;
             assert!(index_result.success);
-            
+
             // Search for items
             let search_params = ToolParams {
                 name: "semantic_index".to_string(),
@@ -153,10 +153,10 @@ async fn test_concurrent_index_and_search() -> Result<()> {
                     map
                 },
             };
-            
+
             let search_result = tool_clone.execute(&search_params).await?;
             assert!(search_result.success);
-            
+
             Ok::<_, anyhow::Error>(())
         });
         handles.push(handle);
@@ -181,4 +181,4 @@ fn create_test_item(id: &str, content: &str, tags: Vec<&str>) -> TaggedItem {
             item_type: "test".to_string(),
         },
     }
-} 
+}

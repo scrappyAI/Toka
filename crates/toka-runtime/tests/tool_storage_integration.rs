@@ -1,36 +1,60 @@
 #![cfg(feature = "toolkit")]
 
 use anyhow::Result;
+use async_trait::async_trait;
 use std::sync::Arc;
 use tempfile::tempdir;
+use toka_agents::{Agent, SymbolicAgent};
 use toka_runtime::runtime::{Runtime, RuntimeConfig};
-use toka_agents::{SymbolicAgent, Agent};
-use toka_toolkit_core::{Tool, ToolParams, ToolRegistry, ToolResult, ToolMetadata};
-use async_trait::async_trait;
+use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};
 
 struct EchoTool;
 
 #[async_trait]
 impl Tool for EchoTool {
-    fn name(&self) -> &str { "echo" }
-    fn description(&self) -> &str { "Echo back" }
-    fn version(&self) -> &str { "0.1.0" }
+    fn name(&self) -> &str {
+        "echo"
+    }
+    fn description(&self) -> &str {
+        "Echo back"
+    }
+    fn version(&self) -> &str {
+        "0.1.0"
+    }
     async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
         let out = params.args.get("msg").cloned().unwrap_or_default();
-        Ok(ToolResult { success: true, output: out, metadata: ToolMetadata { execution_time_ms: 0, tool_version: self.version().into(), timestamp: 0 } })
+        Ok(ToolResult {
+            success: true,
+            output: out,
+            metadata: ToolMetadata {
+                execution_time_ms: 0,
+                tool_version: self.version().into(),
+                timestamp: 0,
+            },
+        })
     }
-    fn validate_params(&self, _p: &ToolParams) -> Result<()> { Ok(()) }
+    fn validate_params(&self, _p: &ToolParams) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[tokio::test]
 async fn runtime_agent_tool_storage_roundtrip() -> Result<()> {
     // Runtime with isolated vault/storage
     let tmp = tempdir()?;
-    let cfg = RuntimeConfig { vault_path: tmp.path().join("vault").to_string_lossy().into_owned(), max_agents: 5, event_buffer_size: 32, storage_root: tmp.path().join("storage").to_string_lossy().into_owned() };
+    let cfg = RuntimeConfig {
+        vault_path: tmp.path().join("vault").to_string_lossy().into_owned(),
+        max_agents: 5,
+        event_buffer_size: 32,
+        storage_root: tmp.path().join("storage").to_string_lossy().into_owned(),
+    };
     let runtime = Runtime::new(cfg).await?;
 
     // Register tool
-    runtime.tool_registry().register_tool(Arc::new(EchoTool)).await?;
+    runtime
+        .tool_registry()
+        .register_tool(Arc::new(EchoTool))
+        .await?;
 
     // Create agent
     let mut agent = SymbolicAgent::new("a1");
@@ -43,9 +67,13 @@ async fn runtime_agent_tool_storage_roundtrip() -> Result<()> {
     assert_eq!(&bytes, b"hi");
 
     // Agent invokes tool
-    let mut args = std::collections::HashMap::new(); args.insert("msg".to_string(), "hi".to_string());
-    let params = ToolParams { name: "echo".into(), args };
+    let mut args = std::collections::HashMap::new();
+    args.insert("msg".to_string(), "hi".to_string());
+    let params = ToolParams {
+        name: "echo".into(),
+        args,
+    };
     let res = agent.invoke_tool(runtime.tool_registry(), params).await?;
     assert_eq!(res.output, "hi");
     Ok(())
-} 
+}

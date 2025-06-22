@@ -1,7 +1,7 @@
+use bitflags::bitflags;
+use semver::Version;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use semver::Version;
-use bitflags::bitflags;
 
 bitflags! {
     /// Capability flags declare which subsystems an agent may access.
@@ -35,4 +35,4 @@ pub struct AgentMetadata {
     /// Advertised capability flags. Defaults to empty.
     #[serde(default)]
     pub capabilities: Capability,
-} 
+}

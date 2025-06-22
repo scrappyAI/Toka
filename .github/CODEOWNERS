@@ -1,0 +1,6 @@
+# Each line is a file pattern followed by owner(s)
+# Default owner for all paths
+*       @scrappyAI
+
+# Per-crate ownership examples (extend as team grows)
+# /crates/toka-core/    @scrappyAI 

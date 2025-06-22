@@ -1,9 +1,9 @@
 #![cfg(all(feature = "toolkit", feature = "vault"))]
 
 use anyhow::Result;
+use dirs;
 use tempfile::tempdir;
 use toka_runtime::{runtime::Runtime, runtime::RuntimeConfig};
-use dirs;
 
 #[tokio::test]
 async fn runtime_start_stop_cycle() -> Result<()> {

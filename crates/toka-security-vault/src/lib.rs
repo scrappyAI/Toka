@@ -9,14 +9,14 @@ use aes_gcm::{
 use anyhow::{Context, Result};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use rand::{rngs::OsRng, Rng};
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use sled::Db;
 use std::path::Path;
 use std::sync::Arc;
-use serde::de::DeserializeOwned;
 
-pub mod prelude;
 pub mod blob_adapter;
+pub mod prelude;
 
 pub use prelude::*; // convenient
 

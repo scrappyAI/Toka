@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use semver::{Version, VersionReq};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::metadata::{AgentMetadata, Capability};
@@ -47,10 +47,12 @@ impl AgentBundle {
     }
 
     /// Serialize the bundle to a pretty-printed JSON string.
-    pub fn to_json(&self) -> serde_json::Result<String> { serde_json::to_string_pretty(self) }
+    pub fn to_json(&self) -> serde_json::Result<String> {
+        serde_json::to_string_pretty(self)
+    }
 
     /// Restore an `AgentBundle` from JSON.
     pub fn from_json<S: AsRef<str>>(s: S) -> serde_json::Result<Self> {
         serde_json::from_str(s.as_ref())
     }
-} 
+}

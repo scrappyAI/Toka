@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::{Belief, Observation, EventBus, AgentEvent};
 use super::{AgentContext, ReasonOutcome, ReasoningEngine};
+use crate::{AgentEvent, Belief, EventBus, Observation};
 use async_trait::async_trait;
 
 /// Core Bayesian symbolic reasoner separated from agent container.
@@ -27,7 +27,12 @@ impl Default for SymbolicReasoner {
 
 impl SymbolicReasoner {
     /// Update beliefs based on new observations using Bayesian inference
-    pub async fn observe(&mut self, observation: Observation, bus: Option<&EventBus>, agent_id: &str) -> Result<()> {
+    pub async fn observe(
+        &mut self,
+        observation: Observation,
+        bus: Option<&EventBus>,
+        agent_id: &str,
+    ) -> Result<()> {
         let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
 
         let belief = self
@@ -69,20 +74,31 @@ impl SymbolicReasoner {
 
     /// Returns hypotheses and probabilities
     pub fn hypotheses(&self) -> Vec<(String, f64)> {
-        self.beliefs.iter().map(|(k,v)| (k.clone(), v.probability)).collect()
+        self.beliefs
+            .iter()
+            .map(|(k, v)| (k.clone(), v.probability))
+            .collect()
     }
 
     pub fn actions(&self) -> Vec<String> {
-        self.beliefs.iter().filter(|(_,v)| v.probability > self.action_threshold)
-            .map(|(k,_)| format!("Trigger action for hypothesis: {}", k)).collect()
+        self.beliefs
+            .iter()
+            .filter(|(_, v)| v.probability > self.action_threshold)
+            .map(|(k, _)| format!("Trigger action for hypothesis: {}", k))
+            .collect()
     }
 
     pub fn plans(&self) -> Vec<String> {
-        self.beliefs.iter().filter(|(_,v)| v.probability > self.planning_threshold)
-            .map(|(k,_)| format!("Design plan to test hypothesis: {}", k)).collect()
+        self.beliefs
+            .iter()
+            .filter(|(_, v)| v.probability > self.planning_threshold)
+            .map(|(k, _)| format!("Design plan to test hypothesis: {}", k))
+            .collect()
     }
 
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 #[async_trait]
@@ -91,4 +107,4 @@ impl ReasoningEngine for SymbolicReasoner {
         // For now no top-level reasoning cycle; callers use observe/act/plan.
         Ok(ReasonOutcome::NoOp)
     }
-} 
+}

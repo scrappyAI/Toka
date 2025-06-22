@@ -18,35 +18,104 @@ use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AuthEvent {
-    UserLogin { user_id: String, timestamp: u64 },
-    UserLogout { user_id: String, timestamp: u64 },
-    AuthFailure { attempt_info: String, timestamp: u64 },
-    TokenRefresh { user_id: String, timestamp: u64 },
+    UserLogin {
+        user_id: String,
+        timestamp: u64,
+    },
+    UserLogout {
+        user_id: String,
+        timestamp: u64,
+    },
+    AuthFailure {
+        attempt_info: String,
+        timestamp: u64,
+    },
+    TokenRefresh {
+        user_id: String,
+        timestamp: u64,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AgentEvent {
-    Created { agent_id: String, agent_type: String, timestamp: u64 },
-    BeliefUpdated { agent_id: String, belief_key: String, probability: f64, timestamp: u64 },
-    ActionTriggered { agent_id: String, action: String, timestamp: u64 },
-    PlanGenerated { agent_id: String, plan: String, timestamp: u64 },
-    ObservationProcessed { agent_id: String, observation_key: String, timestamp: u64 },
+    Created {
+        agent_id: String,
+        agent_type: String,
+        timestamp: u64,
+    },
+    BeliefUpdated {
+        agent_id: String,
+        belief_key: String,
+        probability: f64,
+        timestamp: u64,
+    },
+    ActionTriggered {
+        agent_id: String,
+        action: String,
+        timestamp: u64,
+    },
+    PlanGenerated {
+        agent_id: String,
+        plan: String,
+        timestamp: u64,
+    },
+    ObservationProcessed {
+        agent_id: String,
+        observation_key: String,
+        timestamp: u64,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ToolEvent {
-    Invoked { tool_name: String, user_id: String, timestamp: u64 },
-    Completed { tool_name: String, user_id: String, duration_ms: u64, success: bool, timestamp: u64 },
-    Error { tool_name: String, user_id: String, error: String, timestamp: u64 },
+    Invoked {
+        tool_name: String,
+        user_id: String,
+        timestamp: u64,
+    },
+    Completed {
+        tool_name: String,
+        user_id: String,
+        duration_ms: u64,
+        success: bool,
+        timestamp: u64,
+    },
+    Error {
+        tool_name: String,
+        user_id: String,
+        error: String,
+        timestamp: u64,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum VaultEvent {
-    SecretCreated { vault_id: String, secret_key: String, timestamp: u64 },
-    SecretAccessed { vault_id: String, secret_key: String, user_id: String, timestamp: u64 },
-    SecretUpdated { vault_id: String, secret_key: String, timestamp: u64 },
-    SecretDeleted { vault_id: String, secret_key: String, timestamp: u64 },
-    VaultUnlocked { vault_id: String, user_id: String, timestamp: u64 },
+    SecretCreated {
+        vault_id: String,
+        secret_key: String,
+        timestamp: u64,
+    },
+    SecretAccessed {
+        vault_id: String,
+        secret_key: String,
+        user_id: String,
+        timestamp: u64,
+    },
+    SecretUpdated {
+        vault_id: String,
+        secret_key: String,
+        timestamp: u64,
+    },
+    SecretDeleted {
+        vault_id: String,
+        secret_key: String,
+        timestamp: u64,
+    },
+    VaultUnlocked {
+        vault_id: String,
+        user_id: String,
+        timestamp: u64,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -104,10 +173,15 @@ pub struct EventBus {
 impl EventBus {
     pub fn new(buffer: usize) -> Self {
         let (sender, _) = broadcast::channel(buffer.max(1));
-        Self { sender, subscribers: Arc::new(RwLock::new(HashMap::new())) }
+        Self {
+            sender,
+            subscribers: Arc::new(RwLock::new(HashMap::new())),
+        }
     }
 
-    pub fn new_default() -> Self { Self::new(DEFAULT_BUFFER) }
+    pub fn new_default() -> Self {
+        Self::new(DEFAULT_BUFFER)
+    }
 
     pub async fn emit(&self, event_type: EventType, source: &str) -> Result<()> {
         let event = Event::new(event_type, source);
@@ -119,7 +193,9 @@ impl EventBus {
         Ok(())
     }
 
-    pub fn get_receiver(&self) -> broadcast::Receiver<Event> { self.sender.subscribe() }
+    pub fn get_receiver(&self) -> broadcast::Receiver<Event> {
+        self.sender.subscribe()
+    }
 
     pub async fn subscribe(&self, subscriber: Box<dyn EventSubscriber>) -> Result<()> {
         let id = subscriber.subscriber_id().to_owned();
@@ -150,7 +226,9 @@ impl EventBus {
 }
 
 impl Default for EventBus {
-    fn default() -> Self { Self::new_default() }
+    fn default() -> Self {
+        Self::new_default()
+    }
 }
 
 impl Clone for EventBus {
@@ -166,4 +244,4 @@ impl std::fmt::Debug for EventBus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("EventBus").finish()
     }
-} 
+}

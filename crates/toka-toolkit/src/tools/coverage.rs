@@ -5,6 +5,7 @@
 //!    of low-coverage files plus overall coverage percentage.  This is an early scaffold
 //!    meant for agent consumption; the parsing logic can be improved incrementally.
 
+use crate::tools::resolve_uri_to_path;
 use crate::tools::{Tool, ToolMetadata, ToolParams, ToolResult};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
@@ -12,7 +13,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use std::process::Command;
-use crate::tools::resolve_uri_to_path;
 
 // -----------------------------------------------------------------------------
 // CoverageJsonTool
@@ -248,4 +248,4 @@ mod tests {
         // Worst file should be b.rs (50%)
         assert_eq!(summary.worst_files[0].path, "b.rs");
     }
-} 
+}

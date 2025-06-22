@@ -1,4 +1,5 @@
 use super::{Tool, ToolMetadata, ToolParams, ToolResult};
+use crate::tools::resolve_uri_to_path;
 use anyhow::{Context, Result};
 use csv::ReaderBuilder;
 use serde::{Deserialize, Serialize};
@@ -6,7 +7,6 @@ use serde_cbor;
 use std::collections::HashMap;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
-use crate::tools::resolve_uri_to_path;
 
 /// Represents the standardized data format for all ingested data
 #[derive(Debug, Serialize, Deserialize)]
@@ -51,7 +51,10 @@ impl IngestionTool {
 
         // Validate is regular file
         if !metadata.is_file() {
-            return Err(anyhow::anyhow!("Path is not a regular file: {}", path.display()));
+            return Err(anyhow::anyhow!(
+                "Path is not a regular file: {}",
+                path.display()
+            ));
         }
 
         // Check file size isn't empty or too large (100MB limit)
@@ -59,7 +62,10 @@ impl IngestionTool {
             return Err(anyhow::anyhow!("File is empty: {}", path.display()));
         }
         if metadata.len() > 100_000_000 {
-            return Err(anyhow::anyhow!("File exceeds 100MB limit: {}", path.display()));
+            return Err(anyhow::anyhow!(
+                "File exceeds 100MB limit: {}",
+                path.display()
+            ));
         }
 
         // Validate file extension
@@ -223,7 +229,10 @@ impl Tool for IngestionTool {
     }
 
     async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
-        let raw_path = params.args.get("path").ok_or_else(|| anyhow::anyhow!("'path' arg required"))?;
+        let raw_path = params
+            .args
+            .get("path")
+            .ok_or_else(|| anyhow::anyhow!("'path' arg required"))?;
         let path_buf = resolve_uri_to_path(raw_path);
         self.validate_data(&path_buf).await?;
         let data = self.read_data(&path_buf).await?;
@@ -236,9 +245,7 @@ impl Tool for IngestionTool {
             .to_lowercase();
 
         // Convert to standardized format
-        let standardized = self
-            .convert_to_standardized(&data, &source_format)
-            .await?;
+        let standardized = self.convert_to_standardized(&data, &source_format).await?;
 
         // Serialize to CBOR
         let cbor_data =

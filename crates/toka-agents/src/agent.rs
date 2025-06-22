@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::{AgentEvent, EventBus};
 use crate::reasoning::symbolic::SymbolicReasoner;
+use crate::{AgentEvent, EventBus};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Belief {
@@ -46,26 +46,46 @@ impl BaseAgent {
         let mut reasoner = SymbolicReasoner::new();
         reasoner.action_threshold = action_threshold;
         reasoner.planning_threshold = planning_threshold;
-        Self { id: id.to_string(), reasoner, context: HashMap::new(), event_bus: None }
+        Self {
+            id: id.to_string(),
+            reasoner,
+            context: HashMap::new(),
+            event_bus: None,
+        }
     }
 
-    pub fn set_event_bus(&mut self, bus: EventBus) { self.event_bus = Some(bus); }
+    pub fn set_event_bus(&mut self, bus: EventBus) {
+        self.event_bus = Some(bus);
+    }
 
     pub async fn observe(&mut self, obs: Observation) -> Result<()> {
-        self.reasoner.observe(obs, self.event_bus.as_ref(), &self.id).await
+        self.reasoner
+            .observe(obs, self.event_bus.as_ref(), &self.id)
+            .await
     }
 
-    pub async fn hypothesize(&self) -> Vec<(String, f64)> { self.reasoner.hypotheses() }
+    pub async fn hypothesize(&self) -> Vec<(String, f64)> {
+        self.reasoner.hypotheses()
+    }
 
     pub async fn act(&self) -> Vec<String> {
         let actions = self.reasoner.actions();
         if let Some(bus) = &self.event_bus {
-            let ts = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+            let ts = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
             for action in &actions {
-                let _ = bus.emit_agent_event(
-                    AgentEvent::ActionTriggered { agent_id: self.id.clone(), action: action.clone(), timestamp: ts },
-                    &format!("agent:{}", self.id),
-                ).await;
+                let _ = bus
+                    .emit_agent_event(
+                        AgentEvent::ActionTriggered {
+                            agent_id: self.id.clone(),
+                            action: action.clone(),
+                            timestamp: ts,
+                        },
+                        &format!("agent:{}", self.id),
+                    )
+                    .await;
             }
         }
         actions
@@ -74,27 +94,51 @@ impl BaseAgent {
     pub async fn plan(&mut self) -> Vec<String> {
         let plans = self.reasoner.plans();
         if let Some(bus) = &self.event_bus {
-            let ts = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+            let ts = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
             for p in &plans {
-                let _ = bus.emit_agent_event(
-                    AgentEvent::PlanGenerated { agent_id: self.id.clone(), plan: p.clone(), timestamp: ts },
-                    &format!("agent:{}", self.id),
-                ).await;
+                let _ = bus
+                    .emit_agent_event(
+                        AgentEvent::PlanGenerated {
+                            agent_id: self.id.clone(),
+                            plan: p.clone(),
+                            timestamp: ts,
+                        },
+                        &format!("agent:{}", self.id),
+                    )
+                    .await;
             }
         }
         plans
     }
 
     // thresholds helpers ----------------------------------------------------
-    pub fn set_action_threshold(&mut self, t: f64) { self.reasoner.action_threshold = t; }
-    pub fn set_planning_threshold(&mut self, t: f64) { self.reasoner.planning_threshold = t; }
-    pub fn get_action_threshold(&self) -> f64 { self.reasoner.action_threshold }
-    pub fn get_planning_threshold(&self) -> f64 { self.reasoner.planning_threshold }
+    pub fn set_action_threshold(&mut self, t: f64) {
+        self.reasoner.action_threshold = t;
+    }
+    pub fn set_planning_threshold(&mut self, t: f64) {
+        self.reasoner.planning_threshold = t;
+    }
+    pub fn get_action_threshold(&self) -> f64 {
+        self.reasoner.action_threshold
+    }
+    pub fn get_planning_threshold(&self) -> f64 {
+        self.reasoner.planning_threshold
+    }
 
-    pub fn beliefs(&self) -> &HashMap<String, Belief> { &self.reasoner.beliefs }
+    pub fn beliefs(&self) -> &HashMap<String, Belief> {
+        &self.reasoner.beliefs
+    }
 
     pub fn summarize(&self) -> String {
-        format!("BaseAgent {{ id: {}, beliefs: {} entries, context: {} keys }}", self.id, self.reasoner.beliefs.len(), self.context.len())
+        format!(
+            "BaseAgent {{ id: {}, beliefs: {} entries, context: {} keys }}",
+            self.id,
+            self.reasoner.beliefs.len(),
+            self.context.len()
+        )
     }
 }
 
@@ -115,7 +159,7 @@ impl BaseAgent {
         registry: &toka_toolkit_core::ToolRegistry,
         params: toka_toolkit_core::ToolParams,
     ) -> anyhow::Result<toka_toolkit_core::ToolResult> {
-        use toka_toolkit_core::{ToolResult};
+        use toka_toolkit_core::ToolResult;
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
@@ -179,4 +223,4 @@ impl BaseAgent {
 
         result
     }
-} 
+}

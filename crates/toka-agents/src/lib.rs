@@ -4,26 +4,26 @@
 //! into `toka-runtime` when the `agents-core` feature is enabled.  The implementation is
 //! intentionally free of heavy external dependencies so the runtime can remain lean.
 
-pub mod prelude;
 pub mod agent;
-pub mod metadata;
-pub mod reasoning;
 pub mod bundle;
+pub mod metadata;
+pub mod prelude;
+pub mod reasoning;
 pub mod system;
 
-pub use prelude::*;
-pub use agent::{Belief, Observation, BaseAgent, SymbolicAgent};
-pub use metadata::{AgentMetadata, Capability};
-pub use reasoning::{AgentContext, ReasonOutcome, ReasoningEngine, NoOpReasoner};
+pub use agent::{BaseAgent, Belief, Observation, SymbolicAgent};
 pub use bundle::{AgentBundle, ToolSpec};
+pub use metadata::{AgentMetadata, Capability};
+pub use prelude::*;
+pub use reasoning::{AgentContext, NoOpReasoner, ReasonOutcome, ReasoningEngine};
 pub use system::{SystemAgent, SystemAgentKind};
 
 pub use toka_events::{AgentEvent, EventBus};
 
 use anyhow::Result;
 use async_trait::async_trait;
-use toka_security_vault::MemoryAdapter;
 use serde_json;
+use toka_security_vault::MemoryAdapter;
 
 // -----------------------------------------------------------------------------
 //  Minimal local EventBus + AgentEvent stubs
