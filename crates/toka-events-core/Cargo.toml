@@ -1,0 +1,21 @@
+[package]
+name = "toka-events-core"
+version = "0.2.0-alpha"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Core event primitives and types for the Toka platform"
+repository = "https://github.com/tokaengine/toka"
+keywords = ["events", "ledger", "distributed", "causal"]
+
+[dependencies]
+chrono = { version = "0.4.38", features = ["serde", "std"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+smallvec = { version = "1.13", features = ["serde"] }
+uuid = { version = "1.10", features = ["v4", "serde"] }
+
+# Blake3 for causal hashing
+blake3 = "1.5"
+
+[dev-dependencies]
+serde_json = "1.0"

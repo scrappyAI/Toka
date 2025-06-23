@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/toka-core",
     "crates/toka-events",    # New lightweight events crate
+    "crates/toka-events-core", # Core event primitives and types
     "crates/toka-runtime",
     "crates/toka-toolkit",
     "crates/toka-agents",
@@ -15,7 +16,6 @@ members = [
     "crates/toka-cli",
     "crates/toka-ledger-core",
     "crates/toka-ledger-agents",
-    "crates/toka-ledger",
     "crates/toka-ledger-finance",
     "crates/smart-embedder"
 ]
