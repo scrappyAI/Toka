@@ -4,7 +4,7 @@ version = "0.2.0-alpha"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Core event primitives and types for the Toka platform"
-repository = "https://github.com/tokaengine/toka"
+repository = "https://github.com/ScrappyAI/toka"
 keywords = ["events", "ledger", "distributed", "causal"]
 
 [dependencies]
