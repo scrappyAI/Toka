@@ -1,0 +1,37 @@
+[package]
+name = "toka-bus-persist"
+version = "0.2.0-alpha"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Persistent event bus implementation for the Toka platform with sled storage"
+repository = "https://github.com/tokaengine/toka"
+keywords = ["events", "bus", "persistent", "storage", "sled"]
+
+[dependencies]
+# Core dependencies
+anyhow = "1.0"
+async-trait = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+sled = "0.34"
+tokio = { version = "1.36", features = ["sync", "time", "macros", "rt-multi-thread"] }
+uuid = { version = "1.10", features = ["v4", "serde"] }
+
+# MessagePack for serialization
+rmp-serde = "1.1"
+
+# Event core types
+toka-events-core = { path = "../toka-events-core" }
+
+# Optional intent clustering dependencies
+ndarray = { version = "0.15", optional = true }
+parking_lot = { version = "0.12", optional = true }
+
+[dev-dependencies]
+serde_json = "1.0"
+tempfile = "3.8"
+tokio-test = "0.4"
+
+[features]
+default = []
+intent-cluster = ["ndarray", "parking_lot"]
