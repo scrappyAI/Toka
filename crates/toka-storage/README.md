@@ -1,6 +1,61 @@
 # Toka Storage
 
-This crate provides a pluggable storage layer for the Toka platform. It defines a `StorageAdapter` trait that can be implemented to support various storage backends, such as a local filesystem, S3, or GCS.
+Generic storage abstractions and interfaces for the Toka platform.
+
+## Overview
+
+This crate provides generic storage abstractions that can be implemented by various storage backends. It defines the core interfaces for storing and retrieving data in a platform-agnostic way.
+
+## Features
+
+- Generic storage trait definitions
+- Multiple storage backend support
+- Async/await interface
+- Transaction support
+- Key-value and document storage patterns
+- Pluggable storage implementations
+
+## Usage
+
+Add the following to your `Cargo.toml`:
+
+```toml
+[dependencies]
+toka-storage = "0.1.0"
+```
+
+### Example
+
+```rust
+use toka_storage::{Storage, StorageBackend};
+
+// Use any storage backend that implements the Storage trait
+let storage: Box<dyn Storage> = StorageBackend::new(config).await?;
+
+// Store data
+storage.put("key", "value").await?;
+
+// Retrieve data
+let value = storage.get("key").await?;
+
+// Delete data
+storage.delete("key").await?;
+```
+
+## Design Philosophy
+
+- **Abstraction**: Platform-agnostic storage interfaces
+- **Flexibility**: Support for multiple storage backends
+- **Performance**: Async-first design for high-throughput operations
+- **Reliability**: Transaction support for data consistency
+
+## License
+
+This project is licensed under either of:
+- MIT License
+- Apache License 2.0
+
+at your option.
 
 ## The `StorageAdapter` Trait
 

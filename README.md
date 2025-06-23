@@ -1,16 +1,17 @@
 # Toka: A Modular Agent and Tool Runtime
 
-Toka is an experimental, modular runtime for building and managing AI agents and their associated tools. It's designed to be a flexible foundation for a wide range of agent-based systems.
+Toka is an experimental, modular runtime for building and managing AI agents and their associated tools. It's designed to be a flexible foundation for a wide range of agent-based systems with a focus on security, extensibility, and clean architecture.
 
-This project is currently in its early stages. The goal is to build a robust, open-source platform for agent development in a collaborative, community-driven way.
+This project is currently in active development. The goal is to build a robust, open-source platform for agent development in a collaborative, community-driven way.
 
 ## Core Principles
 
 - **Modularity:** Toka is built as a collection of small, independent crates. This allows you to pick and choose the components you need, keeping your application lean.
-- **Security:** Security is a top priority. The `toka-security-auth` and `toka-security-vault` crates provide a solid foundation for securing your agents and their data.
+- **Security First:** Security is a top priority with capability-based authentication and encrypted vault storage.
 - **Extensibility:** The toolkit-based architecture makes it easy to add new tools and capabilities to your agents.
+- **Clean Architecture:** Clear separation of concerns with domain-driven design principles.
 
-## Getting Started
+## Quick Start
 
 To start using the full Toka platform, add the following to your `Cargo.toml`:
 
@@ -18,6 +19,8 @@ To start using the full Toka platform, add the following to your `Cargo.toml`:
 [dependencies]
 toka = "0.1.0"
 ```
+
+This gives you a batteries-included experience with agents, authentication, vault storage, and toolkit support.
 
 If you only need specific functionality, you can disable the default features and select the ones you need:
 
@@ -28,24 +31,60 @@ toka = { version = "0.1", default-features = false, features = ["auth"] }
 
 ## Crate Structure
 
-The Toka workspace is organized into several crates:
+The Toka workspace is organized into several focused crates:
 
-- `toka`: The main meta-crate that provides a batteries-included experience.
-- `toka-core`: Defines the core data models, business logic, and domain rules.
-- `toka-agents`: Provides the core agent implementation.
-- `toka-runtime`: The agent and tool runtime.
-- `toka-toolkit`: A collection of standard tools for agents.
-- `toka-security-auth`: Primitives for capability-based authentication.
-- `toka-security-vault`: A secure vault for managing agent secrets.
-- `toka-events`: A lightweight event system for inter-component communication.
-- `toka-primitives`: Basic data types used throughout the platform.
-- `toka-cli`: A command-line interface for interacting with the Toka runtime.
+### Core Foundation
+- `toka-primitives`: Fundamental, dependency-free types (IDs, currency, etc.)
+- `toka-core`: Higher-level domain logic and business rules
+- `toka-events-core`: Event system primitives and types
+
+### Runtime & Execution
+- `toka-runtime`: Async host for agents, event bus, and toolkit integration
+- `toka-agents`: Default agent implementations and interfaces
+- `toka-cli`: Command-line interface for interacting with the Toka runtime
+
+### Event System
+- `toka-bus-memory`: In-memory event bus implementation
+- `toka-bus-persist`: Persistent event bus implementation
+
+### Security & Storage
+- `toka-security-auth`: Capability-based authentication primitives
+- `toka-secrets`: Encrypted key/value vault for secure storage
+- `toka-storage`: Generic storage abstractions
+
+### Toolkit & Tools
+- `toka-toolkit-core`: Tool trait and registry abstractions
+- `toka-toolkit`: Batteries-included tool implementations
+
+### Ledger System
+- `toka-ledger-core`: Core ledger functionality
+- `toka-ledger-agents`: Agent-specific ledger operations
+- `toka-ledger-finance`: Financial ledger operations
+
+### Specialized
+- `smart-embedder`: Smart embedding generation utilities
+
+### Meta Crate
+- `toka`: Convenience meta-crate that re-exports commonly used components
+
+## Development Status
+
+The project is currently in active development with the following milestones completed:
+
+- ✅ Core crate structure and organization
+- ✅ Security primitives and vault implementation
+- ✅ Agent framework and runtime
+- ✅ Event bus system (memory and persistent)
+- ✅ Toolkit architecture
+- ✅ Ledger system foundation
+- 🔄 Testing and documentation improvements
+- ⬜ Production readiness and performance optimization
 
 ## Contributing
 
 This is an open-source project, and contributions are welcome! Please feel free to open an issue or submit a pull request.
 
-For more details on how to contribute, please see the (soon to be created) `CONTRIBUTING.md` file.
+For more details on how to contribute, please see the `CONTRIBUTING.md` file.
 
 ## License
 
