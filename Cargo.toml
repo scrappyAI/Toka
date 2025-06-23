@@ -4,6 +4,7 @@ members = [
     "crates/toka-core",
     "crates/toka-events",    # New lightweight events crate
     "crates/toka-events-core", # Core event primitives and types
+    "crates/toka-bus-memory", # In-memory event bus implementation
     "crates/toka-runtime",
     "crates/toka-toolkit",
     "crates/toka-agents",
