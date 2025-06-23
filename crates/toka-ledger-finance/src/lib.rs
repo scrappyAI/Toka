@@ -89,7 +89,7 @@ impl LedgerTx {
 
         for entry in &self.0 {
             let kind = if entry.delta.0 >= 0 { "ledger.credit" } else { "ledger.debit" };
-            let hdr = bus.commit(entry, &parents, kind, embedding.clone()).await?;
+            let hdr = bus.commit(entry, &parents, kind, embedding.as_slice().unwrap_or(&[])).await?;
             if parents.is_empty() {
                 parents.push(hdr.clone());
             }

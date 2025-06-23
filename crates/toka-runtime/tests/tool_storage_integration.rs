@@ -58,7 +58,7 @@ async fn runtime_agent_tool_storage_roundtrip() -> Result<()> {
 
     // Create agent
     let mut agent = SymbolicAgent::new("a1");
-    agent.set_event_bus(toka_events::EventBus::new_default());
+    agent.set_event_bus(toka_bus_memory::MemoryEventBus::new_default());
 
     // Use storage adapter via runtime
     let local = runtime.storage("local").await.expect("local adapter");

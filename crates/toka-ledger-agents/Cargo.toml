@@ -16,4 +16,5 @@ chrono = { version = "0.4", features = ["serde"] }
 sled = "0.34"
 rmp-serde = "1.1"
 
-toka-ledger-core = { path = "../toka-ledger-core" } 
+toka-events-core = { path = "../toka-events-core" }
+toka-bus-persist = { path = "../toka-bus-persist", features = ["intent-cluster"] } 

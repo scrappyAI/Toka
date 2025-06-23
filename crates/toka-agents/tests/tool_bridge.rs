@@ -65,7 +65,7 @@ async fn agent_invoke_tool_emits_events() -> Result<()> {
     // Ensure at least one ToolEvent came through
     let mut got_invoked = false;
     while let Ok(event) = rx.try_recv() {
-        if let toka_events::EventType::Tool(_) = event.event_type {
+        if let toka_bus_memory::EventType::Tool(_) = event.event_type {
             got_invoked = true;
             break;
         }

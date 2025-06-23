@@ -14,7 +14,7 @@ tracing = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }
 futures = "0.3"
 # add unified events crate
-toka-events = { path = "../toka-events" }
+toka-bus-memory = { path = "../toka-bus-memory" }
 # crypto & utility crates used in auth/vault modules (kept optional for lean builds)
 # sha2 = { version = "0.10", optional = true }
 # hex = { version = "0.4", optional = true }

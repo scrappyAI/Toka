@@ -15,7 +15,7 @@ tracing = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }
 semver = { version = "1", features = ["serde"] }
 bitflags = { version = "2", features = ["serde"] }
-toka-events = { path = "../toka-events" }
+toka-bus-memory = { path = "../toka-bus-memory" }
 # typetag removed – core has no dyn-serde by default 
 toka-secrets = { path = "../toka-secrets" }
 toka-toolkit-core = { path = "../toka-toolkit-core", optional = true }

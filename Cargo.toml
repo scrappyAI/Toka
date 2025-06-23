@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "crates/toka-core",
-    "crates/toka-events",    # New lightweight events crate
     "crates/toka-events-core", # Core event primitives and types
     "crates/toka-bus-memory", # In-memory event bus implementation
     "crates/toka-bus-persist", # Persistent event bus implementation
@@ -51,6 +50,8 @@ clap = { version = "4.5", features = ["derive"] }
 # Development dependencies
 tokio-test = "0.4"
 sqlx-test = "0.7"
+
+base64ct = "1.7.3"
 
 [workspace.package]
 version = "0.1.0"

@@ -6,7 +6,7 @@
 |-------------------------|---------------------------|-----------------------|------------------|
 | `toka-primitives`       | (keep)                    | ① no_std primitives  | Fundamental, dependency-free types (IDs, currency, etc.). |
 | `toka-core`             | `toka-domain`             | ③ separate lifecycle | Higher-level domain logic built on primitives. |
-| `toka-events`           | (keep)                    | ① no_std             | Ultra-light in-memory event bus. |
+| `toka-events`           | (removed)                 | –                     | Legacy crate replaced by `toka-bus-memory`. |
 | `toka-security-auth`    | (renamed – done)          | ① + ③                | Capability-token primitives, crypto free. |
 | `toka-secrets`          | (renamed – done)          | ② heavy deps         | Encrypted key/value vault built on sled + aes-gcm. |
 | `toka-agents`           | (renamed – done)          | ② optional deps      | Default agent implementations for the runtime. |
