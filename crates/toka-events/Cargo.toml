@@ -15,6 +15,14 @@ uuid = { version = "1", features = ["v4", "serde"] }
 tokio = { version = "1", features = ["sync"] }
 chrono = { version = "0.4", features = ["serde"] }
 
+# Core event types
+toka-events-core = { path = "../toka-events-core" }
+
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
-anyhow = "1" 
+anyhow = "1"
+
+[features]
+default = ["rich"]
+legacy = []
+rich = []
