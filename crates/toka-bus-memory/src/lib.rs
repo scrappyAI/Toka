@@ -25,20 +25,117 @@ const DEFAULT_BUFFER: usize = 1024;
 /// Authentication-related events
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AuthEvent {
-    UserLogin { user_id: String, timestamp: u64 },
-    UserLogout { user_id: String, timestamp: u64 },
-    AuthFailure { attempt_info: String, timestamp: u64 },
-    TokenRefresh { user_id: String, timestamp: u64 },
+    // Login events
+    UserLogin {
+        user_id: String,
+        ip_address: String,
+        device_info: String,
+        timestamp: u64,
+    },
+    UserLogout {
+        user_id: String,
+        session_duration: u64,
+        timestamp: u64,
+    },
+    
+    // Authentication failures
+    AuthFailure {
+        attempt_info: String,
+        failure_type: String, // e.g. "invalid_password", "expired_token", etc.
+        ip_address: String,
+        user_agent: String,
+        timestamp: u64,
+    },
+    
+    // Token management
+    TokenRefresh {
+        user_id: String,
+        token_type: String, // e.g. "access", "refresh"
+        previous_token_age: u64,
+        timestamp: u64,
+    },
+    TokenRevoked {
+        user_id: String,
+        token_id: String,
+        reason: String,
+        timestamp: u64,
+    },
+    
+    // Permission changes
+    PermissionGranted {
+        user_id: String,
+        permission: String,
+        granted_by: String,
+        timestamp: u64,
+    },
+    PermissionRevoked {
+        user_id: String,
+        permission: String,
+        revoked_by: String,
+        reason: String,
+        timestamp: u64,
+    },
+    
+    // Security events
+    SuspiciousActivity {
+        user_id: String,
+        activity_type: String,
+        details: String,
+        ip_address: String,
+        timestamp: u64,
+    },
+    AccountLocked {
+        user_id: String,
+        reason: String,
+        lock_duration: u64,
+        timestamp: u64,
+    },
+    AccountUnlocked {
+        user_id: String,
+        unlocked_by: String,
+        timestamp: u64,
+    }
 }
 
 /// Agent-related events
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AgentEvent {
+    // Creation events
     Created { agent_id: String, agent_type: String, timestamp: u64 },
+    CreationFailed { agent_id: String, error: String, timestamp: u64 },
+    
+    // Belief events
     BeliefUpdated { agent_id: String, belief_key: String, probability: f64, timestamp: u64 },
+    BeliefUpdateFailed { agent_id: String, belief_key: String, error: String, timestamp: u64 },
+    
+    // Action events
     ActionTriggered { agent_id: String, action: String, timestamp: u64 },
+    ActionStarted { agent_id: String, action: String, timestamp: u64 },
+    ActionCompleted { agent_id: String, action: String, result: String, timestamp: u64 },
+    ActionFailed { agent_id: String, action: String, error: String, timestamp: u64 },
+    ActionTimedOut { agent_id: String, action: String, timeout_ms: u64, timestamp: u64 },
+    
+    // Planning events
+    PlanningStarted { agent_id: String, timestamp: u64 },
     PlanGenerated { agent_id: String, plan: String, timestamp: u64 },
+    PlanningFailed { agent_id: String, error: String, timestamp: u64 },
+    PlanningTimedOut { agent_id: String, timeout_ms: u64, timestamp: u64 },
+    
+    // Observation events
+    ObservationReceived { agent_id: String, observation_key: String, timestamp: u64 },
+    ObservationProcessing { agent_id: String, observation_key: String, timestamp: u64 },
     ObservationProcessed { agent_id: String, observation_key: String, timestamp: u64 },
+    ObservationFailed { agent_id: String, observation_key: String, error: String, timestamp: u64 },
+    
+    // Thinking/Processing events
+    ThinkingStarted { agent_id: String, task: String, timestamp: u64 },
+    ThinkingCompleted { agent_id: String, task: String, timestamp: u64 },
+    ThinkingFailed { agent_id: String, task: String, error: String, timestamp: u64 },
+    
+    // System events
+    AgentPaused { agent_id: String, reason: String, timestamp: u64 },
+    AgentResumed { agent_id: String, timestamp: u64 },
+    AgentTerminated { agent_id: String, reason: String, timestamp: u64 }
 }
 
 /// Tool-related events
@@ -59,6 +156,19 @@ pub enum VaultEvent {
     VaultUnlocked { vault_id: String, user_id: String, timestamp: u64 },
 }
 
+/// Memory-related events
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum MemoryEvent {
+    MemoryAccessed { memory_id: String, user_id: String, timestamp: u64 },
+    MemoryUpdated { memory_id: String, user_id: String, timestamp: u64 },
+    MemoryDeleted { memory_id: String, user_id: String, timestamp: u64 },
+    /// Memory has been successfully persisted to durable storage
+    MemoryPersisted { memory_id: String, user_id: String, timestamp: u64 },
+    MemoryAccessFailed { memory_id: String, user_id: String, error: String, timestamp: u64 },
+    MemoryUpdateFailed { memory_id: String, user_id: String, error: String, timestamp: u64 },
+    MemoryDeleteFailed { memory_id: String, user_id: String, error: String, timestamp: u64 },
+}
+
 /// Legacy event type hierarchy for backward compatibility
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum EventType {
@@ -66,6 +176,7 @@ pub enum EventType {
     Agent(AgentEvent),
     Tool(ToolEvent),
     Vault(VaultEvent),
+    Memory(MemoryEvent),
     Generic { event_type: String, data: String },
 }
 
@@ -145,6 +256,10 @@ pub trait EventBus: Send + Sync + Clone {
     
     async fn emit_auth_event(&self, auth_event: AuthEvent, source: &str) -> Result<()> {
         self.emit(EventType::Auth(auth_event), source).await
+    }
+
+    async fn emit_memory_event(&self, memory_event: MemoryEvent, source: &str) -> Result<()> {
+        self.emit(EventType::Memory(memory_event), source).await
     }
 }
 
@@ -262,6 +377,8 @@ mod tests {
         bus.emit(
             EventType::Auth(AuthEvent::UserLogin {
                 user_id: "alice".to_string(),
+                ip_address: "127.0.0.1".to_string(),
+                device_info: "test-device".to_string(),
                 timestamp: ts,
             }),
             "test",
@@ -335,6 +452,33 @@ mod tests {
         bus.unsubscribe("test").await?;
         assert_eq!(bus.subscriber_count().await, 0);
         
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_memory_event_bus() -> Result<()> {
+        let bus = MemoryEventBus::new_default();
+        let sub = Box::new(CountingSub {
+            id: "test".into(),
+            count: tokio::sync::Mutex::new(0),
+        });
+
+        bus.subscribe(sub).await?;
+
+        let ts = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+
+        bus.emit_memory_event(
+            MemoryEvent::MemoryAccessed {
+                memory_id: "m".into(),
+                user_id: "u".into(),
+                timestamp: ts,
+            },
+            "svc",
+        ).await?;
+
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        assert_eq!(bus.subscriber_count().await, 1);
+
         Ok(())
     }
 }
