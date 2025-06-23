@@ -4,7 +4,7 @@ version = "0.2.0-alpha"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Persistent event bus implementation for the Toka platform with sled storage"
-repository = "https://github.com/tokaengine/toka"
+repository = "https://github.com/scrappyAI/toka"
 keywords = ["events", "bus", "persistent", "storage", "sled"]
 
 [dependencies]
