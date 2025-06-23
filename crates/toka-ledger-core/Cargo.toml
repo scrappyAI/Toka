@@ -11,11 +11,9 @@ anyhow = "1"
 smallvec = { version = "1.13", features = ["serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 uuid  = { version = "1.7", features = ["v4", "serde"] }
-blake3 = "1.5"
-rmp-serde = "1.1"
-sled = "0.34"
-tokio = { workspace = true, features = ["sync", "time"] }
-ndarray = "0.15" # kept for API parity, unused internally
+
+toka-events-core = { path = "../toka-events-core" }
+toka-bus-persist = { path = "../toka-bus-persist" }
 
 [features]
 default = [] 

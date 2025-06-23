@@ -6,6 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use super::{AgentContext, ReasonOutcome, ReasoningEngine};
 use crate::{AgentEvent, Belief, EventBus, Observation};
 use async_trait::async_trait;
+use toka_bus_memory::EventBus as _;
 
 /// Core Bayesian symbolic reasoner separated from agent container.
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -18,14 +18,17 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-pub mod core;
-pub mod hash;
-pub mod bus;
-
 // ---------------------------------------------------------------------------
-// Re-exports for ergonomic downstream use
+// Modern re-exports – legacy modules removed to avoid duplication.
 // ---------------------------------------------------------------------------
 
-pub use core::{EventHeader, EventPayload, EventId, IntentId, CausalDigest};
-pub use bus::VaultBus;
-pub use hash::causal_hash; 
+// Core primitives & hashing
+pub use toka_events_core::{EventHeader, EventPayload, EventId, IntentId, CausalDigest, causal_hash};
+
+// Persistent storage-backed event bus
+pub use toka_bus_persist::{VaultBus, PersistentEventBus};
+
+// NOTE: The original internal `core`, `hash`, and `bus` modules were removed
+// in favour of the canonical implementations in `toka-events-core` and
+// `toka-bus-persist`. Downstream code can continue to depend on
+// `toka_ledger_core::*` without any changes. 
