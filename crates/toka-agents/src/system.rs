@@ -1,6 +1,7 @@
 use crate::{Agent, BaseAgent, EventBus};
 use anyhow::Result;
 use async_trait::async_trait;
+use crate::memory_adapter::MemoryAdapter;
 
 /// Built-in system agent kinds managed by the runtime.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -60,11 +61,11 @@ impl Agent for SystemAgent {
         self.inner.process_event(event_type, data).await
     }
 
-    async fn save_state(&self, adapter: &dyn toka_secrets::MemoryAdapter) -> Result<()> {
+    async fn save_state(&self, adapter: &dyn MemoryAdapter) -> Result<()> {
         self.inner.save_state(adapter).await
     }
 
-    async fn load_state(&mut self, adapter: &dyn toka_secrets::MemoryAdapter) -> Result<()> {
+    async fn load_state(&mut self, adapter: &dyn MemoryAdapter) -> Result<()> {
         self.inner.load_state(adapter).await
     }
 }

@@ -3,9 +3,7 @@
 
 use anyhow::Result;
 use std::time::{SystemTime, UNIX_EPOCH};
-use toka_agents::{Agent, BaseAgent, EventBus, Observation};
-use toka_secrets::Vault;
-use tempfile::tempdir;
+use toka_agents::{Agent, BaseAgent, EventBus, Observation, InMemoryAdapter};
 
 #[tokio::test]
 async fn test_agent_with_extreme_belief_values() -> Result<()> {
@@ -148,8 +146,7 @@ async fn test_agent_event_processing_resilience() -> Result<()> {
 
 #[tokio::test]
 async fn test_agent_state_persistence_edge_cases() -> Result<()> {
-    let temp_dir = tempdir()?;
-    let vault = Vault::new(temp_dir.path().to_str().unwrap())?;
+    let adapter = InMemoryAdapter::default();
     
     let mut agent = BaseAgent::new("persistence_test");
     
@@ -164,11 +161,11 @@ async fn test_agent_state_persistence_edge_cases() -> Result<()> {
     }
     
     // Save state
-    agent.save_state(&vault).await?;
+    agent.save_state(&adapter).await?;
     
     // Create new agent and try to load
     let mut new_agent = BaseAgent::new("different_id"); // Different ID
-    new_agent.load_state(&vault).await?;
+    new_agent.load_state(&adapter).await?;
     
     // Should handle mismatched IDs gracefully
     let summary = new_agent.summarize();

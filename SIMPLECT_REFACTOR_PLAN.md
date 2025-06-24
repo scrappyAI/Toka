@@ -76,7 +76,8 @@ pub trait MemoryAdapter {
 ## Progress
 
 - [x] Slice 1 – **toka-bus crate scaffolded** (`EventBus`, `MemoryBus`, workspace member)
-- [ ] Slice 1 – Migrate existing crates to depend on `toka-bus`
+- [x] Slice 1 – Migrate existing crates to depend on `toka-bus`
+- [x] Slice 1 – Removed legacy `toka_secrets` dependency; introduced lightweight `MemoryAdapter` in `toka-agents`
 - [ ] Slice 2 – Vault persistence-only refactor (pending)
 
 _Last updated: 2025-06-24_ 

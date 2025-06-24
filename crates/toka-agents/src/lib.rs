@@ -10,6 +10,7 @@ pub mod metadata;
 pub mod prelude;
 pub mod reasoning;
 pub mod system;
+pub mod memory_adapter;
 
 pub use agent::{BaseAgent, Belief, Observation, SymbolicAgent};
 pub use bundle::{AgentBundle, ToolSpec};
@@ -17,13 +18,13 @@ pub use metadata::{AgentMetadata, Capability};
 pub use prelude::*;
 pub use reasoning::{AgentContext, NoOpReasoner, ReasonOutcome, ReasoningEngine};
 pub use system::{SystemAgent, SystemAgentKind};
+pub use memory_adapter::{MemoryAdapter, InMemoryAdapter};
 
 pub use toka_bus::{AgentEvent, MemoryBus as EventBus, ToolEvent, EventBusExt as _};
 
 use anyhow::Result;
 use async_trait::async_trait;
 use serde_json;
-use toka_secrets::MemoryAdapter;
 
 // -----------------------------------------------------------------------------
 //  Minimal local EventBus + AgentEvent stubs

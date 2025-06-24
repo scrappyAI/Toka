@@ -62,6 +62,7 @@ pub mod strategy;
 /// A convenient prelude for importing the most common types.
 pub mod prelude {
     pub use crate::bus::EventBus;
+    pub use crate::Vault;
     pub use crate::events::{
         causal_hash, create_event_header, CausalDigest, DomainEvent, EventHeader, EventId,
         EventPayload, IntentId,
