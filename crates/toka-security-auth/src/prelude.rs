@@ -4,4 +4,5 @@
 //! items so that downstream code (or an LLM) can interact with the crate with
 //! minimal ceremony.
 
-pub use crate::token::CapabilityToken;
+pub use crate::token::{CapabilityToken, Claims};
+pub use crate::validator::{TokenValidator, JwtValidator};

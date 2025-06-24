@@ -6,9 +6,10 @@ license = "MIT OR Apache-2.0"
 description = "Lightweight capability-token primitives for Toka platform auth."
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
-sha2 = "0.10"
-hex = "0.4" 
+serde = { workspace = true, features = ["derive"] }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+jsonwebtoken = { workspace = true }
 
 [features]
 # Default build includes core primitives

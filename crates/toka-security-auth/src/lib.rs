@@ -5,6 +5,7 @@
 //! heavy crypto or async dependencies.
 
 pub mod token;
+pub mod validator;
 
 pub mod prelude;
 

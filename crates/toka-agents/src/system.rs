@@ -1,7 +1,7 @@
 use crate::{Agent, BaseAgent, EventBus};
 use anyhow::Result;
 use async_trait::async_trait;
-use crate::memory_adapter::MemoryAdapter;
+use toka_memory::MemoryAdapter;
 
 /// Built-in system agent kinds managed by the runtime.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

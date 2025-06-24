@@ -141,6 +141,23 @@ impl BaseAgent {
             self.context.len()
         )
     }
+
+    async fn save_state(&self, adapter: &dyn toka_memory::MemoryAdapter) -> Result<()> {
+        let key = format!("agent:{}", self.id);
+        let bytes = serde_json::to_vec(self)?;
+        adapter.put(&key, bytes, 0).await
+    }
+
+    async fn load_state(&mut self, adapter: &dyn toka_memory::MemoryAdapter) -> Result<()> {
+        let key = format!("agent:{}", self.id);
+        if let Some(bytes) = adapter.get(&key).await? {
+            if let Ok(saved) = serde_json::from_slice::<BaseAgent>(&bytes) {
+                self.context = saved.context;
+                self.reasoner = saved.reasoner;
+            }
+        }
+        Ok(())
+    }
 }
 
 // Temporary alias for backward compatibility – will be deprecated in a future release.

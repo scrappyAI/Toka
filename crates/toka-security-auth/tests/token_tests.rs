@@ -1,47 +1,26 @@
-use std::env;
+use std::thread;
+use std::time::Duration;
 use toka_security_auth::CapabilityToken;
 
-const FALLBACK_SECRET: &str = "super_secret_key";
+const SECRET: &str = "super_secret_key";
 
-fn get_secret() -> String {
-    env::var("TOKA_TEST_SECRET").unwrap_or_else(|_| FALLBACK_SECRET.to_string())
+#[test]
+fn token_roundtrip() {
+    let token = CapabilityToken::new("alice", "vault1", vec!["read".into()], SECRET, 3600).unwrap();
+    assert!(token.is_valid(SECRET));
 }
 
 #[test]
-fn test_token_creation_and_signature() {
-    let secret = get_secret();
-    let token = CapabilityToken::new(
-        "alice",
-        "vault1",
-        vec!["read".into()],
-        &secret,
-        3600,
-    );
-
-    assert!(token.is_valid(&secret));
+fn invalid_secret_fails() {
+    let token = CapabilityToken::new("bob", "vault2", vec!["write".into()], SECRET, 3600).unwrap();
+    assert!(!token.is_valid("incorrect_secret"));
 }
 
 #[test]
-fn test_token_signature_tampering() {
-    let secret = get_secret();
-    let mut token =
-        CapabilityToken::new("user123", "vaultABC", vec!["read".to_string()], &secret, 60);
-
-    // Tamper with the signature
-    token.signature = "invalidsignature".into();
-
-    assert!(!token.is_valid(&secret));
-}
-
-#[test]
-fn test_token_expiration() {
-    let secret = get_secret();
-    let mut token =
-        CapabilityToken::new("user123", "vaultABC", vec!["read".to_string()], &secret, 60);
-
-    // Manually expire the token
-    token.expires_at = token.issued_at.saturating_sub(1);
-    token.signature = token.compute_signature(&secret);
-
-    assert!(!token.is_valid(&secret));
+fn token_expires() {
+    let token = CapabilityToken::new("carol", "vault3", vec!["read".into()], SECRET, 1).unwrap();
+    assert!(token.is_valid(SECRET));
+    // Wait just over a second to ensure expiry has passed.
+    thread::sleep(Duration::from_millis(1100));
+    assert!(!token.is_valid(SECRET));
 }

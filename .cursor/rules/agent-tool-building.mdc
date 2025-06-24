@@ -1,0 +1,72 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+<ProjectRule name="HardenSecuritySurfaceAgentTools">
+<Extends>HardenSecuritySurface</Extends>
+
+<Description>
+Guidelines for building safe, composable, and auditable tools for use by AI agents. Tools are interfaces agents invoke to perform external actions or access privileged information.
+</Description>
+
+<Objective>
+- Build minimal, reliable, auditable tools for agent use.
+- Prevent tools from becoming escalation surfaces or execution hazards.
+- Maintain strict separation between intent (from agent) and effect (in system).
+</Objective>
+
+<Instructions>
+
+1. <DeclareCapabilities>
+   - Every tool must declare its:
+     - **Capability** (e.g., `read_file`, `transfer_funds`)
+     - **Input schema**
+     - **Output schema**
+   - Use static typing and explicit contract design. Reject unstructured, ad-hoc I/O.
+
+</DeclareCapabilities>
+
+2. <SideEffectClarity>
+   - Tools must clearly indicate if they:
+     - Cause side effects
+     - Perform irreversible actions
+     - Interact with external systems
+   - Default to read-only or idempotent behavior unless explicitly marked.
+
+</SideEffectClarity>
+
+3. <Safety Guards>
+   - All tools must:
+     - Validate inputs against schema or domain constraints
+     - Enforce limits (e.g., file size, number of items, depth)
+     - Fail gracefully with rich error types
+   - Harden against malformed requests, recursion, and abuse.
+
+</SafetyGuards>
+
+4. <Execution Isolation>
+   - Tools that invoke subprocesses, network calls, or file writes:
+     - Must run in isolated sandboxes
+     - Must be marked as "Privileged"
+     - Should emit audit logs with timestamped trace
+
+</ExecutionIsolation>
+
+5. <Tool Registration>
+   - Register tools via a central manifest with:
+     - ID, version, changelog, capability
+     - Authz requirements (if any)
+   - Deny runtime-discovered or injected tools.
+
+</ToolRegistration>
+
+6. <Versioning & Deprecation>
+   - Tools must be versioned and backward-compatible where possible.
+   - Deprecate unsafe or unstable tools cleanly with migration paths.
+
+</VersioningAndDeprecation>
+
+</Instructions>
+
+</ProjectRule>

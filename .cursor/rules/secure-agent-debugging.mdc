@@ -1,0 +1,68 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+<ProjectRule name="HardenSecuritySurfaceAgentDebugging">
+<Extends>HardenSecuritySurface</Extends>
+
+<Description>
+Secure guidelines for debugging AI agents and their interactions. Focuses on observability, traceability, and containment to prevent inadvertent harm or data leaks during troubleshooting.
+</Description>
+
+<Objective>
+- Enable safe debugging without leaking secrets or destabilizing the system.
+- Provide fine-grained visibility into agent actions and tool calls.
+- Prevent prompt tampering, context contamination, and unscoped introspection.
+</Objective>
+
+<Instructions>
+
+1. <TraceEverything>
+   - Capture structured trace logs:
+     - Agent input (`intent`, `prompt`)
+     - Planning steps and tools invoked
+     - Tool I/O and response
+     - Memory reads/writes
+   - Tag logs with UUIDs and timestamps. Mask PII and sensitive output in default views.
+
+</TraceEverything>
+
+2. <Scoped Replay>
+   - Enable **replay mode** for agents to re-run previous steps deterministically without side effects.
+   - Do not allow mutation of production memory/state during replay.
+   - Use virtual VFS or mock tool outputs where needed.
+
+</ScopedReplay>
+
+3. <Redacted Logs>
+   - Default to redacted views in shared environments.
+   - Do not log:
+     - Full user prompts
+     - Secrets or credentials
+     - System internals unless explicitly debug-flagged
+
+</RedactedLogs>
+
+4. <Prompt Safety>
+   - During debugging, prompt history should be immutable and visible but not rewriteable unless sandboxed.
+   - Prevent adversarial or speculative prompt modification when inspecting agent chains.
+
+</PromptSafety>
+
+5. <Crash Reproduction>
+   - Capture minimum crash state:
+     - Input + tool plan + stack trace
+   - Add reproduction harnesses to unit-test agent regressions (e.g., `agent_test!(“edge_case_42”)`).
+
+</CrashReproduction>
+
+6. <Safe Overrides>
+   - Allow temporary tool overrides for debugging (e.g., mock `read_file`) but flag them visibly in logs and disallow in production mode.
+   - Disallow override of core auth, ledger, or irreversible tools even in dev.
+
+</SafeOverrides>
+
+</Instructions>
+
+</ProjectRule>

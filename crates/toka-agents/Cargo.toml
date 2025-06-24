@@ -18,6 +18,7 @@ bitflags = { version = "2", features = ["serde"] }
 toka-bus = { path = "../toka-bus" }
 toka-vault = { path = "../toka-vault", optional = true }
 toka-toolkit-core = { path = "../toka-toolkit-core", optional = true }
+toka-memory = { path = "../toka-memory" }
 
 [features]
 default = ["core"]

@@ -10,7 +10,6 @@ pub mod metadata;
 pub mod prelude;
 pub mod reasoning;
 pub mod system;
-pub mod memory_adapter;
 
 pub use agent::{BaseAgent, Belief, Observation, SymbolicAgent};
 pub use bundle::{AgentBundle, ToolSpec};
@@ -18,7 +17,7 @@ pub use metadata::{AgentMetadata, Capability};
 pub use prelude::*;
 pub use reasoning::{AgentContext, NoOpReasoner, ReasonOutcome, ReasoningEngine};
 pub use system::{SystemAgent, SystemAgentKind};
-pub use memory_adapter::{MemoryAdapter, InMemoryAdapter};
+pub use toka_memory::{MemoryAdapter, InMemoryAdapter};
 
 pub use toka_bus::{AgentEvent, MemoryBus as EventBus, ToolEvent, EventBusExt as _};
 
@@ -86,14 +85,14 @@ impl Agent for BaseAgent {
 
     async fn save_state(&self, adapter: &dyn MemoryAdapter) -> Result<()> {
         let key = format!("agent:{}", self.id);
-        let json = serde_json::to_string(self)?;
-        adapter.save_json(&key, &json)
+        let bytes = serde_json::to_vec(self)?;
+        adapter.put(&key, bytes, 0).await
     }
 
     async fn load_state(&mut self, adapter: &dyn MemoryAdapter) -> Result<()> {
         let key = format!("agent:{}", self.id);
-        if let Some(json) = adapter.load_json(&key)? {
-            if let Ok(saved) = serde_json::from_str::<BaseAgent>(&json) {
+        if let Some(bytes) = adapter.get(&key).await? {
+            if let Ok(saved) = serde_json::from_slice::<BaseAgent>(&bytes) {
                 self.context = saved.context;
                 self.reasoner = saved.reasoner;
             }
