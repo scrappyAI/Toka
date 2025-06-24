@@ -66,7 +66,7 @@ mod clustering {
     use parking_lot::RwLock;
     
     /// Dimensionality of the embedding vectors
-    pub const EMBEDDING_DIM: usize = 768;
+    pub const EMBEDDING_DIM: usize = 1536;
     
     /// Cosine similarity threshold for clustering
     const SIMILARITY_THRESHOLD: f32 = 0.82;

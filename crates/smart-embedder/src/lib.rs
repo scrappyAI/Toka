@@ -29,6 +29,7 @@ pub trait SentenceEncoder: Send + Sync {
 }
 
 /// Smart embedder that converts structured payloads into semantic embeddings.
+#[derive(Debug)]
 pub struct SmartEmbedder<L, E> {
     llm:      L,
     encoder:  E,
@@ -70,7 +71,7 @@ Summary:"#
 // ------------------------------------------------------------
 
 #[cfg(feature = "openai")]
-mod openai_client {
+pub mod openai_client {
     use super::*;
     use reqwest::Client;
 
@@ -137,7 +138,7 @@ mod openai_client {
 }
 
 #[cfg(feature = "transformers")]
-mod transformer_encoder {
+pub mod transformer_encoder {
     use super::*;
     use rust_bert::pipelines::sentence_embeddings::SentenceEmbeddingsModel;
 
@@ -149,6 +150,8 @@ mod transformer_encoder {
     impl BertEncoder {
         /// Load the default `all-MiniLM-L6-v2` model.
         pub fn new() -> anyhow::Result<Self> {
+            // Note: This panics if the model files are not available.
+            // Ensure they are downloaded by running the rust-bert download script.
             let model = SentenceEmbeddingsModel::new(Default::default())?;
             Ok(Self { model })
         }
@@ -158,7 +161,10 @@ mod transformer_encoder {
     impl SentenceEncoder for BertEncoder {
         async fn encode(&self, sentence: &str) -> Result<Array1<f32>> {
             let vecs = self.model.encode(&[sentence])?;
-            Ok(vecs[0].clone())
+            // rust-bert can fail silently, returning an empty vec.
+            vecs.get(0)
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("Sentence encoding failed to produce a vector."))
         }
     }
 } 

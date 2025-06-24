@@ -1,24 +1,30 @@
 [workspace]
 resolver = "2"
 members = [
+    # Core Application Logic
     "crates/toka-core",
-    "crates/toka-events-core", # Core event primitives and types
-    "crates/toka-bus-memory", # In-memory event bus implementation
-    "crates/toka-bus-persist", # Persistent event bus implementation
-    "crates/toka-runtime",
-    "crates/toka-toolkit",
-    "crates/toka-agents",
-    "crates/toka-security-auth",
-    "crates/toka-secrets",
-    "crates/toka-toolkit-core",
     "crates/toka-primitives",
-    "crates/toka",
-    "crates/toka-storage",
+
+    # Security
+    "crates/toka-security-auth",
+
+    # Agents & Runtime
+    "crates/toka-agents",
+    "crates/toka-runtime",
     "crates/toka-cli",
-    "crates/toka-ledger-core",
-    "crates/toka-ledger-agents",
-    "crates/toka-ledger-finance",
-    "crates/smart-embedder"
+
+    # Tools
+    "crates/toka-toolkit-core",
+    "crates/toka-toolkit",
+
+    # The Canonical Event Store
+    "crates/toka-vault",
+
+    # Specialized Tooling
+    "crates/smart-embedder",
+
+    # Meta-crate
+    "crates/toka"
 ]
 
 [workspace.dependencies]

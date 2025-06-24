@@ -1,6 +1,6 @@
 //! Core event primitives and types for the Toka platform.
 //!
-//! This crate provides the foundational types and traits for event handling
+//! This module provides the foundational types and traits for event handling
 //! across the Toka ecosystem, including causal hashing and event headers.
 
 use chrono::{DateTime, Utc};
@@ -21,10 +21,11 @@ pub type CausalDigest = [u8; 32];
 /// to the vault.
 pub trait EventPayload: Serialize + for<'de> Deserialize<'de> + Send + Sync {}
 
+// Blanket implementation for any type that meets the bounds.
 impl<T> EventPayload for T where T: Serialize + for<'de> Deserialize<'de> + Send + Sync {}
 
 /// Minimal header stored inline with every event.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct EventHeader {
     /// Event identifier (UUID v4).
     pub id: EventId,
@@ -36,14 +37,16 @@ pub struct EventHeader {
     pub digest: CausalDigest,
     /// Semantic intent bucket this event belongs to.
     /// For the *core* crate we don't try to cluster; callers can set it to
-    /// whatever value they need (e.g. `Uuid::nil()` when unknown).
+    /// whatever value they need (e.g., `Uuid::nil()` when unknown).
     pub intent: IntentId,
     /// Application-defined kind, e.g. `ledger.mint` or `chat.msg`.
     pub kind: String,
 }
 
-/// Domain events that can occur within the Toka platform.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+/// A standard set of domain events that can occur within the Toka platform.
+/// This enum provides a structured way to represent common events, but systems
+/// are free to use their own custom event payload types.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[non_exhaustive]
 pub enum DomainEvent {
     /// Agent-related events
@@ -98,6 +101,7 @@ pub enum DomainEvent {
 ///
 /// This function takes an event payload and its causal parent digests,
 /// and produces a deterministic hash that captures the causal relationship.
+/// The hash is computed as `Blake3(payload || sorted_parent_digest_1 || ...)`.
 ///
 /// # Arguments
 /// * `payload_bytes` - Serialized event payload
@@ -107,46 +111,40 @@ pub enum DomainEvent {
 /// A 32-byte Blake3 digest
 pub fn causal_hash(payload_bytes: &[u8], parent_digests: &[CausalDigest]) -> CausalDigest {
     let mut hasher = blake3::Hasher::new();
-    
+
     // Hash the payload
     hasher.update(payload_bytes);
-    
+
     // Hash parent digests in sorted order for determinism
     let mut sorted_parents = parent_digests.to_vec();
     sorted_parents.sort_unstable();
-    
+
     for parent_digest in sorted_parents {
         hasher.update(&parent_digest);
     }
-    
+
     hasher.finalize().into()
 }
 
-/// Utility function to create an EventHeader with causal hash.
+/// Utility function to create an EventHeader.
 ///
-/// # Arguments
-/// * `id` - Event ID
-/// * `parents` - Parent event IDs
-/// * `intent` - Intent ID
-/// * `kind` - Event kind string
-/// * `payload` - Event payload to hash
-///
-/// # Returns
-/// A complete EventHeader with computed causal hash
+/// This simplifies the process of constructing a header by automatically
+/// handling timestamping and causal hashing.
 pub fn create_event_header<P: EventPayload>(
-    id: EventId,
-    parents: SmallVec<[EventId; 4]>,
+    parents: &[EventHeader],
     intent: IntentId,
     kind: String,
     payload: &P,
-    parent_digests: &[CausalDigest],
-) -> Result<EventHeader, serde_json::Error> {
-    let payload_bytes = serde_json::to_vec(payload)?;
-    let digest = causal_hash(&payload_bytes, parent_digests);
-    
+) -> Result<EventHeader, rmp_serde::encode::Error> {
+    let parent_ids: SmallVec<[EventId; 4]> = parents.iter().map(|h| h.id).collect();
+    let parent_digests: Vec<CausalDigest> = parents.iter().map(|h| h.digest).collect();
+
+    let payload_bytes = rmp_serde::to_vec_named(payload)?;
+    let digest = causal_hash(&payload_bytes, &parent_digests);
+
     Ok(EventHeader {
-        id,
-        parents,
+        id: Uuid::new_v4(),
+        parents: parent_ids,
         timestamp: Utc::now(),
         digest,
         intent,
@@ -164,10 +162,10 @@ mod tests {
         let payload = b"test_payload";
         let parent1 = [1u8; 32];
         let parent2 = [2u8; 32];
-        
+
         let hash1 = causal_hash(payload, &[parent1, parent2]);
         let hash2 = causal_hash(payload, &[parent2, parent1]); // Different order
-        
+
         // Should be the same due to sorting
         assert_eq!(hash1, hash2);
     }
@@ -178,10 +176,10 @@ mod tests {
             agent_id: Uuid::new_v4(),
             payload: json!({"action": "started"}),
         };
-        
-        let serialized = serde_json::to_string(&event).unwrap();
-        let deserialized: DomainEvent = serde_json::from_str(&serialized).unwrap();
-        
+
+        let serialized = rmp_serde::to_vec_named(&event).unwrap();
+        let deserialized: DomainEvent = rmp_serde::from_slice(&serialized).unwrap();
+
         assert_eq!(event, deserialized);
     }
 
@@ -191,17 +189,11 @@ mod tests {
             component: "test".to_string(),
             payload: json!({"test": true}),
         };
-        
-        let header = create_event_header(
-            Uuid::new_v4(),
-            SmallVec::new(),
-            Uuid::nil(),
-            "system.test".to_string(),
-            &event,
-            &[],
-        ).unwrap();
-        
+
+        let header =
+            create_event_header(&[], Uuid::nil(), "system.test".to_string(), &event).unwrap();
+
         assert_eq!(header.kind, "system.test");
         assert_eq!(header.parents.len(), 0);
     }
-}
+} 

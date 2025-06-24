@@ -15,15 +15,14 @@ tracing = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }
 semver = { version = "1", features = ["serde"] }
 bitflags = { version = "2", features = ["serde"] }
-toka-bus-memory = { path = "../toka-bus-memory" }
-# typetag removed – core has no dyn-serde by default 
-toka-secrets = { path = "../toka-secrets" }
+toka-vault = { path = "../toka-vault", optional = true }
 toka-toolkit-core = { path = "../toka-toolkit-core", optional = true }
 
 [features]
 default = ["core"]
 core = []
 toolkit = ["toka-toolkit-core"]
+vault = ["toka-vault"]
 
 [dev-dependencies]
 tempfile = "3" 
