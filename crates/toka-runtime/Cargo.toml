@@ -25,11 +25,14 @@ toka-agents = { path = "../toka-agents", optional = true }
 toka-security-auth = { path = "../toka-security-auth", optional = true }
 toka-toolkit-core = { path = "../toka-toolkit-core", optional = true }
 toka-bus = { path = "../toka-bus" }
+toka-storage = { path = "../toka-storage" }
 
 rmp-serde = { version = "1", optional = true }
 
 rand = { workspace = true }
 parking_lot = { version = "0.12", optional = true }
+
+tracing-subscriber = { workspace = true }
 
 [dev-dependencies]
 tempfile = "3"

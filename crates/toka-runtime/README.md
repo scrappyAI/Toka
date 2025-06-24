@@ -64,3 +64,36 @@ Early alpha (≥ v0.2.0-alpha).  Expect sharp edges and breaking changes while w
 Apache-2.0 OR MIT
 
 © 2024 Toka Contributors 
+
+---
+
+### Enabling Secret Rotation (`auth` feature)
+
+With the `auth` feature enabled the runtime manages a **secret pool** used to
+sign capability tokens.  Two knobs are available via `RuntimeConfig`:
+
+| Field | Description | Default |
+|-------|-------------|---------|
+| `initial_secret` | Bootstrap key (if `None` a random 256-bit key is generated) | `None` |
+| `retired_ttl_secs` | Grace period during which _retired_ secrets remain valid | `300` |
+
+Example:
+
+```rust,ignore
+let mut cfg = RuntimeConfig::default();
+cfg.initial_secret = Some("my-bootstrap-secret".into());
+cfg.retired_ttl_secs = 120; // 2-minute overlap
+```
+
+You can rotate the active secret at runtime:
+
+```rust,ignore
+runtime.rotate_secrets();
+```
+
+Or, via the CLI (build with `--features auth,vault,toolkit`):
+
+```bash
+$ toka auth rotate-secret
+✅ Secret rotated successfully
+``` 

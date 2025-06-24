@@ -1,7 +1,7 @@
 //! Comprehensive ID system tests for edge cases and security
 //! Tests parsing, serialization, collision resistance, and malformed input handling
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::str::FromStr;
 use toka_primitives::ids::*;
 use uuid::Uuid;

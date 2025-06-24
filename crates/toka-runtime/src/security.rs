@@ -21,6 +21,8 @@ use anyhow::Result;
 use parking_lot::RwLock;
 use rand::{distributions::Alphanumeric, Rng};
 use toka_security_auth::prelude::{JwtValidator, TokenValidator};
+use tracing_subscriber::{fmt::MakeWriter, fmt, prelude::*};
+use std::io::{self, Write};
 
 /// Maximum number of retired secrets kept alive for validation.
 const MAX_OLD_SECRETS: usize = 4;
@@ -132,4 +134,55 @@ impl TokenValidator for MultiValidator {
         }
         Err(anyhow::anyhow!("token validation failed for all secrets"))
     }
+}
+
+// -------------------------------------------------------------------------------------------------
+// Tracing redaction layer
+// -------------------------------------------------------------------------------------------------
+
+/// Writer that redacts secrets on the fly before delegating to stdout.
+struct RedactingWriter {
+    envelope: Envelope,
+    inner: io::Stdout,
+}
+
+impl Write for RedactingWriter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let s = String::from_utf8_lossy(buf);
+        let redacted = self.envelope.redact(&s);
+        self.inner.write(redacted.as_bytes())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.inner.flush()
+    }
+}
+
+/// Factory for [`RedactingWriter`] so we can plug it into `tracing-subscriber`.
+#[derive(Clone)]
+struct RedactingMakeWriter {
+    envelope: Envelope,
+}
+
+impl<'a> MakeWriter<'a> for RedactingMakeWriter {
+    type Writer = RedactingWriter;
+
+    fn make_writer(&'a self) -> Self::Writer {
+        RedactingWriter {
+            envelope: self.envelope.clone(),
+            inner: io::stdout(),
+        }
+    }
+}
+
+/// Install a global tracing subscriber that automatically redacts capability
+/// secrets in log output.
+pub fn install_redacted_tracing(envelope: Envelope) {
+    let fmt_layer = fmt::layer().with_writer(RedactingMakeWriter {
+        envelope: envelope.clone(),
+    });
+
+    let _ = tracing_subscriber::registry()
+        .with(fmt_layer)
+        .try_init();
 } 

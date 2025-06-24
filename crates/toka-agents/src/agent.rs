@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::reasoning::symbolic::SymbolicReasoner;
-use crate::{AgentEvent, ToolEvent, EventBus};
+use crate::{AgentEvent, EventBus};
 use toka_bus::EventBusExt as _;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

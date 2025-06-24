@@ -11,5 +11,5 @@ clap = { workspace = true, features = ["derive"] }
 anyhow = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 
-# Re-export runtime & toolkit for internal use (future work)
-toka-runtime = { path = "../toka-runtime", version = "0.1.0", optional = true } 
+# Runtime with auth & vault features for CLI operations
+toka-runtime = { path = "../toka-runtime", version = "0.1.0", features = ["vault", "toolkit", "auth"] } 

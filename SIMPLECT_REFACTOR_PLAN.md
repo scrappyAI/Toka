@@ -83,6 +83,7 @@ pub trait MemoryAdapter {
 - [x] Slice 3 – Added full unit-test coverage & concise README
 - [x] Slice 4 – Auth refactor: migrated to JWT (HS256) capability tokens, implemented `TokenValidator`
 - [x] Slice 4 – Enforced strict expiration semantics and added security tests
-- [ ] Slice 5 – Runtime security envelope (secret rotation, validator hook, redaction layer) **(in progress)**
+- [x] Slice 5 – Runtime security envelope (secret rotation, validator hook, redaction layer) – core code & CLI done
+- [ ] Slice 5 – Update documentation / ADR (remaining)
 
 _Last updated: 2025-06-24_ 

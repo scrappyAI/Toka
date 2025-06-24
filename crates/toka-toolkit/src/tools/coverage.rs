@@ -10,7 +10,7 @@ use crate::tools::{Tool, ToolMetadata, ToolParams, ToolResult};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
 use std::path::Path;
 use std::process::Command;
 

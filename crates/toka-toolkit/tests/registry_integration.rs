@@ -1,5 +1,5 @@
 use anyhow::Result;
-use toka_toolkit::tools::{ToolParams, ToolRegistry};
+use toka_toolkit::tools::ToolParams;
 
 #[tokio::test]
 async fn echo_tool_via_registry() -> Result<()> {

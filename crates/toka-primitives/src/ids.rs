@@ -105,12 +105,19 @@ impl IdKind for VaultMarker {
 
 // --- Type Aliases ---------------------------------------------------------
 
+/// Unique identifier for users in the system
 pub type UserID = Id<UserMarker>;
+/// Unique identifier for agents in the system
 pub type AgentID = Id<AgentMarker>;
+/// Unique identifier for models in the system
 pub type ModelID = Id<ModelMarker>;
+/// Unique identifier for transactions in the system
 pub type TransactionID = Id<TransactionMarker>;
+/// Unique identifier for resources in the system
 pub type ResourceID = Id<ResourceMarker>;
+/// Unique identifier for products in the system
 pub type ProductID = Id<ProductMarker>;
+/// Unique identifier for vaults in the system
 pub type VaultID = Id<VaultMarker>;
 
 // --- Boilerplate Conversions & Serialization -----------------------------

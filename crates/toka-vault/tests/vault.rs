@@ -4,7 +4,7 @@ use toka_vault::prelude::*;
 use toka_vault::Vault;
 use serde::{Deserialize, Serialize};
 use tempfile::tempdir;
-use uuid::Uuid;
+
 use rmp_serde;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]

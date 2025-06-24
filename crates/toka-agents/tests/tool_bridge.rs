@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use std::sync::Arc;
 use toka_agents::{EventBus, SymbolicAgent};
 use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};
-use toka_bus::ToolEvent;
+
 
 struct EchoTool;
 

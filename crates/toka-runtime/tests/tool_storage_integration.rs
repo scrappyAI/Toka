@@ -4,10 +4,9 @@ use anyhow::Result;
 use async_trait::async_trait;
 use std::sync::Arc;
 use tempfile::tempdir;
-use toka_agents::{Agent, SymbolicAgent};
+use toka_agents::SymbolicAgent;  // Use BaseAgent instead; SymbolicAgent will be removed in a future release
 use toka_runtime::runtime::{Runtime, RuntimeConfig};
-use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};
-use toka_bus::MemoryBus;
+use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolResult};
 
 struct EchoTool;
 
@@ -48,6 +47,7 @@ async fn runtime_agent_tool_storage_roundtrip() -> Result<()> {
         max_agents: 5,
         event_buffer_size: 32,
         storage_root: tmp.path().join("storage").to_string_lossy().into_owned(),
+        ..RuntimeConfig::default()
     };
     let runtime = Runtime::new(cfg).await?;
 
@@ -65,7 +65,7 @@ async fn runtime_agent_tool_storage_roundtrip() -> Result<()> {
     let local = runtime.storage("local").await.expect("local adapter");
     local.put("local://file.txt", b"hi").await?;
     let bytes = local.get("local://file.txt").await?;
-    assert_eq!(&bytes, b"hi");
+    assert_eq!(bytes.as_ref().map(|v| v.as_slice()), Some(b"hi".as_slice()));
 
     // Agent invokes tool
     let mut args = std::collections::HashMap::new();

@@ -47,29 +47,88 @@ pub trait EventBus: Send + Sync {
 /// Agent-centric event types commonly used by agents & runtime.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AgentEvent {
-    BeliefUpdated { agent_id: String, belief_key: String, probability: f64, timestamp: u64 },
-    PlanGenerated { agent_id: String, plan: String, timestamp: u64 },
-    ActionTriggered { agent_id: String, action: String, timestamp: u64 },
+    /// Agent's belief state has been updated
+    BeliefUpdated { 
+        /// The agent identifier
+        agent_id: String, 
+        /// The belief key that was updated
+        belief_key: String, 
+        /// The new probability value
+        probability: f64, 
+        /// Unix timestamp when the belief was updated
+        timestamp: u64 
+    },
+    /// Agent has generated a new plan
+    PlanGenerated { 
+        /// The agent identifier
+        agent_id: String, 
+        /// The generated plan text
+        plan: String, 
+        /// Unix timestamp when the plan was generated
+        timestamp: u64 
+    },
+    /// Agent has triggered an action
+    ActionTriggered { 
+        /// The agent identifier
+        agent_id: String, 
+        /// The action that was triggered
+        action: String, 
+        /// Unix timestamp when the action was triggered
+        timestamp: u64 
+    },
 }
 
 /// Tool lifecycle events.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ToolEvent {
-    Invoked { tool_name: String, user_id: String, timestamp: u64 },
-    Completed { tool_name: String, user_id: String, duration_ms: u64, success: bool, timestamp: u64 },
-    Error  { tool_name: String, user_id: String, error: String, timestamp: u64 },
+    /// Tool was invoked by a user
+    Invoked { 
+        /// Name of the tool that was invoked
+        tool_name: String, 
+        /// User who invoked the tool
+        user_id: String, 
+        /// Unix timestamp when the tool was invoked
+        timestamp: u64 
+    },
+    /// Tool execution completed
+    Completed { 
+        /// Name of the tool that completed
+        tool_name: String, 
+        /// User who invoked the tool
+        user_id: String, 
+        /// Execution duration in milliseconds
+        duration_ms: u64, 
+        /// Whether the tool execution was successful
+        success: bool, 
+        /// Unix timestamp when the tool completed
+        timestamp: u64 
+    },
+    /// Tool execution encountered an error
+    Error { 
+        /// Name of the tool that errored
+        tool_name: String, 
+        /// User who invoked the tool
+        user_id: String, 
+        /// Error message
+        error: String, 
+        /// Unix timestamp when the error occurred
+        timestamp: u64 
+    },
 }
 
 // ------------------------------------------------------------------
 // Convenience extension trait – emitted events will use canonical kind strings
 // ------------------------------------------------------------------
 
+/// Extension trait providing convenience methods for emitting specific event types
 #[async_trait]
 pub trait EventBusExt: EventBus {
+    /// Emit an agent event with canonical kind string formatting
     async fn emit_agent_event(&self, ev: AgentEvent, subject: &str) -> Result<BusEventHeader> {
         self.publish(&ev, &format!("agent.{subject}" )).await
     }
 
+    /// Emit a tool event with canonical kind string formatting
     async fn emit_tool_event(&self, ev: ToolEvent, subject: &str) -> Result<BusEventHeader> {
         self.publish(&ev, &format!("tool.{subject}")).await
     }
@@ -105,6 +164,11 @@ impl MemoryBus {
     /// Legacy helper for tests – returns `Self::default()`.
     pub fn new_default() -> Self {
         Self::default()
+    }
+
+    /// Testing convenience – obtains a fresh receiver.
+    pub fn get_receiver(&self) -> broadcast::Receiver<BusEventHeader> {
+        self.subscribe()
     }
 }
 

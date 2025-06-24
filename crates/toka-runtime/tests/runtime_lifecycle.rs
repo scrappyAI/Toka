@@ -17,6 +17,7 @@ async fn runtime_start_stop_cycle() -> Result<()> {
             .join(".toka/storage")
             .to_string_lossy()
             .into_owned(),
+        ..RuntimeConfig::default()
     };
     let runtime = Runtime::new(cfg).await?;
     runtime.start().await?;

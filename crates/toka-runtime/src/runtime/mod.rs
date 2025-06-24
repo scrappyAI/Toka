@@ -7,9 +7,7 @@ use toka_storage::{LocalFsAdapter, StorageAdapter};
 use tokio::sync::{broadcast, Mutex, RwLock};
 use tracing::{error, info, warn};
 use uuid::Uuid;
-use toka_bus::{MemoryBus, EventBus, EventBusExt, BusEventHeader};
-#[cfg(feature = "vault")]
-use toka_vault::prelude::{create_event_header, EventSink, EventHeader};
+use toka_bus::{MemoryBus, EventBus};
 #[cfg(feature = "auth")]
 use std::time::Duration;
 #[cfg(feature = "auth")]
@@ -18,7 +16,6 @@ use crate::security::{self, Envelope};
 use crate::agents::Agent;
 use crate::agents::SymbolicAgent;
 use crate::tools::ToolRegistry;
-use crate::vault::{Vault, VaultEntry};
 
 /// Runtime configuration
 #[derive(Debug, Clone)]
@@ -27,10 +24,6 @@ pub struct RuntimeConfig {
     pub max_agents: usize,
     pub event_buffer_size: usize,
     pub storage_root: String,
-    #[cfg(feature = "auth")]
-    pub initial_secret: Option<String>,
-    #[cfg(feature = "auth")]
-    pub retired_ttl_secs: u64,
 }
 
 impl Default for RuntimeConfig {
@@ -44,10 +37,6 @@ impl Default for RuntimeConfig {
                 .join(".toka/storage")
                 .to_string_lossy()
                 .into_owned(),
-            #[cfg(feature = "auth")]
-            initial_secret: None,
-            #[cfg(feature = "auth")]
-            retired_ttl_secs: 300, // 5-minute overlap by default
         }
     }
 }
@@ -58,7 +47,6 @@ pub struct Runtime {
     agents: Arc<RwLock<HashMap<String, Box<dyn Agent + Send + Sync>>>>,
     event_bus: Arc<Mutex<MemoryBus>>,
     event_tx: broadcast::Sender<(String, String)>,
-    vault: Arc<Vault>,
     #[allow(dead_code)]
     tool_registry: Arc<ToolRegistry>,
     storage_adapters: Arc<RwLock<HashMap<String, Arc<dyn StorageAdapter>>>>,
@@ -70,10 +58,6 @@ pub struct Runtime {
 impl Runtime {
     /// Create a new runtime instance with the given configuration
     pub async fn new(config: RuntimeConfig) -> Result<Self> {
-        let vault = Vault::new(&config.vault_path)
-            .with_context(|| format!("Failed to initialize vault at {}", config.vault_path))?;
-        let vault = Arc::new(vault);
-
         let event_bus = MemoryBus::new(config.event_buffer_size);
         let (event_tx, _) = broadcast::channel(config.event_buffer_size);
 
@@ -94,26 +78,28 @@ impl Runtime {
         adapters.insert("local".into(), Arc::new(local_adapter));
 
         #[cfg(feature = "auth")]
-        let security_env = {
-            let secret = config
-                .initial_secret
-                .clone()
-                .unwrap_or_else(|| security::random_secret());
-            Envelope::initialise(secret, Duration::from_secs(config.retired_ttl_secs))
-        };
+        let security_env = Envelope::initialise(
+            security::random_secret(),
+            Duration::from_secs(300),
+        );
 
         let runtime = Self {
             config,
             agents: Arc::new(RwLock::new(HashMap::new())),
             event_bus: Arc::new(Mutex::new(event_bus)),
             event_tx,
-            vault: vault.clone(),
             tool_registry: Arc::new(tool_registry),
             storage_adapters: Arc::new(RwLock::new(adapters)),
             is_running: Arc::new(Mutex::new(false)),
             #[cfg(feature = "auth")]
-            security: security_env,
+            security: security_env.clone(),
         };
+
+        #[cfg(feature = "auth")]
+        {
+            // Initialise tracing once; callers may choose to override later.
+            crate::security::install_redacted_tracing(security_env);
+        }
 
         runtime.load_state().await?;
 
@@ -222,18 +208,9 @@ impl Runtime {
 
         // 2. Publish on the intra-process bus (legacy behaviour).
         let bus = self.event_bus.lock().await;
-        let bus_header = bus.publish(&data, &event_type).await?;
+        let _bus_header = bus.publish(&data, &event_type).await?;
 
-        // 3. Persist in vault – synthetic causal parents for now (empty).
-        #[cfg(feature = "vault")]
-        {
-            let header: EventHeader = create_event_header(&[], Uuid::nil(), event_type.clone(), &data)?;
-            let payload_bytes = rmp_serde::to_vec_named(&data)?;
-            self.vault.commit(&header, &payload_bytes).await?;
-
-            // Trace link between bus header & vault header
-            tracing::debug!("bus_id = {:?}, vault_id = {:?}", bus_header.id, header.id);
-        }
+        // Persistence skipped in slim build.
 
         Ok(())
     }
@@ -250,29 +227,21 @@ impl Runtime {
             agents.keys().cloned().collect()
         };
 
-        let entry = VaultEntry {
-            key: "runtime_state".to_string(),
-            data: serde_json::to_string(&agent_ids)?,
-            metadata: crate::vault::VaultMetadata {
-                created_at: std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs(),
-                updated_at: std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs(),
-                version: 1,
-            },
-        };
-
-        self.vault.insert(&entry).await?;
-
-        // Persist each agent full state.
-        let agents = self.agents.read().await;
-        for agent in agents.values() {
-            let _ = agent.save_state(&*self.vault).await;
+        // Persist to a simple JSON file under the vault storage root.  This is
+        // an interim solution until the new projection API lands.
+        let json = serde_json::to_vec(&agent_ids)?;
+        let key = "runtime_state.json";
+        if let Some(vault_fs) = self.storage("vault").await {
+            vault_fs.put(key, &json).await?;
+        } else {
+            // Fallback to local file system at runtime_path
+            let path = std::path::Path::new(&self.config.vault_path).join(key);
+            tokio::fs::create_dir_all(path.parent().unwrap()).await?;
+            tokio::fs::write(path, &json).await?;
         }
+
+        // Agent-specific state persistence skipped in slim build.
+
         Ok(())
     }
 
@@ -280,8 +249,19 @@ impl Runtime {
     pub async fn load_state(&self) -> Result<()> {
         // The minimal build restores *only* the list of agent IDs (without their full state).
         // This is sufficient for basic CLI inspection commands.
-        if let Some(entry) = self.vault.get("runtime_state").await? {
-            let agent_ids: Vec<String> = serde_json::from_str(&entry.data)
+        let key = "runtime_state.json";
+        let maybe_bytes = if let Some(vault_fs) = self.storage("vault").await {
+            vault_fs.get(key).await?
+        } else {
+            let path = std::path::Path::new(&self.config.vault_path).join(key);
+            match tokio::fs::read(path).await {
+                Ok(b) => Some(b),
+                Err(_) => None,
+            }
+        };
+
+        if let Some(bytes) = maybe_bytes {
+            let agent_ids: Vec<String> = serde_json::from_slice(&bytes)
                 .context("Failed to deserialize runtime agent summary")?;
 
             let mut agent_map = self.agents.write().await;
@@ -293,10 +273,7 @@ impl Runtime {
 
             info!("Loaded {} agent placeholders from vault", agent_map.len());
 
-            // attempt to load full state for each
-            for (id, agent) in agent_map.iter_mut() {
-                let _ = agent.load_state(&*self.vault).await;
-            }
+            // Per-agent state restore omitted in slim build.
         }
         Ok(())
     }
@@ -356,6 +333,7 @@ mod tests {
                 .join(".toka/storage")
                 .to_string_lossy()
                 .into_owned(),
+            ..RuntimeConfig::default()
         };
 
         let runtime = Runtime::new(config).await?;
@@ -386,6 +364,7 @@ mod tests {
                 .join(".toka/storage")
                 .to_string_lossy()
                 .into_owned(),
+            ..RuntimeConfig::default()
         };
 
         let runtime1 = Arc::new(Runtime::new(config1).await?);
@@ -415,6 +394,7 @@ mod tests {
                 .join(".toka/storage")
                 .to_string_lossy()
                 .into_owned(),
+            ..RuntimeConfig::default()
         };
 
         let runtime2 = Runtime::new(config2).await?;

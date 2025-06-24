@@ -2,7 +2,7 @@
 
 use crate::api::{EventSink, QueryApi};
 use crate::events::{
-    causal_hash, CausalDigest, EventHeader, EventId, EventPayload, IntentId,
+    CausalDigest, EventHeader, EventId, EventPayload,
 };
 use crate::strategy::{IntentStrategy, NilIntentStrategy};
 use anyhow::Result;

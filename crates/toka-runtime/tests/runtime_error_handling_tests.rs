@@ -7,7 +7,7 @@ use anyhow::Result;
 use std::sync::Arc;
 use std::time::Duration;
 use tempfile::tempdir;
-use toka_agents::{Agent, SymbolicAgent};
+use toka_agents::SymbolicAgent;  // Use BaseAgent instead; SymbolicAgent will be removed in a future release
 use toka_runtime::runtime::{Runtime, RuntimeConfig};
 
 #[tokio::test]
@@ -18,6 +18,7 @@ async fn test_runtime_with_invalid_paths() -> Result<()> {
         max_agents: 5,
         event_buffer_size: 32,
         storage_root: "/another/invalid/path".to_string(),
+        ..RuntimeConfig::default()
     };
     
     // Should handle gracefully or create directories
@@ -203,7 +204,7 @@ async fn test_state_persistence_failure_recovery() -> Result<()> {
     
     // Register an agent
     let agent = Box::new(SymbolicAgent::new("persistent_agent"));
-    let agent_id = runtime.register_agent(agent).await?;
+    let _agent_id = runtime.register_agent(agent).await?;
     
     // Save state
     runtime.save_state().await?;
@@ -246,7 +247,7 @@ async fn test_storage_adapter_error_handling() -> Result<()> {
         // This should work
         adapter.put("test://file.txt", b"test data").await?;
         let data = adapter.get("test://file.txt").await?;
-        assert_eq!(data, b"test data");
+        assert_eq!(data.as_ref().map(|v| v.as_slice()), Some(b"test data".as_slice()));
         
         // Clean up
         adapter.delete("test://file.txt").await?;
@@ -305,12 +306,14 @@ async fn test_malformed_event_handling() -> Result<()> {
     runtime.register_agent(agent).await?;
     
     // Send various malformed events
+    let long_event_type = "very_long_event_type".repeat(100);
+    let long_data = "very_long_data".repeat(1000);
     let malformed_events = vec![
         ("", ""),
         ("malformed", ""),
         ("", "malformed"),
-        ("very_long_event_type".repeat(100), "data"),
-        ("event", "very_long_data".repeat(1000)),
+        (long_event_type.as_str(), "data"),
+        ("event", long_data.as_str()),
         ("event\0with\0nulls", "data\0with\0nulls"),
         ("event\nwith\nnewlines", "data\nwith\nnewlines"),
         ("event🌍with🌍unicode", "data🌍with🌍unicode"),

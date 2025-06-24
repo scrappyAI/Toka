@@ -49,6 +49,11 @@ enum Commands {
         #[command(subcommand)]
         sub: VaultCmd,
     },
+    /// Authentication & security utilities
+    Auth {
+        #[command(subcommand)]
+        sub: AuthCmd,
+    },
 }
 
 #[derive(Subcommand)]
@@ -98,6 +103,12 @@ enum VaultCmd {
     },
 }
 
+#[derive(Subcommand)]
+enum AuthCmd {
+    /// Rotate the active capability-token secret immediately.
+    RotateSecret,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -106,6 +117,7 @@ async fn main() -> Result<()> {
         Commands::Agent { sub } => handle_agent(sub).await?,
         Commands::Tool { sub } => handle_tool(sub).await?,
         Commands::Vault { sub } => handle_vault(sub).await?,
+        Commands::Auth { sub } => handle_auth(sub).await?,
     }
 
     Ok(())
@@ -148,6 +160,18 @@ async fn handle_vault(cmd: VaultCmd) -> Result<()> {
         }
         VaultCmd::Put { key, value } => {
             println!("[TODO] Vault PUT for key: {} with value: {}", key, value);
+        }
+    }
+    Ok(())
+}
+
+async fn handle_auth(cmd: AuthCmd) -> Result<()> {
+    match cmd {
+        AuthCmd::RotateSecret => {
+            use toka_runtime::runtime::{Runtime, RuntimeConfig};
+            let rt = Runtime::new(RuntimeConfig::default()).await?;
+            rt.rotate_secrets();
+            println!("✅ Secret rotated successfully");
         }
     }
     Ok(())
