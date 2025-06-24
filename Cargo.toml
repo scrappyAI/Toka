@@ -28,6 +28,7 @@ members = [
 
     # New member
     "crates/toka-bus",
+    "crates/toka-memory",
 ]
 
 [workspace.dependencies]

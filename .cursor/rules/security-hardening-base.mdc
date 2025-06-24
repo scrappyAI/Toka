@@ -1,0 +1,52 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+<ProjectRule name="HardenSecuritySurface">
+
+<Description>
+General-purpose rule for hardening application security. Helps agents eliminate vulnerabilities, enforce best practices, and build in layered defenses.
+</Description>
+
+<Objective>
+- Detect and mitigate common security weaknesses.
+- Enforce secure-by-default architecture.
+- Provide clear audit trails of security-related improvements.
+</Objective>
+
+<Instructions>
+
+1. <IdentifyWeaknesses>
+   - Use `cargo-audit`, `cargo-geiger`, and lints to detect:
+     - Insecure dependencies
+     - Use of `unsafe` blocks
+     - Unchecked deserialization, injection risks
+</IdentifyWeaknesses>
+
+2. <MitigateRisks>
+   - Replace unsafe code with safe patterns when possible.
+   - Validate inputs at system boundaries.
+   - Encrypt secrets at rest and scrub in-memory secrets after use.
+</MitigateRisks>
+
+3. <InstrumentDefenses>
+   - Add structured logging for auth failures and anomalous input.
+   - Use fuzz/property-based tests for parsing or protocol logic.
+   - Gate sensitive features with flags or explicit permissions.
+</InstrumentDefenses>
+
+4. <Commits>
+   - Security commits must describe intent and risk addressed.
+     - e.g., `fix(auth): add missing signature check`
+   - Avoid mixing logic and refactor commits.
+</Commits>
+
+5. <Maintainability>
+   - Tag sensitive logic with `// SECURITY:` or `#[sensitive]`.
+   - Avoid brittle defenses; write tests for edge cases and regressions.
+</Maintainability>
+
+</Instructions>
+
+</ProjectRule>

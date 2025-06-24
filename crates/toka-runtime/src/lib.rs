@@ -10,3 +10,7 @@ pub use toka_secrets as vault;
 
 #[cfg(feature = "toolkit")]
 pub use toka_agents as agents;
+
+// Expose persistence API from toka-vault (slice-2 integration)
+#[cfg(feature = "vault")]
+pub use toka_vault as event_store;

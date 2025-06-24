@@ -1,0 +1,85 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+<ProjectRule name="HardenSecuritySurfaceAgents">
+<Extends>HardenSecuritySurface</Extends>
+
+<Description>
+Security-focused guidance for developing AI agents with execution capabilities, ensuring control, traceability, and fail-safe boundaries in autonomous and semi-autonomous behaviors.
+</Description>
+
+<Objective>
+- Ensure agents cannot perform unauthorized or irreversible actions.
+- Constrain agents within well-defined, observable, and auditable environments.
+- Prevent prompt injection, tool misuse, memory corruption, or capability escalation.
+</Objective>
+
+<Instructions>
+
+1. <ConstrainCapabilities>
+   - All agents must declare and register their capabilities explicitly (`Capability`, `Scope`, `Intent`).
+   - Disallow dynamic or inferred tool access unless authorized and logged.
+   - Prefer capability-based invocation over natural-language-only interfaces.
+
+</ConstrainCapabilities>
+
+2. <SandboxExecution>
+   - Agents executing code, queries, or filesystem tasks must:
+     - Run in isolated sandboxes (e.g., WASM, Docker, virtual VFS).
+     - Log inputs and outputs deterministically.
+     - Enforce timeouts and memory limits to prevent runaway behavior.
+   - Disable network or filesystem access unless scoped and controlled.
+
+</SandboxExecution>
+
+3. <Input Hardening>
+   - Sanitize and validate all user input before forwarding to LLMs or action planners.
+   - Detect and mitigate prompt injection, instruction leakage, and nested execution patterns.
+   - Use structured input/output schemas (e.g., JSON with schema validation) for critical actions.
+
+</Input Hardening>
+
+4. <Intent-Aware Logging>
+   - All agent actions must be logged with:
+     - The original **intent** or request
+     - The **tools invoked**
+     - The **outcome** (with failure state, if any)
+   - Store logs in tamper-evident formats when tied to financial, security, or compliance actions.
+
+</Intent-AwareLogging>
+
+5. <Policy Enforcement>
+   - Define and apply runtime policies (`Policy`, `Constraints`, `AllowList`) at each invocation layer.
+   - Use static rules for high-risk actions (e.g., `DELETE`, `TRANSFER`, `EXEC`) and dynamic evaluation (e.g., via OPA or custom rule engines) for context-sensitive decisions.
+
+</PolicyEnforcement>
+
+6. <Memory Safety>
+   - Agent memory must be:
+     - Ephemeral by default unless scoped and approved
+     - Namespaced by agent ID and purpose
+     - Auditable (include timestamps, reasons for memory read/write)
+
+</MemorySafety>
+
+7. <Fail-Safe Defaults>
+   - Agents must fail closed. If in doubt, deny execution.
+   - All elevated actions (e.g., payments, system changes) require human-in-the-loop or dual approval.
+   - Avoid speculative or irreversible actions from first-step reasoning — use confirmation or simulation rounds.
+
+</FailSafeDefaults>
+
+8. <Commit Discipline>
+   - Agent-related commits must document the agent’s:
+     - Scope
+     - Capabilities added or changed
+     - Security assumptions
+   - Example: `agent(exec): add timeout + capability check for fs::write`
+
+</CommitDiscipline>
+
+</Instructions>
+
+</ProjectRule>

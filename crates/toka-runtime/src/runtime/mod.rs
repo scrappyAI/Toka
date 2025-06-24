@@ -9,6 +9,8 @@ use tokio::sync::{broadcast, Mutex, RwLock};
 use tracing::{error, info, warn};
 use uuid::Uuid;
 use toka_bus::{MemoryBus, EventBus, EventBusExt, BusEventHeader};
+#[cfg(feature = "vault")]
+use toka_vault::prelude::{create_event_header, EventSink, EventHeader};
 
 use crate::agents::Agent;
 use crate::agents::SymbolicAgent;
@@ -187,12 +189,23 @@ impl Runtime {
 
     /// Emit an event to all agents
     pub async fn emit_event(&self, event_type: String, data: String) -> Result<()> {
-        // Send to broadcast channel for agent processing
+        // 1. Broadcast to local agents via channel.
         self.event_tx.send((event_type.clone(), data.clone()))?;
 
-        // Also publish header on the internal bus for listeners outside runtime
+        // 2. Publish on the intra-process bus (legacy behaviour).
         let bus = self.event_bus.lock().await;
-        let _ = bus.publish(&data, &event_type).await?;
+        let bus_header = bus.publish(&data, &event_type).await?;
+
+        // 3. Persist in vault – synthetic causal parents for now (empty).
+        #[cfg(feature = "vault")]
+        {
+            let header: EventHeader = create_event_header(&[], Uuid::nil(), event_type.clone(), &data)?;
+            let payload_bytes = rmp_serde::to_vec_named(&data)?;
+            self.vault.commit(&header, &payload_bytes).await?;
+
+            // Trace link between bus header & vault header
+            tracing::debug!("bus_id = {:?}, vault_id = {:?}", bus_header.id, header.id);
+        }
 
         Ok(())
     }
