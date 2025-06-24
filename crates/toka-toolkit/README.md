@@ -1,73 +1,67 @@
 # Toka Toolkit
 
-A comprehensive toolkit for the Toka platform, providing utilities, helpers, and integrations for building robust Toka applications.
+_Batteries-included collection of async **tools** + a `ToolRegistry` implementation._
 
-## Overview
+---
 
-The Toka Toolkit crate offers a wide range of utilities and helpers to streamline development within the Toka ecosystem. It builds on the abstractions provided by `toka-toolkit-core` and integrates with other Toka components for a seamless developer experience.
+## Purpose
 
-## Features
+* Offer **reference implementations** (ingestion, ledger, semantic index, coverage, …) that agents can invoke via capability-checked calls.
+* Provide a **type-safe plugin system** (`Tool` trait) so you can register your own domain-specific helpers without modifying the runtime.
+* Keep the core optional – if you only need the trait definitions use [`toka-toolkit-core`](../toka-toolkit-core/README.md).
 
-- File system utilities
-- Serialization/deserialization (JSON, CBOR, CSV)
-- Random number generation
-- Cryptographic utilities (hashing, encoding)
-- Date and time handling
-- UUID generation
-- Async utilities and helpers
-- Directory management
-- Tracing and logging integration
-- Type tagging support
-- Integration with `toka-toolkit-core`
+---
 
-## Dependencies
+## Default Tools
 
-### Core Dependencies
-- anyhow: Error handling
-- async-trait: Async trait support
-- tokio: Async runtime (with multiple features)
-- serde: Serialization/deserialization
-- serde_json: JSON support
-- serde_cbor: CBOR support
-- csv: CSV parsing
-- chrono: Date and time handling
-- uuid: Unique identifier generation
-- futures: Future utilities
-- rand: Random number generation
-- hex: Hexadecimal encoding/decoding
-- sha2: Cryptographic hash functions
-- base64: Base64 encoding/decoding
-- directories: Directory management
-- tracing: Logging and instrumentation
-- typetag: Type tagging
-- toka-toolkit-core: Core toolkit abstractions
+| Name | What it does |
+|------|--------------|
+| `echo` | Minimal PoC – echoes parameters back |
+| `ingestion` | Validate CSV/TSV/JSON and convert to standardised CBOR |
+| `ledger` | Reconcile credit / debit transactions |
+| `reporting` | Generate financial summaries |
+| `scheduling` | Lightweight async task scheduler |
+| `semantic_index` | Tag & search arbitrary items |
+| `coverage-json` / `coverage-analyse` | Help improve test coverage |
 
-### Dev Dependencies
-- tokio: Async runtime for tests
-- anyhow: Error handling (tests)
-- rand: Random number generation (tests)
-- serde_cbor: CBOR support (tests)
-- tempfile: Temporary file handling (tests)
+All are **optional** – you can start with an empty registry and add only what you need.
 
-## Usage
+---
 
-Add the following to your `Cargo.toml`:
+## Relationship to the Event Store
 
-```toml
-[dependencies]
-toka-toolkit = { version = "0.1.0" }
+Tool executions emit `ToolEvent`s on the **in-process `EventBus`** which the runtime can then persist in [`toka-vault`](../toka-vault/README.md).  This historical log is critical for auditability and future semantic search.
+
+---
+
+## Example
+
+```rust,ignore
+use toka_toolkit::{ToolParams, ToolRegistry};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let registry = ToolRegistry::new().await?;
+
+    let mut args = std::collections::HashMap::new();
+    args.insert("message".into(), "hello".into());
+    let params = ToolParams { name: "echo".into(), args };
+    let res = registry.execute_tool("echo", &params).await?;
+    assert_eq!(res.output, "hello");
+    Ok(())
+}
 ```
 
-## Design Philosophy
+---
 
-- Comprehensive: Provides a wide range of utilities for Toka development
-- Modular: Integrates with core abstractions and other Toka crates
-- Async-first: Designed for modern, async Rust applications
+## Feature Matrix
+
+_No extra feature flags – heavy optional deps live behind the individual tool crates they pull in._
+
+---
 
 ## License
 
-This project is licensed under either of:
-- MIT License
-- Apache License 2.0
+Apache-2.0 OR MIT
 
-at your option. 
+© 2024 Toka Contributors 

@@ -1,47 +1,56 @@
 # Toka Primitives
 
-This crate provides fundamental, building-block types used throughout the Toka ecosystem. These primitives are designed to be lightweight and free of any high-level business logic, making them easy to compose in other parts of the platform.
+Zero-dependency building blocks (IDs & Currency) shared by all other Toka crates.
 
-## Features
+---
 
-This crate is feature-gated to allow you to only include the primitives you need.
+## Why a Separate Crate?
 
-- `ids`: Provides strongly-typed identifiers for various entities in the Toka ecosystem. This helps prevent bugs caused by mixing up different types of IDs.
-- `currency`: Provides a `MicroUSD` type for handling monetary values with high precision.
+* **`no_std` friendly** – Can be used on embedded targets or WASM without dragging in the full platform.
+* **Single Source of Truth** for fundamental types referenced by the canonical event store (`toka-vault`) and higher domain logic (`toka-core`).
+* **Stable release cadence** – `primitives` can evolve independently of fast-moving application crates.
 
-By default, both the `ids` and `currency` features are enabled.
+---
 
-## Usage
+## Feature Flags
 
-Add `toka-primitives` to your `Cargo.toml`:
+Both features are enabled by default but can be turned off to shave bytes:
+
+| Feature | Provides |
+|---------|----------|
+| `ids` | Type-safe identifiers like `UserID`, `AgentID`, `VaultID`, … |
+| `currency` | `MicroUSD` fixed-precision money type |
+
+Example `Cargo.toml` when you only need IDs:
 
 ```toml
 [dependencies]
-toka-primitives = "0.1.0"
+toka-primitives = { version = "0.1", default-features = false, features = ["ids"] }
 ```
 
-If you only need specific primitives, you can disable the default features and select the ones you need:
+---
 
-```toml
-[dependencies]
-toka-primitives = { version = "0.1.0", default-features = false, features = ["ids"] }
-```
-
-### Example: Using `AgentID`
+## Quick Demo
 
 ```rust
-use toka_primitives::AgentID;
-
-let agent_id = AgentID::new();
-println!("New Agent ID: {}", agent_id);
-```
-
-### Example: Using `MicroUSD`
-
-```rust
-use toka_primitives::MicroUSD;
+use toka_primitives::{AgentID, MicroUSD};
 use rust_decimal_macros::dec;
 
-let cost = MicroUSD(dec!(0.0015)); // $0.0015
-println!("Cost: {}", cost);
-``` 
+let id = AgentID::new();
+let price = MicroUSD::from_usd_decimal(dec!(0.99)).unwrap();
+println!("Agent {id} paid {price}");
+```
+
+---
+
+## Relationship to the Vault
+
+Events persisted in `toka-vault` reference these types so that every crate speaks the **same language**.  Keeping primitives decoupled prevents accidental cyclic dependencies.
+
+---
+
+## License
+
+Apache-2.0 OR MIT
+
+© 2024 Toka Contributors 

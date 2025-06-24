@@ -1,64 +1,66 @@
 # Toka Runtime
 
-A flexible runtime environment for the Toka platform, providing core execution capabilities and optional integrations with other Toka components.
+Async host that wires **agents**, the **canonical event store** (`toka-vault`) and an optional **toolkit** into a single executable.
 
-## Overview
+---
 
-The Toka Runtime crate provides the foundational runtime environment for executing Toka applications. It offers a modular design that allows for optional integration with various Toka components through feature flags.
+## Highlights
 
-## Features
+1. **Event-sourced by design** – Every event goes through the embedded `EventBus` and can be streamed to or replayed from the vault.
+2. **Opt-in surface area** – Keep binaries tiny by enabling only the feature flags you need:
 
-The crate ships with minimal functionality by default. Additional capabilities can be enabled through feature flags:
+| Feature | What you get | Major extra deps |
+|---------|--------------|------------------|
+| *(none)* | Pure runtime scaffold (async loops, `EventBus`) | `tokio`, `tracing` |
+| `vault` | Secure local vault backend (sled or in-mem) | `toka-vault` |
+| `toolkit` | `ToolRegistry`, CLI, type-erased `serde` plugin system | `toka-toolkit`, `clap`, `typetag` |
+| `auth` | Capability token helpers | `toka-security-auth` |
 
-### Core Features
-- Async runtime support via Tokio
-- Tracing and logging infrastructure
-- Serialization/deserialization utilities
-- UUID generation and handling
-- Future utilities
+The matrix composes – e.g. `features = ["vault", "toolkit"]` gives you a full local dev stack.
 
-### Optional Features
-- `toolkit`: Enables full toolkit support including:
-  - CLI interface via clap
-  - Type tagging support
-  - Integration with toka-agents-core
-  - Integration with toka-toolkit-core
-- `vault`: Enables secure local vault storage capabilities
-- `auth`: Enables authentication and capability token utilities
+---
 
-## Dependencies
-
-### Core Dependencies
-- anyhow: Error handling
-- async-trait: Async trait support
-- tokio: Async runtime
-- serde: Serialization/deserialization
-- tracing: Logging and instrumentation
-- uuid: Unique identifier generation
-- futures: Future utilities
-
-### Optional Dependencies
-- clap: CLI argument parsing
-- typetag: Type tagging
-- Various Toka crates (toka-toolkit, toka-agents-core, etc.)
-
-## Usage
-
-Add the following to your `Cargo.toml`:
+## Quick Start
 
 ```toml
 [dependencies]
-toka-runtime = { version = "0.1.0", features = ["toolkit", "vault"] }
+toka-runtime = { version = "0.1", features = ["vault", "toolkit"] }
 ```
 
-## Development
+```rust,ignore
+use toka_runtime::runtime::{Runtime, RuntimeConfig};
 
-The crate includes test utilities and temporary file handling for development purposes.
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let cfg = RuntimeConfig::default();
+    let runtime = Runtime::new(cfg).await?;
+    runtime.start().await?;
+
+    // … register agents, emit events …
+
+    runtime.stop().await?;
+    Ok(())
+}
+```
+
+---
+
+## Design Decisions
+
+* **Single Source of Truth** – The runtime no longer embeds multiple bus / ledger back-ends.  All persistence is delegated to [`toka-vault`](../../toka-vault/README.md) as described in [`EVENT_SYSTEM_REFACTOR.md`](../../EVENT_SYSTEM_REFACTOR.md).
+* **Pluggable Storage** – `storage("local")`, `storage("vault")` etc. allow agents & tools to store artefacts without depending on a concrete backend.
+* **Graceful Degradation** – If you compile without `toolkit` the public API still works; you just get a no-op tool registry.
+
+---
+
+## Status
+
+Early alpha (≥ v0.2.0-alpha).  Expect sharp edges and breaking changes while we stabilise the lifecycle APIs.
+
+---
 
 ## License
 
-This project is licensed under either of:
-- MIT License
-- Apache License 2.0
+Apache-2.0 OR MIT
 
-at your option. 
+© 2024 Toka Contributors 

@@ -1,51 +1,66 @@
-# Toka Agents Core
+# Toka Agents
 
-Default agent implementations for the Toka platform.
+Reference agent implementations for the Toka platform – ready-made shells you can drop into [`toka-runtime`](../toka-runtime/README.md).
 
-## Overview
+---
 
-The Toka Agents Core crate provides the foundational agent implementations and interfaces for the Toka platform. It serves as the base layer for building and extending agent functionality within the Toka ecosystem.
+## Why does this crate exist?
 
-## Features
+* Provide **batteries-included agents** (e.g. `SymbolicAgent`) so you can try the platform without writing code.
+* Demonstrate how to compose the **event-sourced** architecture – every belief update, plan and tool call is recorded in [`toka-vault`](../toka-vault/README.md).
+* Serve as a test-bed for multiple reasoning engines (symbolic, LLM, sandbox) hidden behind a single `ReasoningEngine` trait.
 
-- Core agent interfaces and traits
-- Default agent implementations
-- Async execution support
-- Serialization/deserialization capabilities
-- Tracing and logging integration
-- UUID-based agent identification
+---
 
-## Dependencies
+## Capabilities & Feature Flags
 
-### Core Dependencies
-- anyhow: Error handling
-- async-trait: Async trait support
-- serde: Serialization/deserialization
-- tokio: Async runtime
-- tracing: Logging and instrumentation
-- uuid: Unique identifier generation
+| Feature | Purpose | Additional Deps |
+|---------|---------|-----------------|
+| `core` *(default)* | Basic symbolic agent, reasoning traits | – |
+| `toolkit` | Bridge to the [`toka-toolkit-core`](../toka-toolkit-core/README.md) `ToolRegistry` | `toka-toolkit-core` |
+| `vault` | Persist long-term state in the canonical event store | `toka-vault` |
 
-## Usage
+You can therefore embed the crate **without** the heavy toolkit / vault stacks when you only need in-memory reasoning.
 
-Add the following to your `Cargo.toml`:
+---
 
-```toml
-[dependencies]
-toka-agents = { version = "0.1.0" }
+## Quick Look
+
+```rust,ignore
+use toka_agents::{BaseAgent, Observation};
+
+let mut agent = BaseAgent::new("alice");
+agent.observe(Observation {
+    key: "sky_is_blue".into(),
+    evidence_strength: 2.0,
+    supports: true,
+}).await?;
+
+// Generate actions based on updated beliefs
+let actions = agent.act().await;
+println!("{:?}", actions);
 ```
 
-## Design Philosophy
+Behind the scenes every belief update is emitted as an `AgentEvent` and can be persisted by the runtime.
 
-The crate is designed with the following principles in mind:
-- Minimal dependencies for core functionality
-- Async-first approach for efficient execution
-- Strong typing and error handling
-- Extensible architecture for custom agent implementations
+---
+
+## Relationship to the Runtime
+
+`toka-runtime` owns the **lifecyle** – spawning agents, routing events and wiring optional vault & toolkit features.  `toka-agents` only knows about the `EventBus` trait and remains IO-free otherwise.
+
+---
+
+## Security & Stability
+
+* Capability flags (`TOOL_USE`, `VAULT`, `MEMORY`, `REASONING`) declare *exactly* what each agent is allowed to do.
+* All code is `#![forbid(unsafe_code)]`.
+* The API is **unstable** while we move towards v0.2 – expect breaking changes.
+
+---
 
 ## License
 
-This project is licensed under either of:
-- MIT License
-- Apache License 2.0
+Apache-2.0 OR MIT — choose whichever works for you.
 
-at your option. 
+© 2024 Toka Contributors 

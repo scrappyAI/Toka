@@ -1,53 +1,63 @@
 # Toka Core
 
-Core business logic and domain rules for the Toka platform, including currency, resource, and identifier definitions.
+Core business logic and domain rules for the Toka platform, built on top of the `toka-primitives` crate.
 
-## Overview
+---
 
-This crate provides the fundamental building blocks and domain models for the Toka platform. It is designed with a modular feature system that allows downstream consumers to opt-in to specific functionality they need.
+## What's Inside?
 
-## Features
+| Category | Module | Feature Flag |
+|----------|--------|--------------|
+| Fundamental Types | IDs, Currency | `ids`, `currency` |
+| Domain Models | LLM model metadata, Resources, Vault descriptors | `models`, `resources`, `vaults` |
+| Economics | Fee schedules, payout rules, platform-wide take-rate policies | `economics` |
+| Products | Credit packages & other SKUs | `products` |
+| Pricing | Policy abstraction + default implementation | `pricing` |
 
-The crate ships with no functionality enabled by default. Consumers must explicitly opt-in to the domain areas they need:
+Nothing is enabled by default – downstream crates opt-in to just what they need to keep binaries lean.
 
-### Fundamental Building Blocks
-- `ids`: Type-safe identifiers
-- `currency`: Micro-USD and helper functions
+---
 
-### Higher-level Domain Areas
-- `models`: LLM model metadata and pricing
-- `resources`: Generic resource descriptors
-- `vaults`: Vault metadata structs
-- `economics`: Fee schedules and platform economics
-- `products`: User-facing SKUs such as credit packs
-- `pricing`: Pricing policies and service facade
+## Relation to the Event Store
 
-### Tooling
-- `schema-gen`: JSON Schema generation support
+All state-changing actions in Toka are captured in the **canonical event store** provided by the [`toka-vault`](../../toka-vault/README.md) crate.  `toka-core` defines *what* is stored (domain rules & invariants) but **does not talk to the vault directly** – that is the runtime's job.  This separation keeps the domain layer free of IO and heavy dependencies.
 
-## Usage
+For details on the vault consolidation and why legacy bus / ledger crates were retired see [`EVENT_SYSTEM_REFACTOR.md`](../../EVENT_SYSTEM_REFACTOR.md).
 
-Add the following to your `Cargo.toml`:
+---
+
+## Quick Start
 
 ```toml
 [dependencies]
-toka-core = { version = "0.1.0", features = ["ids", "currency"] }
+# Enable only the pieces you need – here IDs & Currency
+toka-core = { version = "0.1", features = ["ids", "currency"] }
 ```
 
-## Dependencies
+```rust
+use toka_core::currency::MicroUSD;
+use toka_core::ids::UserID;
 
-- serde: Serialization/deserialization
-- rust_decimal: Decimal number handling
-- uuid: Unique identifier generation
-- chrono: Date and time handling
-- thiserror: Error handling
-- schemars: JSON Schema generation (optional)
-- anyhow: Error handling utilities
+let price = MicroUSD(1_500_000); // $1.50
+let user = UserID::new();
+println!("User {user} has to pay {price}");
+```
+
+---
+
+## Philosophy
+
+* **Event-sourced by default** – Decisions are evaluated using past events, never hidden mutable state.
+* **Lean dependencies** – Pure Rust `no_std` compatible where possible.
+* **Composable** – Each feature gate is orthogonal, making it trivial to build tiny binaries for edge devices.
+
+---
 
 ## License
 
-This project is licensed under either of:
-- MIT License
-- Apache License 2.0
+Dual-licensed under either:
 
-at your option. 
+* Apache-2.0 OR
+* MIT
+
+© 2024 Toka Contributors 

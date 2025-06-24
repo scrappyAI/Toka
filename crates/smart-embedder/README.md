@@ -1,72 +1,78 @@
 # Smart Embedder
 
-Smart embedding generation utilities for the Toka platform.
+_LLM-powered summarisation + embedding generation for events in **Toka Vault**_
 
-## Overview
+---
 
-This crate provides utilities for generating and managing embeddings for text and other data types. It's designed to support semantic search, similarity matching, and other AI-powered features within the Toka ecosystem.
+## Motivation
 
-## Features
+After the [event system consolidation](../../EVENT_SYSTEM_REFACTOR.md) every actionable fact in the platform flows through the `toka-vault` event store.  `smart-embedder` turns those **structured events** into dense vectors so that agents and tools can:
 
-- Text embedding generation
-- Embedding similarity calculations
-- Vector storage and retrieval
-- Batch processing support
-- Multiple embedding model support
-- Semantic search capabilities
+* run semantic search over millions of historical events,
+* cluster related intents for higher-level reasoning,
+* build recommendation or anomaly-detection pipelines.
 
-## Usage
+---
 
-Add the following to your `Cargo.toml`:
+## High-level Architecture
 
-```toml
-[dependencies]
-smart-embedder = "0.1.0"
+```mermaid
+flowchart TD
+    A[Vault Events] --> |serialize| B[SmartEmbedder]
+    B --> |LLM summary| C[(Sentence Encoder)]
+    C --> D[Vector DB / Index]
 ```
 
-### Example
+1. **Summarise** – An LLM condenses the raw JSON payload into a single sentence.
+2. **Encode** – A sentence embedding model converts the summary into a fixed-dimensional vector.
+3. **Store / Search** – Your choice of index (not included here) makes the vectors queryable.
 
-```rust
-use smart_embedder::{Embedder, EmbeddingModel};
+Both steps are abstracted behind traits so you can plug in OpenAI, local `llama.cpp`, `rust-bert`, etc.
 
-let embedder = Embedder::new(EmbeddingModel::Default);
+---
 
-// Generate embeddings
-let text = "Hello, world!";
-let embedding = embedder.embed_text(text).await?;
+## Feature Flags
 
-// Batch embedding generation
-let texts = vec!["text1", "text2", "text3"];
-let embeddings = embedder.embed_batch(texts).await?;
+| Feature | Adds | Heavy deps |
+|---------|------|-----------|
+| *(none)* | Trait definitions only | – |
+| `openai` | Simple OpenAI-compatible client | `reqwest` |
+| `transformers` | Local BERT-based encoder via `rust-bert` | `rust-bert`, `ndarray` |
 
-// Calculate similarity
-let similarity = embedder.cosine_similarity(&embedding1, &embedding2)?;
+Keep your dependency graph **lean** by enabling only what you need.
 
-// Semantic search
-let results = embedder.semantic_search(
-    query_embedding,
-    &candidate_embeddings,
-    5
-).await?;
+---
+
+## Example
+
+```rust,no_run
+use smart_embedder::{openai_client::OpenAiClient, transformer_encoder::BertEncoder, SmartEmbedder};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let llm = OpenAiClient::new(std::env::var("OPENAI_API_KEY")?, "https://api.openai.com".into());
+    let encoder = BertEncoder::new()?;
+    let embedder = SmartEmbedder::new(llm, encoder);
+
+    let event_kind = "agent.action";
+    let payload = serde_json::json!({"agent_id": "agnt_…", "action": "echo"});
+    let vec = embedder.embed_event(event_kind, &payload).await?;
+    println!("Vector dim = {}", vec.len());
+    Ok(())
+}
 ```
 
-## Dependencies
+---
 
-- Machine learning libraries for embedding generation
-- Vector math libraries for similarity calculations
-- Async runtime support
+## Roadmap
 
-## Design Philosophy
+* v0.2 – Benchmarks + SIMD quantisation
+* v0.3 – Intent clustering research integration (when the design stabilises)
 
-- **Performance**: Optimized for high-throughput embedding generation
-- **Flexibility**: Support for multiple embedding models and algorithms
-- **Accuracy**: High-quality embeddings for semantic understanding
-- **Scalability**: Batch processing and efficient storage
+---
 
 ## License
 
-This project is licensed under either of:
-- MIT License
-- Apache License 2.0
+Apache-2.0 OR MIT
 
-at your option. 
+© 2024 Toka Contributors 

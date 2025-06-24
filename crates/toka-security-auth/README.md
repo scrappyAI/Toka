@@ -1,53 +1,57 @@
-# Toka Auth Core
+# Toka Security-Auth
 
-Lightweight capability-token primitives for Toka platform authentication.
+Lightweight **capability-token** primitives shared by the runtime, agents and tools.
 
-## Overview
+---
 
-The Toka Auth Core crate provides the fundamental authentication primitives for the Toka platform, focusing on capability-based token systems. It offers a lightweight and secure approach to handling authentication and authorization within the Toka ecosystem.
+## Why Capability Tokens?
+
+The platform's security model is _capability-based_: every actor receives an unforgeable token that spells out **exactly** which vault, tools or resources it may access.  This crate implements those tokens without pulling in heavyweight crypto libraries – just a keyed Blake2 signature for now.
+
+---
 
 ## Features
 
-- Capability token primitives
-- Secure token generation and validation
-- Cryptographic hash functions
-- Hex encoding/decoding utilities
+* `CapabilityToken` struct with *time-boxed*, *tamper-evident* signature.
+* Constant-time signature comparison to mitigate timing attacks.
+* `#![forbid(unsafe_code)]` – security starts with memory safety.
 
-## Dependencies
+---
 
-### Core Dependencies
-- serde: Serialization/deserialization
-- sha2: Cryptographic hash functions
-- hex: Hexadecimal encoding/decoding
+## Example
 
-## Usage
+```rust
+use toka_security_auth::token::CapabilityToken;
 
-Add the following to your `Cargo.toml`:
-
-```toml
-[dependencies]
-toka-auth-core = { version = "0.1.0" }
+let secret = "my-32-byte-server-secret"; // store securely!
+let token = CapabilityToken::new(
+    "user_…",
+    "vlt_…",
+    vec!["TOOL_USE".into(), "VAULT".into()],
+    secret,
+    3600, // 1h TTL
+);
+assert!(token.is_valid(secret));
 ```
 
-## Security Considerations
+Embed the serialised token into HTTP headers or gRPC metadata and verify it inside the runtime.
 
-This crate is designed with security as a primary concern:
-- Uses cryptographic hash functions for token generation
-- Implements capability-based access control
-- Provides secure token validation mechanisms
+---
 
-## Design Philosophy
+## Relationship to the Event Store
 
-The crate follows these principles:
-- Minimal dependencies for security and reliability
-- Focus on capability-based security model
-- Lightweight implementation for edge deployments
-- Clear separation of concerns
+Authorisation is **orthogonal** to the event system, but tokens often appear in event payloads (e.g. `agent.auth_used`).  Keeping the type in its own crate avoids pulling hashing deps into `toka-vault`.
+
+---
+
+## Status
+
+Stable API – no breaking changes expected before v1.0 unless a security issue is uncovered.
+
+---
 
 ## License
 
-This project is licensed under either of:
-- MIT License
-- Apache License 2.0
+Apache-2.0 OR MIT
 
-at your option. 
+© 2024 Toka Contributors 
