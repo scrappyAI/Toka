@@ -7,6 +7,7 @@ use tempfile::tempdir;
 use toka_agents::{Agent, SymbolicAgent};
 use toka_runtime::runtime::{Runtime, RuntimeConfig};
 use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};
+use toka_bus::MemoryBus;
 
 struct EchoTool;
 
@@ -58,7 +59,7 @@ async fn runtime_agent_tool_storage_roundtrip() -> Result<()> {
 
     // Create agent
     let mut agent = SymbolicAgent::new("a1");
-    agent.set_event_bus(toka_bus_memory::MemoryEventBus::new_default());
+    agent.set_event_bus(toka_bus::MemoryBus::default());
 
     // Use storage adapter via runtime
     let local = runtime.storage("local").await.expect("local adapter");

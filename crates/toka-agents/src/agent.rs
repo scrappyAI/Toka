@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::reasoning::symbolic::SymbolicReasoner;
-use crate::{AgentEvent, EventBus};
-use toka_bus_memory::EventBus as _;
+use crate::{AgentEvent, ToolEvent, EventBus};
+use toka_bus::EventBusExt as _;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Belief {
@@ -170,7 +170,7 @@ impl BaseAgent {
         if let Some(bus) = &self.event_bus {
             let _ = bus
                 .emit_tool_event(
-                    toka_bus_memory::ToolEvent::Invoked {
+                    toka_bus::ToolEvent::Invoked {
                         tool_name: params.name.clone(),
                         user_id: self.id.clone(),
                         timestamp: now,
@@ -189,7 +189,7 @@ impl BaseAgent {
                 Ok(r) => {
                     let _ = bus
                         .emit_tool_event(
-                            toka_bus_memory::ToolEvent::Completed {
+                            toka_bus::ToolEvent::Completed {
                                 tool_name: params.name.clone(),
                                 user_id: self.id.clone(),
                                 duration_ms: r.metadata.execution_time_ms,
@@ -206,7 +206,7 @@ impl BaseAgent {
                 Err(e) => {
                     let _ = bus
                         .emit_tool_event(
-                            toka_bus_memory::ToolEvent::Error {
+                            toka_bus::ToolEvent::Error {
                                 tool_name: params.name.clone(),
                                 user_id: self.id.clone(),
                                 error: e.to_string(),

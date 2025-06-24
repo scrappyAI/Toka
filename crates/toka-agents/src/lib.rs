@@ -18,7 +18,7 @@ pub use prelude::*;
 pub use reasoning::{AgentContext, NoOpReasoner, ReasonOutcome, ReasoningEngine};
 pub use system::{SystemAgent, SystemAgentKind};
 
-pub use toka_bus_memory::{AgentEvent, MemoryEventBus as EventBus};
+pub use toka_bus::{AgentEvent, MemoryBus as EventBus, ToolEvent, EventBusExt as _};
 
 use anyhow::Result;
 use async_trait::async_trait;

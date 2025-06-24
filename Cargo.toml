@@ -24,7 +24,10 @@ members = [
     "crates/smart-embedder",
 
     # Meta-crate
-    "crates/toka"
+    "crates/toka",
+
+    # New member
+    "crates/toka-bus",
 ]
 
 [workspace.dependencies]

@@ -15,6 +15,7 @@ tracing = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }
 semver = { version = "1", features = ["serde"] }
 bitflags = { version = "2", features = ["serde"] }
+toka-bus = { path = "../toka-bus" }
 toka-vault = { path = "../toka-vault", optional = true }
 toka-toolkit-core = { path = "../toka-toolkit-core", optional = true }
 

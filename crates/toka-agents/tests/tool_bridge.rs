@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use std::sync::Arc;
 use toka_agents::{EventBus, SymbolicAgent};
 use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};
+use toka_bus::ToolEvent;
 
 struct EchoTool;
 
@@ -64,12 +65,12 @@ async fn agent_invoke_tool_emits_events() -> Result<()> {
 
     // Ensure at least one ToolEvent came through
     let mut got_invoked = false;
-    while let Ok(event) = rx.try_recv() {
-        if let toka_bus_memory::EventType::Tool(_) = event.event_type {
+    while let Ok(head) = rx.try_recv() {
+        if head.kind.starts_with("tool.") {
             got_invoked = true;
             break;
         }
     }
-    assert!(got_invoked, "No ToolEvent received");
+    assert!(got_invoked, "No ToolEvent header received");
     Ok(())
 }

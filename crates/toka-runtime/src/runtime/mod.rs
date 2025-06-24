@@ -8,10 +8,10 @@ use toka_storage::{LocalFsAdapter, StorageAdapter};
 use tokio::sync::{broadcast, Mutex, RwLock};
 use tracing::{error, info, warn};
 use uuid::Uuid;
+use toka_bus::{MemoryBus, EventBus, EventBusExt, BusEventHeader};
 
 use crate::agents::Agent;
 use crate::agents::SymbolicAgent;
-use crate::events::{EventBus, EventType};
 use crate::tools::ToolRegistry;
 use crate::vault::{Vault, VaultEntry};
 
@@ -43,7 +43,7 @@ impl Default for RuntimeConfig {
 pub struct Runtime {
     config: RuntimeConfig,
     agents: Arc<RwLock<HashMap<String, Box<dyn Agent + Send + Sync>>>>,
-    event_bus: Arc<Mutex<EventBus>>,
+    event_bus: Arc<Mutex<MemoryBus>>,
     event_tx: broadcast::Sender<(String, String)>,
     vault: Arc<Vault>,
     #[allow(dead_code)]
@@ -59,7 +59,7 @@ impl Runtime {
             .with_context(|| format!("Failed to initialize vault at {}", config.vault_path))?;
         let vault = Arc::new(vault);
 
-        let event_bus = EventBus::new(config.event_buffer_size);
+        let event_bus = MemoryBus::new(config.event_buffer_size);
         let (event_tx, _) = broadcast::channel(config.event_buffer_size);
 
         let tool_registry = ToolRegistry::new();
@@ -190,10 +190,9 @@ impl Runtime {
         // Send to broadcast channel for agent processing
         self.event_tx.send((event_type.clone(), data.clone()))?;
 
-        // Also send to event bus for external listeners
-        let event_bus = self.event_bus.lock().await;
-        let generic_event = EventType::Generic { event_type, data };
-        event_bus.emit(generic_event, "runtime-cli").await?;
+        // Also publish header on the internal bus for listeners outside runtime
+        let bus = self.event_bus.lock().await;
+        let _ = bus.publish(&data, &event_type).await?;
 
         Ok(())
     }
