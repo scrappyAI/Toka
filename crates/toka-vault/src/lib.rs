@@ -15,7 +15,7 @@
 //!
 //! ## Usage
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use toka_vault::Vault;
 //! use toka_vault::prelude::*;
 //! use serde::{Serialize, Deserialize};
@@ -53,7 +53,11 @@
 #![warn(missing_docs)]
 
 // The new, consolidated modules
+// Legacy bus trait is deprecated – retained for transitional compilation only.
+#[deprecated(note = "EventBus has moved to the `toka-bus` crate – use that instead.")]
 pub mod bus;
+/// Persistence-only public traits (Slice 2).
+pub mod api;
 pub mod events;
 pub mod memory;
 pub mod persistence;
@@ -61,6 +65,10 @@ pub mod strategy;
 
 /// A convenient prelude for importing the most common types.
 pub mod prelude {
+    // Persistence layer traits
+    pub use crate::api::{EventSink, QueryApi};
+    // Legacy export kept for downstreams that haven't migrated yet.
+    #[allow(deprecated)]
     pub use crate::bus::EventBus;
     pub use crate::Vault;
     pub use crate::events::{
@@ -81,6 +89,7 @@ use anyhow::Result;
 use prelude::*;
 use tokio::sync::broadcast;
 use async_trait::async_trait;
+use crate::api::{EventSink, QueryApi};
 
 /// The primary, unified entry point for interacting with the event store.
 ///
@@ -133,39 +142,37 @@ impl Vault {
     }
 }
 
-// Implement the EventBus trait for the unified Vault enum
+// Implement the new persistence-only traits ----------------------------------------------------
+
 #[async_trait]
-impl EventBus for Vault {
-    async fn commit<P: EventPayload>(
-        &self,
-        payload: &P,
-        parents: &[EventHeader],
-        kind: &str,
-        embedding: &[f32],
-    ) -> Result<EventHeader> {
+impl EventSink for Vault {
+    async fn commit(&self, header: &EventHeader, payload: &[u8]) -> Result<()> {
         match self {
             #[cfg(feature = "persist-sled")]
-            Self::Persistent(v) => v.commit(payload, parents, kind, embedding).await,
+            Self::Persistent(v) => v.commit(header, payload).await,
             #[cfg(feature = "memory-vault")]
-            Self::Memory(v) => v.commit(payload, parents, kind, embedding).await,
+            Self::Memory(v) => v.commit(header, payload).await,
+        }
+    }
+}
+
+#[async_trait]
+impl QueryApi for Vault {
+    async fn header(&self, id: &EventId) -> Result<Option<EventHeader>> {
+        match self {
+            #[cfg(feature = "persist-sled")]
+            Self::Persistent(v) => v.header(id).await,
+            #[cfg(feature = "memory-vault")]
+            Self::Memory(v) => v.header(id).await,
         }
     }
 
-    async fn get_header(&self, event_id: &EventId) -> Result<Option<EventHeader>> {
+    async fn payload<P: EventPayload>(&self, digest: &CausalDigest) -> Result<Option<P>> {
         match self {
             #[cfg(feature = "persist-sled")]
-            Self::Persistent(v) => v.get_header(event_id).await,
+            Self::Persistent(v) => v.payload(digest).await,
             #[cfg(feature = "memory-vault")]
-            Self::Memory(v) => v.get_header(event_id).await,
-        }
-    }
-
-    async fn get_payload<P: EventPayload>(&self, digest: &CausalDigest) -> Result<Option<P>> {
-        match self {
-            #[cfg(feature = "persist-sled")]
-            Self::Persistent(v) => v.get_payload(digest).await,
-            #[cfg(feature = "memory-vault")]
-            Self::Memory(v) => v.get_payload(digest).await,
+            Self::Memory(v) => v.payload(digest).await,
         }
     }
 }

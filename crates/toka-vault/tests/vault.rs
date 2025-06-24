@@ -4,6 +4,8 @@ use toka_vault::prelude::*;
 use toka_vault::Vault;
 use serde::{Deserialize, Serialize};
 use tempfile::tempdir;
+use uuid::Uuid;
+use rmp_serde;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 struct TestPayload {
@@ -17,21 +19,21 @@ async fn run_vault_tests(vault: Vault) {
         id: 1,
         msg: "hello".to_string(),
     };
-    let header1 = vault
-        .commit(&payload1, &[], "test.one", &[])
-        .await
-        .unwrap();
+    // Manually construct header & persist
+    let header1 = create_event_header(&[], uuid::Uuid::nil(), "test.one".into(), &payload1).unwrap();
+    let payload_bytes = rmp_serde::to_vec_named(&payload1).unwrap();
+    vault.commit(&header1, &payload_bytes).await.unwrap();
 
     // Verify header fields
     assert_eq!(header1.kind, "test.one");
     assert_eq!(header1.parents.len(), 0);
 
     // Retrieve and verify
-    let retrieved_header = vault.get_header(&header1.id).await.unwrap().unwrap();
+    let retrieved_header = vault.header(&header1.id).await.unwrap().unwrap();
     assert_eq!(retrieved_header, header1);
 
     let retrieved_payload: TestPayload = vault
-        .get_payload(&header1.digest)
+        .payload(&header1.digest)
         .await
         .unwrap()
         .unwrap();
@@ -42,10 +44,10 @@ async fn run_vault_tests(vault: Vault) {
         id: 2,
         msg: "world".to_string(),
     };
-    let header2 = vault
-        .commit(&payload2, &[header1.clone()], "test.two", &[])
-        .await
-        .unwrap();
+    let header2_parents = vec![header1.clone()];
+    let header2 = create_event_header(&header2_parents, uuid::Uuid::nil(), "test.two".into(), &payload2).unwrap();
+    let payload2_bytes = rmp_serde::to_vec_named(&payload2).unwrap();
+    vault.commit(&header2, &payload2_bytes).await.unwrap();
 
     assert_eq!(header2.parents.len(), 1);
     assert_eq!(header2.parents[0], header1.id);
@@ -55,7 +57,9 @@ async fn run_vault_tests(vault: Vault) {
     let mut sub = vault.subscribe();
 
     let payload3 = TestPayload { id: 3, msg: "sub".to_string() };
-    let header3 = vault.commit(&payload3, &[], "test.three", &[]).await.unwrap();
+    let header3 = create_event_header(&[], uuid::Uuid::nil(), "test.three".into(), &payload3).unwrap();
+    let payload3_bytes = rmp_serde::to_vec_named(&payload3).unwrap();
+    vault.commit(&header3, &payload3_bytes).await.unwrap();
 
     let received = sub.recv().await.unwrap();
     assert_eq!(received, header3);

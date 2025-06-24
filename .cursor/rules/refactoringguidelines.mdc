@@ -1,0 +1,76 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+<Description>
+Best practices for systematic and productive refactoring within a Rust workspace. Emphasizes modular improvements, atomic commits, test coverage, crate-local boundaries, semantic versioning, and workspace-wide consistency.
+</Description>
+
+<Goals>
+- Complete a clean, verifiable refactoring cycle scoped to a crate or logical unit in the workspace.
+- Maintain or improve readability, modularity, test coverage, and API clarity.
+- Ensure each crate builds and tests independently and as part of the workspace.
+- Use meaningful commit messages to capture intent and progress.
+- Keep workspace and crate metadata (Cargo.toml, docs) aligned with code changes.
+</Goals>
+
+<Instructions>
+
+1. <Scope>
+   - Identify the target crate(s) or module(s) within the workspace.
+   - Define goals for the refactor (e.g., better separation of concerns, improved API, dependency reduction).
+   - Do not begin wide refactoring without a clearly scoped crate or unit of responsibility.
+</Scope>
+
+2. <Execution>
+   - Work in **small, isolated slices** within crate boundaries.
+   - Ensure each slice:
+     - Compiles successfully (`cargo check -p <crate>`)
+     - Passes all associated tests (`cargo test -p <crate>`)
+     - Respects existing public APIs or provides appropriate migration
+   - Leverage workspace structure:
+     - Use `--workspace` only for integration checks
+     - Respect crate boundaries; avoid leaking abstractions unless intentionally shared via workspace dependencies
+</Execution>
+
+3. <Commits>
+   - After each verifiable slice, create a **descriptive, atomic commit**:
+     - Example: `refactor(auth): extract token verification logic into submodule`
+     - Commits should represent one logical step; do not bundle unrelated changes.
+   - Include brief rationale if non-obvious.
+</Commits>
+
+4. <Testing>
+   - Write or update tests for any refactored logic.
+   - Run tests at both:
+     - Crate level (`cargo test -p <crate>`)
+     - Workspace level (`cargo test --workspace`) before merging.
+   - Maintain or improve test coverage and assertions.
+</Testing>
+
+5. <Docs and Metadata>
+   - Update relevant:
+     - Crate-level `README.md` or doc comments
+     - `Cargo.toml` fields (`description`, `version`, `features`, `dependencies`)
+     - Workspace-level metadata if adding/removing crates or changing structure
+   - Add `#[doc(hidden)]` or visibility markers if changing public API visibility.
+</Docs and Metadata>
+
+6. <Versioning>
+   - Follow semantic versioning per crate:
+     - Patch: minor refactor, no API change
+     - Minor: new APIs or features added safely
+     - Major: breaking changes or significant rewrites
+   - Update version fields in each affected `Cargo.toml` and propagate through workspace dependencies if needed.
+</Versioning>
+
+7. <Completion>
+   - When refactoring goals are met:
+     - Ensure all crates compile and test cleanly across the workspace
+     - Merge commits into `main` or your integration branch
+     - Optionally squash trivial commits, preserving intent and history
+     - Tag version if appropriate (e.g., `v0.5.0`)
+</Completion>
+
+</Instructions>

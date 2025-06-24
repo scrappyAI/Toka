@@ -1,14 +1,14 @@
 //! In-memory, non-persistent event bus implementation.
 
-use crate::bus::EventBus;
+use crate::api::{EventSink, QueryApi};
 use crate::events::{
     CausalDigest, EventHeader, EventId, EventPayload,
 };
-use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
+use anyhow::Result;
 
 /// Default buffer size for the broadcast channel.
 const DEFAULT_BUFFER: usize = 1024;
@@ -49,41 +49,35 @@ impl MemoryVault {
 }
 
 #[async_trait]
-impl EventBus for MemoryVault {
-    /// Commits an event to the in-memory store.
-    ///
-    /// Note: The `embedding` argument is ignored in this implementation as there
-    /// is no persistence or intent clustering.
-    async fn commit<P: EventPayload>(
-        &self,
-        payload: &P,
-        parents: &[EventHeader],
-        kind: &str,
-        _embedding: &[f32], // Ignored
-    ) -> Result<EventHeader> {
-        let payload_bytes = rmp_serde::to_vec_named(payload)?;
-        let header =
-            crate::events::create_event_header(parents, uuid::Uuid::nil(), kind.to_string(), payload)?;
-
+impl EventSink for MemoryVault {
+    async fn commit(&self, header: &EventHeader, payload: &[u8]) -> Result<()> {
+        // Deduplicate payloads – multiple headers can reference same digest
         self.payloads
             .write()
             .await
-            .insert(header.digest, payload_bytes);
+            .entry(header.digest)
+            .or_insert_with(|| payload.to_vec());
+
+        // Persist header
         self.headers
             .write()
             .await
             .insert(header.id, header.clone());
 
+        // Broadcast live update
         let _ = self.broadcast_tx.send(header.clone());
 
-        Ok(header)
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl QueryApi for MemoryVault {
+    async fn header(&self, id: &EventId) -> Result<Option<EventHeader>> {
+        Ok(self.headers.read().await.get(id).cloned())
     }
 
-    async fn get_header(&self, event_id: &EventId) -> Result<Option<EventHeader>> {
-        Ok(self.headers.read().await.get(event_id).cloned())
-    }
-
-    async fn get_payload<P: EventPayload>(&self, digest: &CausalDigest) -> Result<Option<P>> {
+    async fn payload<P: EventPayload>(&self, digest: &CausalDigest) -> Result<Option<P>> {
         if let Some(bytes) = self.payloads.read().await.get(digest) {
             let payload: P = rmp_serde::from_slice(bytes)?;
             Ok(Some(payload))

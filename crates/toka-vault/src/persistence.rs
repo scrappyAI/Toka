@@ -1,6 +1,6 @@
 //! The persistent vault implementation, backed by sled.
 
-use crate::bus::EventBus;
+use crate::api::{EventSink, QueryApi};
 use crate::events::{
     causal_hash, CausalDigest, EventHeader, EventId, EventPayload, IntentId,
 };
@@ -77,44 +77,28 @@ impl<S: IntentStrategy> PersistentVault<S> {
 }
 
 #[async_trait]
-impl<S: IntentStrategy> EventBus for PersistentVault<S> {
-    async fn commit<P: EventPayload>(
-        &self,
-        payload: &P,
-        parents: &[EventHeader],
-        kind: &str,
-        embedding: &[f32],
-    ) -> Result<EventHeader> {
-        // 1. Serialize payload
-        let payload_bytes = rmp_serde::to_vec_named(payload)?;
-
-        // 2. Compute causal hash
-        let parent_digests: Vec<CausalDigest> = parents.iter().map(|h| h.digest).collect();
-        let digest = causal_hash(&payload_bytes, &parent_digests);
-
-        // 3. Deduplicate payload storage
-        if self.db_payloads.get(&digest)?.is_none() {
-            self.db_payloads.insert(&digest, payload_bytes)?;
+impl<S: IntentStrategy> EventSink for PersistentVault<S> {
+    async fn commit(&self, header: &EventHeader, payload: &[u8]) -> Result<()> {
+        // 1. Deduplicate payload storage by digest
+        if self.db_payloads.get(&header.digest)?.is_none() {
+            self.db_payloads.insert(&header.digest, payload)?;
         }
 
-        // 4. Assign intent
-        let (intent, _is_new_cluster) = self.intent_strategy.assign_intent(embedding).await?;
-
-        // 5. Create event header
-        let header = crate::events::create_event_header(parents, intent, kind.to_string(), payload)?;
-
-        // 6. Persist header
-        let header_bytes = rmp_serde::to_vec_named(&header)?;
+        // 2. Persist header (overwrite-safe)
+        let header_bytes = rmp_serde::to_vec_named(header)?;
         self.db_headers.insert(header.id.as_bytes(), header_bytes)?;
 
-        // 7. Broadcast to live subscribers
+        // 3. Broadcast live update
         let _ = self.broadcast_tx.send(header.clone());
 
-        Ok(header)
+        Ok(())
     }
+}
 
-    async fn get_header(&self, event_id: &EventId) -> Result<Option<EventHeader>> {
-        if let Some(bytes) = self.db_headers.get(event_id.as_bytes())? {
+#[async_trait]
+impl<S: IntentStrategy> QueryApi for PersistentVault<S> {
+    async fn header(&self, id: &EventId) -> Result<Option<EventHeader>> {
+        if let Some(bytes) = self.db_headers.get(id.as_bytes())? {
             let header: EventHeader = rmp_serde::from_slice(&bytes)?;
             Ok(Some(header))
         } else {
@@ -122,7 +106,7 @@ impl<S: IntentStrategy> EventBus for PersistentVault<S> {
         }
     }
 
-    async fn get_payload<P: EventPayload>(&self, digest: &CausalDigest) -> Result<Option<P>> {
+    async fn payload<P: EventPayload>(&self, digest: &CausalDigest) -> Result<Option<P>> {
         if let Some(bytes) = self.db_payloads.get(digest)? {
             let payload: P = rmp_serde::from_slice(&bytes)?;
             Ok(Some(payload))
