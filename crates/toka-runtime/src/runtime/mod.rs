@@ -3,7 +3,6 @@
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::sync::Arc;
-use toka_secrets::blob_adapter::VaultBlobAdapter;
 use toka_storage::{LocalFsAdapter, StorageAdapter};
 use tokio::sync::{broadcast, Mutex, RwLock};
 use tracing::{error, info, warn};
@@ -11,6 +10,10 @@ use uuid::Uuid;
 use toka_bus::{MemoryBus, EventBus, EventBusExt, BusEventHeader};
 #[cfg(feature = "vault")]
 use toka_vault::prelude::{create_event_header, EventSink, EventHeader};
+#[cfg(feature = "auth")]
+use std::time::Duration;
+#[cfg(feature = "auth")]
+use crate::security::{self, Envelope};
 
 use crate::agents::Agent;
 use crate::agents::SymbolicAgent;
@@ -24,6 +27,10 @@ pub struct RuntimeConfig {
     pub max_agents: usize,
     pub event_buffer_size: usize,
     pub storage_root: String,
+    #[cfg(feature = "auth")]
+    pub initial_secret: Option<String>,
+    #[cfg(feature = "auth")]
+    pub retired_ttl_secs: u64,
 }
 
 impl Default for RuntimeConfig {
@@ -37,6 +44,10 @@ impl Default for RuntimeConfig {
                 .join(".toka/storage")
                 .to_string_lossy()
                 .into_owned(),
+            #[cfg(feature = "auth")]
+            initial_secret: None,
+            #[cfg(feature = "auth")]
+            retired_ttl_secs: 300, // 5-minute overlap by default
         }
     }
 }
@@ -52,6 +63,8 @@ pub struct Runtime {
     tool_registry: Arc<ToolRegistry>,
     storage_adapters: Arc<RwLock<HashMap<String, Arc<dyn StorageAdapter>>>>,
     is_running: Arc<Mutex<bool>>,
+    #[cfg(feature = "auth")]
+    security: Envelope,
 }
 
 impl Runtime {
@@ -68,13 +81,26 @@ impl Runtime {
 
         // ── Storage adapters ───────────────────────────────────────────────
         let mut adapters: HashMap<String, Arc<dyn StorageAdapter>> = HashMap::new();
-        let blob_adapter = VaultBlobAdapter::new(vault.clone());
-        adapters.insert("vault".into(), Arc::new(blob_adapter));
+        // For now we re-use the local filesystem adapter for the `vault` scheme.
+        // Future slices will introduce a dedicated blob adapter living alongside
+        // the `toka-vault` crate.
+        let vault_fs = LocalFsAdapter::new(&config.vault_path)
+            .with_context(|| format!("Failed to init vault storage at {}", config.vault_path))?;
+        adapters.insert("vault".into(), Arc::new(vault_fs));
 
         // Legacy local filesystem adapter for backwards-compat
         let local_adapter = LocalFsAdapter::new(&config.storage_root)
             .with_context(|| format!("Failed to init local storage at {}", config.storage_root))?;
         adapters.insert("local".into(), Arc::new(local_adapter));
+
+        #[cfg(feature = "auth")]
+        let security_env = {
+            let secret = config
+                .initial_secret
+                .clone()
+                .unwrap_or_else(|| security::random_secret());
+            Envelope::initialise(secret, Duration::from_secs(config.retired_ttl_secs))
+        };
 
         let runtime = Self {
             config,
@@ -85,6 +111,8 @@ impl Runtime {
             tool_registry: Arc::new(tool_registry),
             storage_adapters: Arc::new(RwLock::new(adapters)),
             is_running: Arc::new(Mutex::new(false)),
+            #[cfg(feature = "auth")]
+            security: security_env,
         };
 
         runtime.load_state().await?;
@@ -281,6 +309,22 @@ impl Runtime {
     /// Access a storage adapter by scheme (`local`, `s3`, …).
     pub async fn storage(&self, scheme: &str) -> Option<Arc<dyn StorageAdapter>> {
         self.storage_adapters.read().await.get(scheme).cloned()
+    }
+
+    // ── Security helpers (auth feature) ─────────────────────────────────
+    #[cfg(feature = "auth")]
+    pub fn validator(&self) -> crate::security::MultiValidator {
+        self.security.validator()
+    }
+
+    #[cfg(feature = "auth")]
+    pub fn rotate_secrets(&self) {
+        self.security.rotate();
+    }
+
+    #[cfg(feature = "auth")]
+    pub fn redact(&self, input: &str) -> String {
+        self.security.redact(input)
     }
 }
 

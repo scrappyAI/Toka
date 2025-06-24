@@ -79,5 +79,10 @@ pub trait MemoryAdapter {
 - [x] Slice 1 – Migrate existing crates to depend on `toka-bus`
 - [x] Slice 1 – Removed legacy `toka_secrets` dependency; introduced lightweight `MemoryAdapter` in `toka-agents`
 - [x] Slice 2 – Vault persistence-only refactor (runtime drain bus → vault)
+- [x] Slice 3 – **toka-memory** crate implemented with `MemoryAdapter` + `InMemoryAdapter` and TTL support
+- [x] Slice 3 – Added full unit-test coverage & concise README
+- [x] Slice 4 – Auth refactor: migrated to JWT (HS256) capability tokens, implemented `TokenValidator`
+- [x] Slice 4 – Enforced strict expiration semantics and added security tests
+- [ ] Slice 5 – Runtime security envelope (secret rotation, validator hook, redaction layer) **(in progress)**
 
 _Last updated: 2025-06-24_ 
