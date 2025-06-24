@@ -1,65 +1,96 @@
-# Toka Bus Persist
+# Toka Vault
 
-Persistent event bus implementation for the Toka platform.
+> Canonical event store for the Toka ecosystem
 
-## Overview
+`toka-vault` is the single source of truth for **what happened** in a Toka-powered system. It stores immutable events, supports live subscriptions, and allows reliable replay for audit or projection building.
 
-This crate provides a persistent event bus implementation that stores events in a database for durability and replay capabilities. It's designed for production systems that require event persistence and historical event access.
+---
 
-## Features
+## Feature Matrix
 
-- Persistent event storage with database backend
-- Event replay and historical access
-- Transactional event publishing
-- Event filtering and querying
-- Async/await support with Tokio
-- Database migration support
+| Feature flag | Purpose | Extra Deps |
+|--------------|---------|------------|
+| _default_ | In-memory vault – perfect for testing and ephemeral workflows | `tokio`, `serde` |
+| `persist-sled` | Durable storage on top of [sled](https://github.com/spacejam/sled) | `sled`, `bincode` |
+| *(coming soon)* `intent-cluster` | Semantic grouping of events | _TBD – design in progress_ |
 
-## Usage
+The crate ships **without heavy dependencies** by default. Enable only what you need.
 
-Add the following to your `Cargo.toml`:
+---
+
+## Quick Start
+
+Add a dependency in your `Cargo.toml`:
+
+```toml
+# In-memory only
+[dependencies]
+toka-vault = "0.1"
+```
+
+With durable sled back-end:
 
 ```toml
 [dependencies]
-toka-bus-persist = "0.1.0"
+toka-vault = { version = "0.1", features = ["persist-sled"] }
 ```
 
-### Example
+Example usage:
 
 ```rust
-use toka_bus_persist::PersistentEventBus;
-use toka_events_core::Event;
+use toka_vault::{Vault, InMemoryVault};
+use tokio_stream::StreamExt;
 
-// Initialize with database connection
-let bus = PersistentEventBus::new(database_url).await?;
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Spin up an in-memory vault
+    let vault = Vault::Memory(InMemoryVault::new(1024)?);
 
-// Publish an event (automatically persisted)
-bus.publish(Event::new("agent.created", payload)).await?;
+    // Subscribe before we emit to avoid missing events
+    let mut sub = vault.subscribe();
 
-// Subscribe to events (includes historical events)
-let mut subscriber = bus.subscribe("agent.*").await?;
+    // Commit an event (payload can be any `serde::Serialize` type)
+    let header = vault.commit_json("user.login", serde_json::json!({"user": "alice"}), &[]).await?;
+    println!("committed event {}", header.id);
 
-// Replay events from a specific point in time
-let events = bus.replay_events("agent.*", since_timestamp).await?;
+    // Receive it back on the subscription
+    if let Some(event) = sub.next().await {
+        println!("got {} -> {:?}", event.header.kind, event.payload);
+    }
+
+    Ok(())
+}
 ```
 
-## Dependencies
+---
 
-- SQLx for database operations
-- PostgreSQL as the primary database backend
-- Tokio for async runtime support
+## Design Goals
 
-## Design Philosophy
+1. **Causality** – Each event carries its parents' IDs; vault enforces a partial order.
+2. **Content Addressing** – Payloads are stored by Blake3 hash to avoid duplication.
+3. **Streaming First** – The API exposes `tokio::broadcast` receivers for low-latency streaming.
+4. **Pluggable Storage** – Back-ends implement the same `EventStore` trait.
 
-- **Durability**: All events are persisted to ensure no data loss
-- **Replayability**: Historical events can be replayed for analysis
-- **Scalability**: Designed to handle high-volume event streams
-- **Reliability**: Transactional guarantees for event publishing
+---
+
+## On Intent Clustering
+
+Intent clustering (automatic semantic grouping of events) is **on hold** while we flesh out the concept. The `intent-cluster` feature flag exists but is _not yet implemented_. Feel free to contribute ideas or proofs-of-concept in a draft PR!
+
+---
+
+## Testing
+
+```bash
+# run all vault tests (in-memory only)
+cargo test -p toka-vault
+
+# include durable back-end tests
+cargo test -p toka-vault --features persist-sled
+```
+
+---
 
 ## License
 
-This project is licensed under either of:
-- MIT License
-- Apache License 2.0
-
-at your option. 
+Dual-licensed under MIT or Apache-2.0, at your option. 
