@@ -21,7 +21,6 @@ members = [
     "crates/toka-events",
 
     # Specialized Tooling
-    "crates/smart-embedder",
 
     # Meta-crate
     "crates/toka",
