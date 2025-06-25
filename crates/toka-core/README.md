@@ -20,7 +20,7 @@ Nothing is enabled by default – downstream crates opt-in to just what they nee
 
 ## Relation to the Event Store
 
-All state-changing actions in Toka are captured in the **canonical event store** provided by the [`toka-vault`](../../toka-vault/README.md) crate.  `toka-core` defines *what* is stored (domain rules & invariants) but **does not talk to the vault directly** – that is the runtime's job.  This separation keeps the domain layer free of IO and heavy dependencies.
+All state-changing actions in Toka are captured in the **canonical event store** provided by the [`toka-events`](../../toka-events/README.md) crate.  `toka-core` defines *what* is stored (domain rules & invariants) but **does not talk to the event store directly** – that is the runtime's job.  This separation keeps the domain layer free of IO and heavy dependencies.
 
 For details on the vault consolidation and why legacy bus / ledger crates were retired see [`EVENT_SYSTEM_REFACTOR.md`](../../EVENT_SYSTEM_REFACTOR.md).
 

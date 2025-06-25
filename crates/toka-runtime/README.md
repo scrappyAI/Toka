@@ -1,6 +1,6 @@
 # Toka Runtime
 
-Async host that wires **agents**, the **canonical event store** (`toka-vault`) and an optional **toolkit** into a single executable.
+Async host that wires **agents**, the **canonical event store** (`toka-events`) and an optional **toolkit** into a single executable.
 
 ---
 
@@ -12,7 +12,7 @@ Async host that wires **agents**, the **canonical event store** (`toka-vault`) a
 | Feature | What you get | Major extra deps |
 |---------|--------------|------------------|
 | *(none)* | Pure runtime scaffold (async loops, `EventBus`) | `tokio`, `tracing` |
-| `vault` | Secure local vault backend (sled or in-mem) | `toka-vault` |
+| `vault` | Secure local event store backend (sled or in-mem) | `toka-events` |
 | `toolkit` | `ToolRegistry`, CLI, type-erased `serde` plugin system | `toka-toolkit`, `clap`, `typetag` |
 | `auth` | Capability token helpers | `toka-security-auth` |
 
@@ -47,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
 
 ## Design Decisions
 
-* **Single Source of Truth** – The runtime no longer embeds multiple bus / ledger back-ends.  All persistence is delegated to [`toka-vault`](../../toka-vault/README.md) as described in [`EVENT_SYSTEM_REFACTOR.md`](../../EVENT_SYSTEM_REFACTOR.md).
+* **Single Source of Truth** – The runtime no longer embeds multiple bus / ledger back-ends.  All persistence is delegated to [`toka-events`](../../toka-events/README.md) as described in [`EVENT_SYSTEM_REFACTOR.md`](../../EVENT_SYSTEM_REFACTOR.md).
 * **Pluggable Storage** – `storage("local")`, `storage("vault")` etc. allow agents & tools to store artefacts without depending on a concrete backend.
 * **Graceful Degradation** – If you compile without `toolkit` the public API still works; you just get a no-op tool registry.
 

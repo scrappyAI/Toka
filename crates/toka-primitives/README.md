@@ -7,7 +7,7 @@ Zero-dependency building blocks (IDs & Currency) shared by all other Toka crates
 ## Why a Separate Crate?
 
 * **`no_std` friendly** – Can be used on embedded targets or WASM without dragging in the full platform.
-* **Single Source of Truth** for fundamental types referenced by the canonical event store (`toka-vault`) and higher domain logic (`toka-core`).
+* **Single Source of Truth** for fundamental types referenced by the canonical event store (`toka-events`) and higher domain logic (`toka-core`).
 * **Stable release cadence** – `primitives` can evolve independently of fast-moving application crates.
 
 ---
@@ -45,7 +45,7 @@ println!("Agent {id} paid {price}");
 
 ## Relationship to the Vault
 
-Events persisted in `toka-vault` reference these types so that every crate speaks the **same language**.  Keeping primitives decoupled prevents accidental cyclic dependencies.
+Events persisted in `toka-events` reference these types so that every crate speaks the **same language**.  Keeping primitives decoupled prevents accidental cyclic dependencies.
 
 ---
 

@@ -7,7 +7,7 @@ Reference agent implementations for the Toka platform – ready-made shells you 
 ## Why does this crate exist?
 
 * Provide **batteries-included agents** (e.g. `SymbolicAgent`) so you can try the platform without writing code.
-* Demonstrate how to compose the **event-sourced** architecture – every belief update, plan and tool call is recorded in [`toka-vault`](../toka-vault/README.md).
+* Demonstrate how to compose the **event-sourced** architecture – every belief update, plan and tool call is recorded in [`toka-events`](../toka-events/README.md).
 * Serve as a test-bed for multiple reasoning engines (symbolic, LLM, sandbox) hidden behind a single `ReasoningEngine` trait.
 
 ---
@@ -18,7 +18,7 @@ Reference agent implementations for the Toka platform – ready-made shells you 
 |---------|---------|-----------------|
 | `core` *(default)* | Basic symbolic agent, reasoning traits | – |
 | `toolkit` | Bridge to the [`toka-toolkit-core`](../toka-toolkit-core/README.md) `ToolRegistry` | `toka-toolkit-core` |
-| `vault` | Persist long-term state in the canonical event store | `toka-vault` |
+| `vault` | Persist long-term state in the canonical event store | `toka-events` |
 
 You can therefore embed the crate **without** the heavy toolkit / vault stacks when you only need in-memory reasoning.
 

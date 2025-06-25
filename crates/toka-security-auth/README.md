@@ -40,7 +40,7 @@ Embed the serialised token into HTTP headers or gRPC metadata and verify it insi
 
 ## Relationship to the Event Store
 
-Authorisation is **orthogonal** to the event system, but tokens often appear in event payloads (e.g. `agent.auth_used`).  Keeping the type in its own crate avoids pulling hashing deps into `toka-vault`.
+Authorisation is **orthogonal** to the event system, but tokens often appear in event payloads (e.g. `agent.auth_used`).  Keeping the type in its own crate avoids pulling hashing deps into `toka-events`.
 
 ---
 

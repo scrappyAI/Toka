@@ -30,7 +30,7 @@ All are **optional** – you can start with an empty registry and add only what 
 
 ## Relationship to the Event Store
 
-Tool executions emit `ToolEvent`s on the **in-process `EventBus`** which the runtime can then persist in [`toka-vault`](../toka-vault/README.md).  This historical log is critical for auditability and future semantic search.
+Tool executions emit `ToolEvent`s on the **in-process `EventBus`** which the runtime can then persist in [`toka-events`](../toka-events/README.md).  This historical log is critical for auditability and future semantic search.
 
 ---
 
