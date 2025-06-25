@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use uuid::Uuid;
 
-/// Unique identifier for an event in the vault.
+/// Unique identifier for an event in the store.
 pub type EventId = Uuid;
 
 /// Identifier for an intent cluster.
@@ -18,7 +18,7 @@ pub type IntentId = Uuid;
 pub type CausalDigest = [u8; 32];
 
 /// Trait implemented by all event payload structures that can be committed
-/// to the vault.
+/// to the store.
 pub trait EventPayload: Serialize + for<'de> Deserialize<'de> + Send + Sync {}
 
 // Blanket implementation for any type that meets the bounds.

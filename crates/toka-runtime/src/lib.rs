@@ -11,9 +11,9 @@ pub mod security;
 #[cfg(feature = "toolkit")]
 pub use toka_agents as agents;
 
-// Expose persistence API from toka-vault (slice-2 integration)
+// Expose persistence API from toka-events
 #[cfg(feature = "vault")]
-pub use toka_vault as event_store;
+pub use toka_events as event_store;
 
 #[cfg(feature = "vault")]
-pub use toka_vault as vault;
+pub use toka_events as vault;

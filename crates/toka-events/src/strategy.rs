@@ -6,18 +6,9 @@ use async_trait::async_trait;
 use uuid::Uuid;
 
 /// Strategy for assigning intents to events based on embeddings.
-///
-/// This trait allows different intent clustering algorithms to be plugged in,
-/// from simple random assignment to sophisticated semantic clustering.
 #[async_trait]
 pub trait IntentStrategy: Send + Sync {
     /// Assign an intent ID to an event based on its embedding.
-    ///
-    /// # Arguments
-    /// * `embedding` - A float slice representing the event's semantic embedding.
-    ///
-    /// # Returns
-    /// The assigned `IntentId` and a `bool` indicating if this created a new cluster.
     async fn assign_intent(&self, embedding: &[f32]) -> Result<(IntentId, bool)>;
 
     /// Get the total number of discovered intent clusters.
@@ -58,11 +49,9 @@ mod online_clustering {
     use parking_lot::RwLock;
 
     /// Dimensionality of the embedding vectors.
-    /// This should match the output of the embedding model used.
-    pub const EMBEDDING_DIM: usize = 384; // e.g., for all-MiniLM-L6-v2
+    pub const EMBEDDING_DIM: usize = 384;
 
-    /// Cosine similarity threshold for clustering. Events with similarity
-    /// above this threshold will be grouped into the same intent cluster.
+    /// Cosine similarity threshold for clustering.
     const SIMILARITY_THRESHOLD: f32 = 0.82;
 
     #[derive(Debug, Clone)]
@@ -73,10 +62,6 @@ mod online_clustering {
     }
 
     /// An online clustering strategy using cosine similarity.
-    ///
-    /// This strategy maintains a running average (centroid) for each discovered
-    /// intent cluster. New events are assigned to the most similar cluster if
-    /// they meet the similarity threshold; otherwise, a new cluster is formed.
     #[derive(Debug, Default)]
     pub struct OnlineClusterStrategy {
         centroids: RwLock<Vec<Centroid>>,
@@ -109,9 +94,8 @@ mod online_clustering {
             {
                 // Update existing centroid (online mean update)
                 let centroid = &mut centroids[idx];
-                centroid.vector =
-                    (&centroid.vector * centroid.count as f32 + &embed_array)
-                        / (centroid.count as f32 + 1.0);
+                centroid.vector = (&centroid.vector * centroid.count as f32 + &embed_array)
+                    / (centroid.count as f32 + 1.0);
                 centroid.count += 1;
                 return Ok((centroid.id, false));
             }

@@ -204,7 +204,17 @@ impl Runtime {
     /// Emit an event to all agents
     pub async fn emit_event(&self, event_type: String, data: String) -> Result<()> {
         // 1. Broadcast to local agents via channel.
-        self.event_tx.send((event_type.clone(), data.clone()))?;
+        // If no runtime task is currently listening (e.g. after `stop()` or during shutdown),
+        // the broadcast channel may be in a *closed* state.  Treat this as a **non-fatal**
+        // condition – upstream callers emit events primarily for agent consumption and can
+        // safely ignore the absence of listeners.
+
+        if let Err(tokio::sync::broadcast::error::SendError(_)) =
+            self.event_tx.send((event_type.clone(), data.clone()))
+        {
+            // Channel closed – swallow the error to preserve best-effort semantics.
+            // Downstream persistence (Vault) continues unimpeded.
+        }
 
         // 2. Publish on the intra-process bus (legacy behaviour).
         let bus = self.event_bus.lock().await;

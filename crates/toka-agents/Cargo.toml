@@ -16,7 +16,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 semver = { version = "1", features = ["serde"] }
 bitflags = { version = "2", features = ["serde"] }
 toka-bus = { path = "../toka-bus" }
-toka-vault = { path = "../toka-vault", optional = true }
+toka-events = { path = "../toka-events", optional = true }
 toka-toolkit-core = { path = "../toka-toolkit-core", optional = true }
 toka-memory = { path = "../toka-memory" }
 
@@ -24,7 +24,7 @@ toka-memory = { path = "../toka-memory" }
 default = ["core"]
 core = []
 toolkit = ["toka-toolkit-core"]
-vault = ["toka-vault"]
+vault = ["toka-events"]
 
 [dev-dependencies]
 tempfile = "3" 

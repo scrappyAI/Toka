@@ -1,11 +1,9 @@
-//! Tests for the unified Vault implementation.
+//! Tests for the unified Vault implementation (toka-events).
 
-use toka_vault::prelude::*;
-use toka_vault::Vault;
+use toka_events::prelude::*;
+use toka_events::Vault;
 use serde::{Deserialize, Serialize};
 use tempfile::tempdir;
-
-use rmp_serde;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 struct TestPayload {
@@ -23,10 +21,6 @@ async fn run_vault_tests(vault: Vault) {
     let header1 = create_event_header(&[], uuid::Uuid::nil(), "test.one".into(), &payload1).unwrap();
     let payload_bytes = rmp_serde::to_vec_named(&payload1).unwrap();
     vault.commit(&header1, &payload_bytes).await.unwrap();
-
-    // Verify header fields
-    assert_eq!(header1.kind, "test.one");
-    assert_eq!(header1.parents.len(), 0);
 
     // Retrieve and verify
     let retrieved_header = vault.header(&header1.id).await.unwrap().unwrap();

@@ -1,9 +1,7 @@
-//! In-memory, non-persistent event bus implementation.
+//! In-memory, non-persistent event store implementation.
 
 use crate::api::{EventSink, QueryApi};
-use crate::events::{
-    CausalDigest, EventHeader, EventId, EventPayload,
-};
+use crate::events::{CausalDigest, EventHeader, EventId, EventPayload};
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -13,11 +11,10 @@ use anyhow::Result;
 /// Default buffer size for the broadcast channel.
 const DEFAULT_BUFFER: usize = 1024;
 
-/// An in-memory, non-persistent event bus.
+/// An in-memory, non-persistent event store.
 ///
 /// This implementation is useful for testing, local development, or any scenario
-/// where event persistence is not required. It provides the same `EventBus`
-/// interface but stores all data in memory, which is lost when the process exits.
+/// where event persistence is not required.
 #[derive(Debug, Clone)]
 pub struct MemoryVault {
     headers: Arc<RwLock<HashMap<EventId, EventHeader>>>,

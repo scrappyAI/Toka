@@ -1,4 +1,4 @@
-//! # Toka Vault – Canonical Event Store
+//! # Toka Events – Canonical Event Store (renamed from `toka-vault`)
 //!
 //! This crate provides the canonical, secure, and persistent event store for the
 //! Toka platform. It is the single source of truth for "what happened" across
@@ -16,8 +16,8 @@
 //! ## Usage
 //!
 //! ```rust,ignore
-//! use toka_vault::Vault;
-//! use toka_vault::prelude::*;
+//! use toka_events::Vault;
+//! use toka_events::prelude::*;
 //! use serde::{Serialize, Deserialize};
 //!
 //! #[derive(Serialize, Deserialize)]
@@ -28,14 +28,14 @@
 //! impl EventPayload for MyEvent {}
 //!
 //! # async fn run() -> anyhow::Result<()> {
-//! // Open a persistent vault
-//! let vault = Vault::open_persistent("./my-vault-data")?;
+//! // Open a persistent store
+//! let vault = Vault::open_persistent("./my-events-data")?;
 //!
 //! // Or use an in-memory vault
 //! let memory_vault = Vault::new_memory();
 //!
 //! // Commit an event
-//! let my_payload = MyEvent { id: 1, message: "Hello, Vault!".to_string() };
+//! let my_payload = MyEvent { id: 1, message: "Hello, Events!".to_string() };
 //! let header = vault.commit(&my_payload, &[], "my.event.kind", &[]).await?;
 //!
 //! println!("Committed event with ID: {}", header.id);
@@ -106,7 +106,7 @@ pub enum Vault {
 }
 
 impl Vault {
-    /// Opens a new or existing persistent vault at the specified file path.
+    /// Opens a new or existing persistent store at the specified file path.
     ///
     /// This will create the necessary database files if they don't exist.
     ///
@@ -175,4 +175,4 @@ impl QueryApi for Vault {
             Self::Memory(v) => v.payload(digest).await,
         }
     }
-}
+} 

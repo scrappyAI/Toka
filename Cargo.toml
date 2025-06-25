@@ -17,8 +17,8 @@ members = [
     "crates/toka-toolkit-core",
     "crates/toka-toolkit",
 
-    # The Canonical Event Store
-    "crates/toka-vault",
+    # Events crate replacing `toka-vault`
+    "crates/toka-events",
 
     # Specialized Tooling
     "crates/smart-embedder",

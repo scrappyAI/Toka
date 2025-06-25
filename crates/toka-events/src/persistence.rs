@@ -1,9 +1,7 @@
-//! The persistent vault implementation, backed by sled.
+//! The persistent event-store implementation, backed by sled.
 
 use crate::api::{EventSink, QueryApi};
-use crate::events::{
-    CausalDigest, EventHeader, EventId, EventPayload,
-};
+use crate::events::{CausalDigest, EventHeader, EventId, EventPayload};
 use crate::strategy::{IntentStrategy, NilIntentStrategy};
 use anyhow::Result;
 use async_trait::async_trait;
@@ -13,7 +11,7 @@ use tokio::sync::broadcast;
 /// Default broadcast channel size for live event streaming.
 const DEFAULT_BROADCAST_SIZE: usize = 256;
 
-/// A persistent event vault with `sled` storage and optional intent clustering.
+/// A persistent event store with `sled` storage and optional intent clustering.
 #[derive(Debug)]
 pub struct PersistentVault<S: IntentStrategy = NilIntentStrategy> {
     db_payloads: Tree,

@@ -1,12 +1,7 @@
-//! Vault public traits – persistence-only API
 //!
-//! Slice 2 of the SIMPLECT refactor removes the event *bus* abstraction from
-//! the vault crate.  Instead the vault now focuses solely on **persistence**
-//! concerns.  External producers (typically the runtime) generate fully
-//! populated `EventHeader`s and call into an `EventSink` for durable storage.
-//! Consumers query historical data via the lightweight `QueryApi`.
-
-#![allow(async_fn_in_trait)] // until `async` in traits is stabilised
+//! Vault public traits – persistence-only API (crate-local rename maintained).
+//!
+#![allow(async_fn_in_trait)]
 
 use crate::events::{CausalDigest, EventHeader, EventId, EventPayload};
 use anyhow::Result;
