@@ -54,6 +54,8 @@ enum Commands {
         #[command(subcommand)]
         sub: AuthCmd,
     },
+    /// Launch an interactive playground (REPL) wired to a temporary runtime
+    Playground,
 }
 
 #[derive(Subcommand)]
@@ -118,6 +120,7 @@ async fn main() -> Result<()> {
         Commands::Tool { sub } => handle_tool(sub).await?,
         Commands::Vault { sub } => handle_vault(sub).await?,
         Commands::Auth { sub } => handle_auth(sub).await?,
+        Commands::Playground => run_playground().await?,
     }
 
     Ok(())
@@ -174,5 +177,162 @@ async fn handle_auth(cmd: AuthCmd) -> Result<()> {
             println!("✅ Secret rotated successfully");
         }
     }
+    Ok(())
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Interactive playground implementation
+// ─────────────────────────────────────────────────────────────────────────────
+
+use std::sync::Arc;
+use tokio::io::{self, AsyncBufReadExt};
+use tracing::Level;
+
+use async_trait::async_trait;
+
+use toka_runtime::runtime::{Runtime, RuntimeConfig};
+use toka_runtime::tools::{Tool, ToolParams, ToolResult, ToolMetadata};
+
+use toka_agents::Agent;
+
+/// Simple system tool that echoes the provided "message" argument verbatim.
+struct EchoTool;
+
+#[async_trait]
+impl Tool for EchoTool {
+    fn name(&self) -> &str {
+        "echo"
+    }
+
+    fn description(&self) -> &str {
+        "Echoes the provided 'message' argument. Useful for smoke-testing tool plumbing."
+    }
+
+    fn version(&self) -> &str {
+        "0.1.0"
+    }
+
+    async fn execute(&self, params: &ToolParams) -> anyhow::Result<ToolResult> {
+        let msg = params
+            .args
+            .get("message")
+            .cloned()
+            .unwrap_or_default();
+
+        Ok(ToolResult {
+            success: true,
+            output: msg.clone(),
+            metadata: ToolMetadata {
+                execution_time_ms: 0,
+                tool_version: self.version().to_string(),
+                timestamp: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+            },
+        })
+    }
+
+    fn validate_params(&self, _params: &ToolParams) -> anyhow::Result<()> {
+        // No strict validation – echo happily accepts empty input.
+        Ok(())
+    }
+}
+
+/// Minimal agent that prints any `user_input` events to STDOUT.
+struct PrinterAgent {
+    id: String,
+}
+
+impl PrinterAgent {
+    fn new(id: &str) -> Self {
+        Self { id: id.to_string() }
+    }
+}
+
+#[async_trait]
+impl Agent for PrinterAgent {
+    fn name(&self) -> &str {
+        &self.id
+    }
+
+    async fn process_event(&mut self, event_type: &str, event_data: &str) -> anyhow::Result<()> {
+        if event_type == "user_input" {
+            println!("📨 Agent '{}' received: {}", self.id, event_data);
+        }
+        Ok(())
+    }
+
+    async fn save_state(
+        &self,
+        _adapter: &dyn toka_agents::MemoryAdapter,
+    ) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    async fn load_state(
+        &mut self,
+        _adapter: &dyn toka_agents::MemoryAdapter,
+    ) -> anyhow::Result<()> {
+        Ok(())
+    }
+}
+
+/// Starts an interactive REPL backed by a fresh in-memory runtime.
+async fn run_playground() -> anyhow::Result<()> {
+    // Pretty‐print tracing events to STDOUT so the user can observe behaviour.
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(Level::INFO)
+        .with_target(false)
+        .try_init();
+
+    // 1️⃣  Boot the runtime with default config.
+    let runtime = Runtime::new(RuntimeConfig::default()).await?;
+    runtime.start().await?;
+
+    // 2️⃣  Register a couple of basic system tools.
+    runtime
+        .tool_registry()
+        .register_tool(Arc::new(EchoTool))
+        .await?;
+
+    // 3️⃣  Create & register a trivial agent that prints user input.
+    runtime
+        .register_agent(Box::new(PrinterAgent::new("printer")))
+        .await?;
+
+    println!("🟢 Playground ready. Type messages, or 'exit' / 'quit' to leave.");
+
+    let mut lines = io::BufReader::new(io::stdin()).lines();
+
+    while let Some(line) = lines.next_line().await? {
+        let line = line.trim();
+        if line.eq_ignore_ascii_case("exit") || line.eq_ignore_ascii_case("quit") {
+            break;
+        }
+
+        // Emit as a runtime event so agents can react.
+        runtime
+            .emit_event("user_input".to_string(), line.to_string())
+            .await?;
+
+        // Example: also demonstrate the echo tool by invoking it directly.
+        let params = ToolParams {
+            name: "echo".to_string(),
+            args: std::iter::once(("message".to_string(), line.to_string()))
+                .collect(),
+        };
+
+        let result = runtime
+            .tool_registry()
+            .execute_tool("echo", &params)
+            .await?;
+
+        println!("🛠️  Tool result: {}", result.output);
+    }
+
+    runtime.stop().await?;
+    println!("👋 Playground terminated.");
+
     Ok(())
 }
