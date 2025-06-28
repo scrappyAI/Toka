@@ -56,8 +56,10 @@
 // Legacy bus trait is deprecated – retained for transitional compilation only.
 #[deprecated(note = "EventBus has moved to the `toka-bus` crate – use that instead.")]
 pub mod bus;
-/// Persistence-only public traits (Slice 2).
-pub mod api;
+/// Re-export the canonical API contract from the lightweight `toka-events-api` crate.
+pub use toka_events_api as api;
+
+/// Local façade re-exporting event primitives + demo [`DomainEvent`] enum.
 pub mod events;
 pub mod memory;
 pub mod persistence;

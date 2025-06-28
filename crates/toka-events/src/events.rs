@@ -1,51 +1,21 @@
-//! Core event primitives and types for the Toka platform.
+//! Event façade for `toka-events` default crate.
 //!
-//! This module provides the foundational types and traits for event handling
-//! across the Toka ecosystem, including causal hashing and event headers.
+//! This module simply re-exports the canonical data types from the new
+//! `toka-events-api` crate while keeping the local `DomainEvent` helper used by
+//! some high-level tests.  All production code should rely on the contracts
+//! defined in `toka-events-api`.
 
-use chrono::{DateTime, Utc};
+// Re-export the primitives so existing downstreams using `crate::events::*`
+// continue to compile unchanged.
+pub use toka_events_api::{causal_hash, create_event_header, CausalDigest, EventHeader, EventId, EventPayload, IntentId};
+
 use serde::{Deserialize, Serialize};
-use smallvec::SmallVec;
 use uuid::Uuid;
 
-/// Unique identifier for an event in the store.
-pub type EventId = Uuid;
-
-/// Identifier for an intent cluster.
-pub type IntentId = Uuid;
-
-/// 32-byte Blake3 digest used for causal hashing.
-pub type CausalDigest = [u8; 32];
-
-/// Trait implemented by all event payload structures that can be committed
-/// to the store.
-pub trait EventPayload: Serialize + for<'de> Deserialize<'de> + Send + Sync {}
-
-// Blanket implementation for any type that meets the bounds.
-impl<T> EventPayload for T where T: Serialize + for<'de> Deserialize<'de> + Send + Sync {}
-
-/// Minimal header stored inline with every event.
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct EventHeader {
-    /// Event identifier (UUID v4).
-    pub id: EventId,
-    /// Parent event IDs this event causally depends on (can be empty).
-    pub parents: SmallVec<[EventId; 4]>,
-    /// Wall-clock timestamp when the event was committed.
-    pub timestamp: DateTime<Utc>,
-    /// Blake3 digest of the event payload and its causal parent digests.
-    pub digest: CausalDigest,
-    /// Semantic intent bucket this event belongs to.
-    /// For the *core* crate we don't try to cluster; callers can set it to
-    /// whatever value they need (e.g., `Uuid::nil()` when unknown).
-    pub intent: IntentId,
-    /// Application-defined kind, e.g. `ledger.mint` or `chat.msg`.
-    pub kind: String,
-}
-
-/// A standard set of domain events that can occur within the Toka platform.
-/// This enum provides a structured way to represent common events, but systems
-/// are free to use their own custom event payload types.
+/// A standard set of high-level domain events that may occur across the Toka
+/// platform.  This enum is **non-exhaustive** and intended mainly for demos and
+/// tests.  Production systems are free to define their own specific payload
+/// types implementing [`EventPayload`].
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[non_exhaustive]
 pub enum DomainEvent {
@@ -95,61 +65,6 @@ pub enum DomainEvent {
         /// Event payload
         payload: serde_json::Value,
     },
-}
-
-/// Compute Blake3 causal hash for an event.
-///
-/// This function takes an event payload and its causal parent digests,
-/// and produces a deterministic hash that captures the causal relationship.
-/// The hash is computed as `Blake3(payload || sorted_parent_digest_1 || ...)`.
-///
-/// # Arguments
-/// * `payload_bytes` - Serialized event payload
-/// * `parent_digests` - Digests of causally dependent parent events
-///
-/// # Returns
-/// A 32-byte Blake3 digest
-pub fn causal_hash(payload_bytes: &[u8], parent_digests: &[CausalDigest]) -> CausalDigest {
-    let mut hasher = blake3::Hasher::new();
-
-    // Hash the payload
-    hasher.update(payload_bytes);
-
-    // Hash parent digests in sorted order for determinism
-    let mut sorted_parents = parent_digests.to_vec();
-    sorted_parents.sort_unstable();
-
-    for parent_digest in sorted_parents {
-        hasher.update(&parent_digest);
-    }
-
-    hasher.finalize().into()
-}
-
-/// Utility function to create an EventHeader.
-///
-/// This simplifies the process of constructing a header by automatically
-/// handling timestamping and causal hashing.
-pub fn create_event_header<P: EventPayload>(
-    parents: &[EventHeader],
-    intent: IntentId,
-    kind: String,
-    payload: &P,
-) -> Result<EventHeader, rmp_serde::encode::Error> {
-    let parent_ids: SmallVec<[EventId; 4]> = parents.iter().map(|h| h.id).collect();
-    let parent_digests: Vec<CausalDigest> = parents.iter().map(|h| h.digest).collect();
-
-    let payload_bytes = rmp_serde::to_vec_named(payload)?;
-    let digest = causal_hash(&payload_bytes, &parent_digests);
-
-    Ok(EventHeader {
-        id: Uuid::new_v4(),
-        parents: parent_ids,
-        timestamp: Utc::now(),
-        digest,
-        intent,
-        kind,
-    })
 }
 
 #[cfg(test)]
