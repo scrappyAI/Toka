@@ -1,77 +1,47 @@
-# Toka
+# toka
 
-> _A modular runtime and toolkit for building secure, event-driven AI systems_
+## `toka` – Meta Crate
 
-Toka is an experimental Rust workspace that provides the foundation for building, running, and operating **agents** – long-lived programs that observe the world, reason, and take action with tools.
+Batteries-included entry-point that re-exports the **most common types** from
+the Toka ecosystem (agents, event store, auth, toolkit …).  Think of it as
+the *standard library* for quickly prototyping on the platform.
 
-The project is in early development. Interfaces may change at any time.
+If you want fine-grained control over dependencies simply depend on the
+individual crates (`toka-agents`, `toka-events`, …) and disable default
+features.
 
----
+### Feature Flags
+| Flag       | Re-exported Sub-system | Extra crates pulled in |
+|------------|------------------------|------------------------|
+| **default** | `agents`, `auth`, `events`, `toolkit` | see below |
+| `agents`   | `toka-agents`        | `tokio`, `anyhow`, … |
+| `auth`     | `toka-security-auth` | `jsonwebtoken` |
+| `events`   | `toka-events`        | `sled`, `blake3`, … |
+| `toolkit`  | `toka-toolkit-core` + `toka-tools` | `wasmtime` (optional) |
 
-## Why Toka?
-
-1. **Event Sourcing by Default** – Everything that happens is captured in an **append-only event store** (`toka-events`).
-2. **Security First** – Capability-based auth, encrypted storage, and sand-boxed execution are built-in, not bolted-on.
-3. **Composable Building Blocks** – Each crate does one job well and can be used à la carte.
-4. **Lean Dependencies** – Features that pull in heavy ML or database stacks are **opt-in**.
-
----
-
-## Workspace at a Glance
-
-| Layer | Crate | Purpose |
-|-------|-------|---------|
-| _Primitives_ | `toka-primitives` | `no_std` types such as IDs & currency. |
-| _Domain_ | `toka-core` | Business rules & pricing logic built on primitives. |
-| _Event Store_ | `toka-events` | **Canonical source of truth** – supports in-memory & sled back-ends. |
-| _Agents_ | `toka-agents` | Re-usable agent behaviours & lifecycles. |
-| _Runtime_ | `toka-runtime` | Async host that wires agents, vault, and toolkit together. |
-| _Toolkit_ | `toka-toolkit-core`, `toka-tools` | Trait + reference tool implementations. |
-| _Security_ | `toka-security-auth` | Capability tokens & auth helpers. |
-| _CLI_ | `toka-cli` | Dev-friendly command-line interface. |
-| _Meta_ | `toka` | Convenience crate that re-exports a sensible default prelude. |
-
----
-
-## Getting Started
-
-Add the **meta-crate** for an all-in-one experience:
-
+Example with _only_ the auth helpers enabled:
 ```toml
 [dependencies]
-toka = "0.1"
+toka = { version = "0.1", default-features = false, features = ["auth"] }
 ```
 
-Need only the event store? Keep it lean:
+### Quick Example
+```rust
+use toka::prelude::*;
 
-```toml
-[dependencies]
-toka-events = { version = "0.1", features = ["persist-sled"] }
+// Create a signed capability token (auth feature)
+let token = CapabilityToken::new(
+    "alice",          // subject
+    "vault1",         // vault id
+    vec!["read".into()],
+    "my-32-byte-secret",
+    3600,              // 1 h TTL
+).unwrap();
+assert!(token.is_valid("my-32-byte-secret"));
 ```
 
 ---
+This crate is `#![forbid(unsafe_code)]` and merely re-exports – it contains
+*no* runtime logic.
 
-## Roadmap Highlights
-
-- v0.2 – Stabilise the vault API & runtime lifecycle.
-- v0.3 – Distributed vault back-ends (e.g. gRPC, Redis).
-- v0.4 – Intent clustering & semantic navigation _(currently on hold – design in progress)._ 
-
----
-
-## Contributing
-
-Contributions are welcome! Please read `CONTRIBUTING.md` before opening PRs.
-
----
-
-## License
-
-Dual-licensed under either:
-
-• **Apache-2.0** OR
-• **MIT**
-
----
-
-© 2024 Toka Contributors 
+License: MIT OR Apache-2.0
