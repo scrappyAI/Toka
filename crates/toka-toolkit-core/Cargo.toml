@@ -15,7 +15,18 @@ tracing = "0.1"
 url = "2"
 jsonschema = "0.17"
 
+# Optional dependencies for advanced schema validation features
+once_cell = { version = "1.19", optional = true }
+dashmap = { version = "5.5", optional = true }
+
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 anyhow = "1"
-async-trait = "0.1" 
+async-trait = "0.1"
+
+[features]
+# Enables in-memory cache for compiled JSON Schemas to reduce validation cost.
+schema_cache = ["once_cell", "dashmap"]
+
+# Allows remote $ref resolution inside JSON Schemas (use with caution).
+allow_remote_refs = [] 
