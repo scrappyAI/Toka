@@ -58,4 +58,40 @@ Run conformance tests locally:
 
 ```bash
 cargo test -p my_crate --features "mcp_conformance"
-``` 
+```
+
+## Example Schemas
+
+Below is a minimal set of **draft-07** JSON Schemas you can copy-paste when
+authoring a simple *echo* style tool.  They pass the new deep-validation logic
+introduced in `toka-toolkit-core` v0.1.1 and illustrate common best practices:
+
+```jsonc
+"input_schema": {
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["text"],
+  "properties": {
+    "text": { "type": "string", "minLength": 1 }
+  }
+},
+"output_schema": {
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["echo"],
+  "properties": {
+    "echo": { "type": "string" }
+  }
+}
+```
+
+### Guidelines
+
+* **Keep it small** – the tooling enforces a hard 64 KiB limit per schema.
+* **Avoid remote `$ref`** – they're disabled by default for security.  Enable
+  with the `allow_remote_refs` crate feature only if absolutely necessary.
+* **Draft compatibility** – target draft-07 today; *draft-2020-12* support will
+  land once the upstream crate is stable.
+
+See the *Tool Development Guidelines* for a broader discussion on capability
+design and side-effect classification. 

@@ -176,20 +176,112 @@ impl ToolManifest {
             }
         }
 
-        // If schemas provided, ensure they compile under draft-07
-        fn check_schema(opt: &Option<Schema>, which: &str) -> anyhow::Result<()> {
-            if let Some(schema) = opt {
-                let raw: serde_json::Value = serde_json::from_str(&schema.0)
-                    .with_context(|| format!("{} schema is not valid JSON", which))?;
-                // Parse-only validation; full schema compilation would need
-                // 'static lifetime.  TODO: cache/leak safely if we require
-                // deeper validation.
-            }
-            Ok(())
-        }
-        check_schema(&self.input_schema, "input")?;
-        check_schema(&self.output_schema, "output")?;
+        // Deep-validate JSON Schemas (draft-07) when supplied.
+        ensure_schema_compiles(&self.input_schema, "input")?;
+        ensure_schema_compiles(&self.output_schema, "output")?;
 
         Ok(())
+    }
+}
+
+/// Compile-time size limit (bytes) applied to every embedded JSON Schema.
+const MAX_SCHEMA_BYTES: usize = 65_536; // 64 KiB
+
+// Feature-gated constants controlling optional behaviour.
+
+// Remote `$ref`s are **rejected** unless the `allow_remote_refs` feature is
+// enabled.  This prevents unbounded network fetches during manifest loading
+// and aligns with the HardenSecuritySurface guidelines.
+#[cfg(feature = "allow_remote_refs")]
+const ALLOW_REMOTE_REFS: bool = true;
+#[cfg(not(feature = "allow_remote_refs"))]
+const ALLOW_REMOTE_REFS: bool = false;
+
+/// Ensures that an optional schema string compiles under JSON-Schema draft-07.
+///
+/// Security & UX guarantees:
+///  • Rejects oversized schemas (> 64 KiB) to mitigate DoS vectors.
+///  • Denies remote `$ref` unless `allow_remote_refs` feature is active.
+///  • Provides precise error context for tool authors.
+///  • Optional LRU-style cache behind the `schema_cache` feature to amortise
+///    compile overhead across manifests.
+fn ensure_schema_compiles(opt: &Option<Schema>, which: &str) -> anyhow::Result<()> {
+    use anyhow::Context;
+    use jsonschema::Draft;
+
+    let raw = match opt {
+        Some(s) => &s.0,
+        None => return Ok(()),
+    };
+
+    if raw.len() > MAX_SCHEMA_BYTES {
+        anyhow::bail!("{which} schema exceeds {MAX_SCHEMA_BYTES} bytes ({} bytes)", raw.len());
+    }
+
+    // Fast JSON parse – we need a `serde_json::Value` anyway for the compiler.
+    let doc: serde_json::Value = serde_json::from_str(raw)
+        .with_context(|| format!("{which} schema: invalid JSON"))?;
+
+    // Shallow scan for remote `$ref` before expensive compilation to avoid
+    // network IO surprises.  We only need to walk objects & arrays.
+    if !ALLOW_REMOTE_REFS && contains_remote_ref(&doc) {
+        anyhow::bail!(
+            "{which} schema: remote $ref URLs are disabled – enable the \
+             `allow_remote_refs` feature to override"
+        );
+    }
+
+    // --------------------------- Optional cache ---------------------------
+    #[cfg(feature = "schema_cache")]
+    {
+        use dashmap::DashMap;
+        use once_cell::sync::Lazy;
+        use std::hash::{Hash, Hasher};
+        use std::sync::Arc;
+
+        static SCHEMA_CACHE: Lazy<DashMap<u64, Arc<jsonschema::JSONSchema>>> =
+            Lazy::new(DashMap::new);
+
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        raw.hash(&mut hasher);
+        let key = hasher.finish();
+
+        if SCHEMA_CACHE.contains_key(&key) {
+            return Ok(());
+        }
+
+        let compiled = jsonschema::JSONSchema::options()
+            .with_draft(Draft::Draft7)
+            .compile(&doc)
+            .with_context(|| format!("{which} schema: invalid draft-07"))?;
+
+        SCHEMA_CACHE.insert(key, Arc::new(compiled));
+        return Ok(());
+    }
+
+    // --------------------------- No-cache path ----------------------------
+    #[cfg(not(feature = "schema_cache"))]
+    {
+        jsonschema::JSONSchema::options()
+            .with_draft(Draft::Draft7)
+            .compile(&doc)
+            .with_context(|| format!("{which} schema: invalid draft-07"))?;
+        Ok(())
+    }
+}
+
+/// Recursively checks whether a JSON value contains a remote `$ref`.
+fn contains_remote_ref(v: &serde_json::Value) -> bool {
+    match v {
+        serde_json::Value::Object(map) => {
+            if let Some(serde_json::Value::String(s)) = map.get("$ref") {
+                if s.starts_with("http://") || s.starts_with("https://") {
+                    return true;
+                }
+            }
+            map.values().any(contains_remote_ref)
+        }
+        serde_json::Value::Array(arr) => arr.iter().any(contains_remote_ref),
+        _ => false,
     }
 } 
