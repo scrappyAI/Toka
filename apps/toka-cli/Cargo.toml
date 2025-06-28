@@ -19,4 +19,7 @@ async-trait = { workspace = true }
 toka-agents = { path = "../../crates/toka-agents" }
 
 # Runtime with auth & vault features for CLI operations
-toka-runtime = { path = "../../crates/toka-runtime", version = "0.1.0", features = ["vault", "toolkit", "auth"] } 
+toka-runtime = { path = "../../crates/toka-runtime", version = "0.1.0", features = ["vault", "toolkit", "auth"] }
+
+serde_json = "1"
+toka-toolkit-core = { path = "../../crates/toka-toolkit-core" } 

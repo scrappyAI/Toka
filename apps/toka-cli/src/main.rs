@@ -56,6 +56,11 @@ enum Commands {
     },
     /// Launch an interactive playground (REPL) wired to a temporary runtime
     Playground,
+    /// Manifest utilities
+    Manifest {
+        #[command(subcommand)]
+        sub: ManifestCmd,
+    },
 }
 
 #[derive(Subcommand)]
@@ -111,6 +116,15 @@ enum AuthCmd {
     RotateSecret,
 }
 
+#[derive(Subcommand)]
+enum ManifestCmd {
+    /// Validate a Tool manifest JSON/YAML file
+    Lint {
+        /// Path to manifest file (JSON)
+        path: String,
+    },
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -121,6 +135,7 @@ async fn main() -> Result<()> {
         Commands::Vault { sub } => handle_vault(sub).await?,
         Commands::Auth { sub } => handle_auth(sub).await?,
         Commands::Playground => run_playground().await?,
+        Commands::Manifest { sub } => handle_manifest(sub).await?,
     }
 
     Ok(())
@@ -334,5 +349,20 @@ async fn run_playground() -> anyhow::Result<()> {
     runtime.stop().await?;
     println!("👋 Playground terminated.");
 
+    Ok(())
+}
+
+async fn handle_manifest(cmd: ManifestCmd) -> Result<()> {
+    match cmd {
+        ManifestCmd::Lint { path } => {
+            use std::fs;
+            use toka_toolkit_core::manifest::ToolManifest;
+
+            let data = fs::read_to_string(&path)?;
+            let manifest: ToolManifest = serde_json::from_str(&data)?;
+            manifest.validate()?;
+            println!("✅ Manifest valid: {} (capability: {})", manifest.name, manifest.capability);
+        }
+    }
     Ok(())
 }

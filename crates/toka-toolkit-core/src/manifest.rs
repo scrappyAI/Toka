@@ -117,4 +117,64 @@ pub struct ToolManifest {
 
 fn schema_version() -> String {
     SCHEMA_VERSION.to_string()
+}
+
+impl ToolManifest {
+    /// Perform static validation of the manifest.
+    ///
+    /// This **does not** validate JSON Schema payloads – only structural
+    /// rules enforced by Toka:
+    ///  * `id`, `name`, `version`, `capability` non-empty
+    ///  * at least one transport
+    ///  * when `Transport::JsonRpcHttp` endpoint must be valid URL
+    ///  * protocols list may be empty but mapping consistency is checked when present.
+    pub fn validate(&self) -> anyhow::Result<()> {
+        use anyhow::{anyhow, Context};
+        if self.id.trim().is_empty() {
+            return Err(anyhow!("manifest.id must not be empty"));
+        }
+        if self.name.trim().is_empty() {
+            return Err(anyhow!("manifest.name must not be empty"));
+        }
+        if self.version.trim().is_empty() {
+            return Err(anyhow!("manifest.version must not be empty"));
+        }
+        if self.capability.trim().is_empty() {
+            return Err(anyhow!("manifest.capability must not be empty"));
+        }
+        if self.transports.is_empty() {
+            return Err(anyhow!("at least one transport must be specified"));
+        }
+
+        for t in &self.transports {
+            if let Transport::JsonRpcHttp { endpoint } = t {
+                let url = url::Url::parse(endpoint)
+                    .with_context(|| format!("invalid JsonRpcHttp endpoint: {}", endpoint))?;
+                if url.scheme() != "http" && url.scheme() != "https" {
+                    return Err(anyhow!("JsonRpcHttp endpoint must be http(s)"));
+                }
+            }
+        }
+
+        // Ensure at most one mapping per protocol kind
+        let mut seen_mcp = false;
+        let mut seen_a2a = false;
+        for p in &self.protocols {
+            match p {
+                ProtocolMapping::Mcp { .. } => {
+                    if seen_mcp {
+                        return Err(anyhow!("duplicate MCP mapping"));
+                    }
+                    seen_mcp = true;
+                }
+                ProtocolMapping::A2a { .. } => {
+                    if seen_a2a {
+                        return Err(anyhow!("duplicate A2A mapping"));
+                    }
+                    seen_a2a = true;
+                }
+            }
+        }
+        Ok(())
+    }
 } 
