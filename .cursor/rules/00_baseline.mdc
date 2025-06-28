@@ -1,0 +1,55 @@
+<ProjectRule name="Baseline">
+
+<Description>
+A portable library of foundational guidelines distilled from the project‐level rule corpus.  These rules are universally applicable across domains and repositories.  Down-stream rule files may explicitly <Extends> these rules – or select individual sub-rules – to compose customised policies without re-stating boilerplate.
+</Description>
+
+<Includes>
+  CoreGuidingPrinciples
+  CodeStyle
+  Documentation
+  Testing
+  ErrorHandling
+  Workflow
+  Versioning
+  Dependencies
+  LLMIntegration
+</Includes>
+
+<Objective>
+- Provide a single, canonical source of truth for the most common engineering conventions.
+- Encourage reuse and incremental adoption by downstream crates, services, and workspaces.
+- Reduce duplication and drift between rule files by enabling composition through the <Extends>/<Includes> mechanism.
+</Objective>
+
+<Instructions>
+
+1. <Adopt>
+   - Every new crate or repository must either:
+     - **Adopt Baseline** unmodified **OR**
+     - **Extend Baseline** and override only the sections that differ.
+   - Example minimal rule file that opts-in verbatim:
+     ```xml
+     <ProjectRule name="MyProjectRules">
+       <Extends>Baseline</Extends>
+     </ProjectRule>
+     ```
+
+2. <Override>
+   - To customise, add your own sections after `<Extends>Baseline</Extends>`.
+   - Keep overrides minimal and well-justified.  Prefer additive changes over wholesale replacement.
+
+3. <Evolve>
+   - Use semantic versioning on the `Baseline` rule itself (`vMAJOR.MINOR.PATCH` in the header when significant changes occur).
+   - Dependent rule files should pin to a MAJOR version when strict stability is required, or track `main` for bleeding edge.
+
+4. <Compose>
+   - Rules may declare `<Extends>Baseline, HardenSecuritySurface</Extends>` to layer security hardening atop the baseline.
+   - Order matters: earlier items in `<Extends>` are applied first; later rules may override specific keys.
+
+5. <Audit>
+   - Run automated lints to ensure that every rule referencing Baseline either inherits it or intentionally opts out (`alwaysApply: false` and no `<Extends>` clause).
+
+</Instructions>
+
+</ProjectRule>
