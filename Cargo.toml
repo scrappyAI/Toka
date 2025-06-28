@@ -1,21 +1,17 @@
 [workspace]
 resolver = "2"
 members = [
-    # Core Application Logic
-    "crates/toka-core",
-    "crates/toka-primitives",
-
     # Security
     "crates/toka-security-auth",
 
     # Agents & Runtime
     "crates/toka-agents",
     "crates/toka-runtime",
-    "crates/toka-cli",
+    "apps/toka-cli",
 
     # Tools
-    "crates/toka-toolkit-core",
-    "crates/toka-toolkit",
+    "crates/toka-tools-api",
+    "crates/toka-tools",
 
     # Events crate replacing `toka-vault`
     "crates/toka-events",
@@ -36,6 +32,9 @@ members = [
 
     # New member
     "crates/toka-storage-api",
+
+    # Primitives API (ids, currency)
+    "crates/toka-primitives-api",
 ]
 
 [workspace.dependencies]

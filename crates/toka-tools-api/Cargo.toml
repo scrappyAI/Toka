@@ -1,9 +1,9 @@
 [package]
-name = "toka-toolkit-core"
+name = "toka-tools-api"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-description = "Minimal tool trait + registry abstractions for Toka."
+description = "Tool trait and registry abstractions for the Toka platform (API crate)."
 
 [dependencies]
 anyhow = "1"

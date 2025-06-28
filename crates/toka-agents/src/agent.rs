@@ -174,10 +174,10 @@ impl BaseAgent {
     /// appropriate `ToolEvent`s on success or error.
     pub async fn invoke_tool(
         &self,
-        registry: &toka_toolkit_core::ToolRegistry,
-        params: toka_toolkit_core::ToolParams,
-    ) -> anyhow::Result<toka_toolkit_core::ToolResult> {
-        use toka_toolkit_core::ToolResult;
+        registry: &toka_tools_api::ToolRegistry,
+        params: toka_tools_api::ToolParams,
+    ) -> anyhow::Result<toka_tools_api::ToolResult> {
+        use toka_tools_api::ToolResult;
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()

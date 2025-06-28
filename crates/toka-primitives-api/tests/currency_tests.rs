@@ -1,5 +1,5 @@
 use rust_decimal::Decimal;
-use toka_primitives::currency::MicroUSD;
+use toka_primitives_api::currency::MicroUSD;
 
 #[test]
 fn micro_usd_from_and_to_decimal_roundtrip() {

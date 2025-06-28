@@ -3,7 +3,7 @@
 
 use std::collections::HashSet;
 use std::str::FromStr;
-use toka_primitives::ids::*;
+use toka_primitives_api::ids::*;
 use uuid::Uuid;
 
 #[test]

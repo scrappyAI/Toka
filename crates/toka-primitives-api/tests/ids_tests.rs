@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use toka_primitives::ids::UserID;
+use toka_primitives_api::ids::UserID;
 
 #[test]
 fn user_id_string_roundtrip() {

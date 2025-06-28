@@ -1,8 +1,8 @@
 [package]
-name = "toka-primitives"
+name = "toka-primitives-api"
 version = "0.1.0"
 edition = "2021"
-description = "Fundamental primitives for the Toka platform: identifiers, currency values, and other core types that are independent of any vertical (creator, FinOps, etc.)."
+description = "Minimal, no_std-friendly primitives (ids, currency) reused across the Toka workspace."
 license = "MIT OR Apache-2.0"
 
 [dependencies]

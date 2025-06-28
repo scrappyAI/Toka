@@ -1,5 +1,5 @@
 [package]
-name = "toka-toolkit"
+name = "toka-tools"
 version = "0.1.0"
 edition = "2021"
 
@@ -21,7 +21,7 @@ base64 = "0.21"
 directories = "5.0"
 tracing = "0.1"
 typetag = "0.2"
-toka-toolkit-core = { path = "../toka-toolkit-core" }
+toka-tools-api = { path = "../toka-tools-api" }
 
 [dev-dependencies]
 # Async test runtime and utilities
