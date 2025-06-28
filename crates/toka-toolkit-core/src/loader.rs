@@ -30,7 +30,6 @@ use async_trait::async_trait;
 use std::fs;
 use std::path::Path;
 use std::sync::Arc;
-use tracing::info;
 
 impl ToolRegistry {
     /// Load, validate and register a tool described by `manifest_path`.
@@ -104,7 +103,10 @@ mod wasm {
         /// Blocking helper – compile & instantiate the module, invoke `execute`.
         fn run_module(&self, json_in: &str) -> Result<String> {
             // Compile module (could be cached per module_path in future).
-            let module = Module::from_file(&self.engine, &self.module_path)
+            let wasm_bytes = std::fs::read(&self.module_path)
+                .with_context(|| format!("Reading WASM module bytes from {}", self.module_path))?;
+            // Safety: bytes come from trusted file path under our control.
+            let module = unsafe { Module::deserialize(&self.engine, &wasm_bytes) } 
                 .with_context(|| format!("Compiling WASM module at {}", self.module_path))?;
             let mut store = Store::new(&self.engine, ());
             let linker = Linker::new(&self.engine);
@@ -137,9 +139,9 @@ mod wasm {
 
         /// Very naive guest allocator integration – looks for an exported `alloc`.
         fn alloc_in_guest(&self, store: &mut Store<()>, instance: &Instance, len: i32) -> Result<i32> {
-            let alloc = instance.get_typed_func::<i32, i32>(store, "alloc")
+            let alloc_func = instance.get_typed_func::<i32, i32>(&mut *store, "alloc")
                 .context("`alloc` export not found (needed to copy params)")?;
-            Ok(alloc.call(store, len)?)
+            Ok(alloc_func.call(store, len)?)
         }
     }
 
@@ -178,8 +180,7 @@ mod wasm {
         }
     }
 
-    // re-export for external use
-    pub(crate) use WasmTool;
+    // intentionally not re-exporting WasmTool to avoid duplicate symbols during docs build
 }
 
 #[cfg(feature = "wasm_loader")]
