@@ -31,6 +31,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 use tracing::info;
+use tokio::time::{timeout, Duration};
 
 impl ToolRegistry {
     /// Load, validate and register a tool described by `manifest_path`.
@@ -54,6 +55,8 @@ impl ToolRegistry {
         // transports.
         let supported_transport = manifest.transports.iter().find(|t| match t {
             Transport::Wasm { .. } => cfg!(feature = "wasm_loader"),
+            Transport::JsonRpcHttp { .. } => cfg!(feature = "http_client"),
+            Transport::JsonRpcStdio { .. } => cfg!(feature = "stdio_transport"),
             // Additional transports go here as they become available.
             _ => false,
         });
@@ -74,8 +77,27 @@ impl ToolRegistry {
                 }
             }
             Transport::InProcess => anyhow::bail!("InProcess transport cannot be loaded dynamically"),
-            Transport::JsonRpcHttp { .. } | Transport::JsonRpcStdio { .. } => {
-                anyhow::bail!("Transport {:?} not yet supported", transport);
+            Transport::JsonRpcHttp { endpoint } => {
+                #[cfg(feature = "http_client")]
+                {
+                    let tool = JsonRpcHttpTool::new(manifest.clone(), endpoint.clone())?;
+                    self.register_tool(Arc::new(tool)).await
+                }
+                #[cfg(not(feature = "http_client"))]
+                {
+                    anyhow::bail!("JsonRpcHttp transport requires the `http_client` feature");
+                }
+            }
+            Transport::JsonRpcStdio { exec } => {
+                #[cfg(feature = "stdio_transport")]
+                {
+                    let tool = JsonRpcStdioTool::new(manifest.clone(), exec.clone());
+                    self.register_tool(Arc::new(tool)).await
+                }
+                #[cfg(not(feature = "stdio_transport"))]
+                {
+                    anyhow::bail!("JsonRpcStdio transport requires the `stdio_transport` feature");
+                }
             }
         }
     }
@@ -239,7 +261,7 @@ mod wasm {
                 success: true,
                 output: json_out,
                 metadata: ToolMetadata {
-                    execution_time_ms: 0, // updated by caller
+                    execution_time_ms: None, // populated by registry
                     tool_version: self.manifest.version.clone(),
                     timestamp: std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)?
@@ -263,4 +285,200 @@ mod wasm {
 }
 
 #[cfg(feature = "wasm_loader")]
-use wasm::WasmTool; 
+use wasm::WasmTool;
+
+#[cfg(feature = "http_client")]
+mod http_tool {
+    use super::*;
+    use reqwest::Client;
+    use async_trait::async_trait;
+
+    const HTTP_TIMEOUT: Duration = Duration::from_secs(10);
+    const MAX_BODY_BYTES: usize = 1 * 1024 * 1024; // 1 MiB
+
+    pub struct JsonRpcHttpTool {
+        manifest: ToolManifest,
+        endpoint: String,
+        client: Client,
+        param_validator: Option<std::sync::Arc<jsonschema::JSONSchema>>,
+    }
+
+    impl JsonRpcHttpTool {
+        pub fn new(manifest: ToolManifest, endpoint: String) -> anyhow::Result<Self> {
+            // Basic URL sanity already checked in manifest::validate, but re-check here defensively.
+            let _ = url::Url::parse(&endpoint)?;
+            let client = Client::builder()
+                .timeout(HTTP_TIMEOUT)
+                .build()?;
+
+            // Compile param schema once.
+            let param_validator = if let Some(schema) = &manifest.input_schema {
+                let doc: serde_json::Value = serde_json::from_str(&schema.0)?;
+                Some(std::sync::Arc::new(jsonschema::JSONSchema::compile(&doc)?))
+            } else { None };
+
+            Ok(Self { manifest, endpoint, client, param_validator })
+        }
+    }
+
+    #[async_trait]
+    impl Tool for JsonRpcHttpTool {
+        fn name(&self) -> &str { &self.manifest.id }
+        fn description(&self) -> &str { &self.manifest.description }
+        fn version(&self) -> &str { &self.manifest.version }
+
+        async fn execute(&self, params: &ToolParams) -> anyhow::Result<ToolResult> {
+            // Validate params if schema present.
+            if let Some(v) = &self.param_validator {
+                let value = serde_json::to_value(&params.args)?;
+                v.validate(&value).map_err(|e| anyhow!("parameter validation failed: {e}"))?;
+            }
+
+            // Build JSON-RPC request.
+            let request = serde_json::json!({
+                "jsonrpc": "2.0",
+                "method": self.manifest.capability,
+                "id": 1,
+                "params": params.args,
+            });
+
+            // POST with timeout.
+            let fut = self.client.post(&self.endpoint).json(&request).send();
+            let resp = timeout(HTTP_TIMEOUT, fut).await??;
+
+            // Enforce content-length / size.
+            let bytes = resp.bytes().await?;
+            if bytes.len() > MAX_BODY_BYTES {
+                anyhow::bail!("HTTP response too large: {} bytes (limit {})", bytes.len(), MAX_BODY_BYTES);
+            }
+
+            let reply: serde_json::Value = serde_json::from_slice(&bytes)?;
+            let output = reply.to_string();
+
+            Ok(ToolResult {
+                success: true,
+                output,
+                metadata: ToolMetadata {
+                    execution_time_ms: None,
+                    tool_version: self.manifest.version.clone(),
+                    timestamp: std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)?
+                        .as_secs(),
+                },
+            })
+        }
+
+        fn validate_params(&self, _params: &ToolParams) -> anyhow::Result<()> { Ok(()) }
+    }
+
+    pub use JsonRpcHttpTool;
+}
+
+#[cfg(feature = "http_client")]
+use http_tool::JsonRpcHttpTool;
+
+#[cfg(feature = "stdio_transport")]
+mod stdio_tool {
+    use super::*;
+    use async_trait::async_trait;
+    use tokio::process::Command;
+    use tokio::io::AsyncReadExt;
+    use tokio::time::{timeout, Duration};
+
+    const STDIO_TIMEOUT: Duration = Duration::from_secs(10);
+    const MAX_STDOUT_BYTES: usize = 1 * 1024 * 1024; // 1 MiB
+
+    pub struct JsonRpcStdioTool {
+        manifest: ToolManifest,
+        exec: String,
+        param_validator: Option<std::sync::Arc<jsonschema::JSONSchema>>,
+    }
+
+    impl JsonRpcStdioTool {
+        pub fn new(manifest: ToolManifest, exec: String) -> Self {
+            let param_validator = if let Some(schema) = &manifest.input_schema {
+                if let Ok(doc) = serde_json::from_str::<serde_json::Value>(&schema.0) {
+                    Some(std::sync::Arc::new(jsonschema::JSONSchema::compile(&doc).unwrap()))
+                } else { None }
+            } else { None };
+            Self { manifest, exec, param_validator }
+        }
+    }
+
+    #[async_trait]
+    impl Tool for JsonRpcStdioTool {
+        fn name(&self) -> &str { &self.manifest.id }
+        fn description(&self) -> &str { &self.manifest.description }
+        fn version(&self) -> &str { &self.manifest.version }
+
+        async fn execute(&self, params: &ToolParams) -> anyhow::Result<ToolResult> {
+            // Validate params.
+            if let Some(v) = &self.param_validator {
+                let value = serde_json::to_value(&params.args)?;
+                v.validate(&value).map_err(|e| anyhow!("parameter validation failed: {e}"))?;
+            }
+
+            // Build JSON-RPC request line.
+            let request = serde_json::json!({
+                "jsonrpc": "2.0",
+                "method": self.manifest.capability,
+                "id": 1,
+                "params": params.args,
+            })
+            .to_string();
+
+            let mut child = Command::new(&self.exec)
+                .stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()?;
+
+            // Write request to stdin.
+            if let Some(mut stdin) = child.stdin.take() {
+                tokio::io::AsyncWriteExt::write_all(&mut stdin, request.as_bytes()).await?;
+            }
+
+            // Wait with timeout.
+            let status = timeout(STDIO_TIMEOUT, child.wait()).await??;
+            if !status.success() {
+                // Capture stderr for context.
+                let mut stderr_buf = Vec::new();
+                if let Some(mut stderr) = child.stderr.take() {
+                    let _ = stderr.read_to_end(&mut stderr_buf).await;
+                }
+                let stderr_str = String::from_utf8_lossy(&stderr_buf);
+                anyhow::bail!("Subprocess returned {}: {}", status, stderr_str);
+            }
+
+            // Read stdout with size cap.
+            let mut stdout_buf = Vec::new();
+            if let Some(mut stdout) = child.stdout.take() {
+                timeout(STDIO_TIMEOUT, stdout.read_to_end(&mut stdout_buf)).await??;
+            }
+            if stdout_buf.len() > MAX_STDOUT_BYTES {
+                anyhow::bail!("Subprocess output too large: {} bytes (limit {})", stdout_buf.len(), MAX_STDOUT_BYTES);
+            }
+
+            let output = String::from_utf8(stdout_buf)?;
+
+            Ok(ToolResult {
+                success: true,
+                output,
+                metadata: ToolMetadata {
+                    execution_time_ms: None,
+                    tool_version: self.manifest.version.clone(),
+                    timestamp: std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)?
+                        .as_secs(),
+                },
+            })
+        }
+
+        fn validate_params(&self, _params: &ToolParams) -> anyhow::Result<()> { Ok(()) }
+    }
+
+    pub use JsonRpcStdioTool;
+}
+
+#[cfg(feature = "stdio_transport")]
+use stdio_tool::JsonRpcStdioTool; 

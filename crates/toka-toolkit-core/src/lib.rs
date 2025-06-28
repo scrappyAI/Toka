@@ -13,7 +13,13 @@ use tracing::info;
 /// Execution metadata returned by every tool.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolMetadata {
-    pub execution_time_ms: u64,
+    /// Wall-clock time spent executing the tool – *populated by the registry*.
+    ///
+    /// Callers constructing a `ToolResult` inside an implementation should set
+    /// this to `None`; the registry will fill it with `Some(duration_ms)` once
+    /// the tool completes. This prevents the confusing "0 means TBD" pattern
+    /// criticized in the security review.
+    pub execution_time_ms: Option<u64>,
     pub tool_version: String,
     pub timestamp: u64,
 }
@@ -95,7 +101,7 @@ impl ToolRegistry {
             .execute(params)
             .await
             .with_context(|| format!("Tool {name} failed"))?;
-        result.metadata.execution_time_ms = start.elapsed().as_millis() as u64;
+        result.metadata.execution_time_ms = Some(start.elapsed().as_millis() as u64);
         Ok(result)
     }
 

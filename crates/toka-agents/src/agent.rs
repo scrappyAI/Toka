@@ -210,7 +210,7 @@ impl BaseAgent {
                             toka_bus::ToolEvent::Completed {
                                 tool_name: params.name.clone(),
                                 user_id: self.id.clone(),
-                                duration_ms: r.metadata.execution_time_ms,
+                                duration_ms: r.metadata.execution_time_ms.unwrap_or_default(),
                                 success: r.success,
                                 timestamp: std::time::SystemTime::now()
                                     .duration_since(std::time::UNIX_EPOCH)

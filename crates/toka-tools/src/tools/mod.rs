@@ -97,7 +97,7 @@ impl Tool for EchoTool {
             success: true,
             output: message.clone(),
             metadata: ToolMetadata {
-                execution_time_ms: 0,
+                execution_time_ms: None,
                 tool_version: self.version.clone(),
                 timestamp: std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)

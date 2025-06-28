@@ -26,7 +26,7 @@ impl Tool for EchoTool {
             success: true,
             output: text.clone(),
             metadata: ToolMetadata {
-                execution_time_ms: 0,
+                execution_time_ms: None,
                 tool_version: self.version().into(),
                 timestamp: 0,
             },
