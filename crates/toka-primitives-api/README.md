@@ -53,4 +53,4 @@ Events persisted in `toka-events` reference these types so that every crate spea
 
 Apache-2.0 OR MIT
 
-© 2024 Toka Contributors 
+© 2025 Toka Contributors 
