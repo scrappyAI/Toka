@@ -1,0 +1,22 @@
+<ProjectRule name="ConsistentDates">
+<Extends>Baseline</Extends>
+
+<Description>
+Reminder that it is currently the year 2025; ensure all documentation, code headers, or copyright annotations reflect this.
+</Description>
+
+<Objective>
+- Avoid outdated year references that can confuse readership or tooling.
+</Objective>
+
+<Instructions>
+
+1. <Review>
+   - Prior to commit, scan modified files for `20XX` references.
+   - Update to `2025` where the context implies current year.
+
+</Review>
+
+</Instructions>
+
+</ProjectRule>

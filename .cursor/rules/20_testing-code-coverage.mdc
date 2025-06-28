@@ -1,9 +1,5 @@
----
-description: 
-globs: 
-alwaysApply: false
----
 <ProjectRule name="EnhanceTestCoverage">
+<Extends>Baseline</Extends>
 
 <Description>
 Guidelines for writing additional tests to increase meaningful code coverage across the project, ensuring correctness, maintainability, and long-term resilience.
@@ -38,12 +34,13 @@ Guidelines for writing additional tests to increase meaningful code coverage acr
    - Use fixtures or test helpers to reduce duplication.
    - Assert **intent**, not just exact values — aim to catch future regressions, not implementation details.
    - Prefer clarity over cleverness. Tests should explain what matters.
+
 </DesignTestsWell>
 
 4. <TrackProgress>
    - Ensure all new tests pass (`cargo test`) and lint cleanly (`cargo clippy`).
    - Generate updated coverage reports and verify improved coverage.
-   - Document added coverage (e.g., “added tests for `parse_config()` edge cases, 92% → 100% coverage”).
+   - Document added coverage (e.g., "added tests for `parse_config()` edge cases, 92% → 100% coverage").
 
 </TrackProgress>
 
@@ -56,7 +53,7 @@ Guidelines for writing additional tests to increase meaningful code coverage acr
 </Commits>
 
 6. <Maintainability>
-   - Don’t add flaky or brittle tests.
+   - Don't add flaky or brittle tests.
    - Remove or refactor redundant legacy tests if superseded.
    - Ensure test code reflects the same quality standards as production code (docs, clarity, structure).
 

@@ -1,8 +1,6 @@
----
-description: 
-globs: 
-alwaysApply: false
----
+<ProjectRule name="RefactoringGuidelines">
+<Extends>Baseline</Extends>
+
 <Description>
 Best practices for systematic and productive refactoring within a Rust workspace. Emphasizes modular improvements, atomic commits, test coverage, crate-local boundaries, semantic versioning, and workspace-wide consistency.
 </Description>
@@ -21,6 +19,7 @@ Best practices for systematic and productive refactoring within a Rust workspace
    - Identify the target crate(s) or module(s) within the workspace.
    - Define goals for the refactor (e.g., better separation of concerns, improved API, dependency reduction).
    - Do not begin wide refactoring without a clearly scoped crate or unit of responsibility.
+
 </Scope>
 
 2. <Execution>
@@ -32,6 +31,7 @@ Best practices for systematic and productive refactoring within a Rust workspace
    - Leverage workspace structure:
      - Use `--workspace` only for integration checks
      - Respect crate boundaries; avoid leaking abstractions unless intentionally shared via workspace dependencies
+
 </Execution>
 
 3. <Commits>
@@ -39,6 +39,7 @@ Best practices for systematic and productive refactoring within a Rust workspace
      - Example: `refactor(auth): extract token verification logic into submodule`
      - Commits should represent one logical step; do not bundle unrelated changes.
    - Include brief rationale if non-obvious.
+
 </Commits>
 
 4. <Testing>
@@ -47,6 +48,7 @@ Best practices for systematic and productive refactoring within a Rust workspace
      - Crate level (`cargo test -p <crate>`)
      - Workspace level (`cargo test --workspace`) before merging.
    - Maintain or improve test coverage and assertions.
+
 </Testing>
 
 5. <Docs and Metadata>
@@ -55,6 +57,7 @@ Best practices for systematic and productive refactoring within a Rust workspace
      - `Cargo.toml` fields (`description`, `version`, `features`, `dependencies`)
      - Workspace-level metadata if adding/removing crates or changing structure
    - Add `#[doc(hidden)]` or visibility markers if changing public API visibility.
+
 </Docs and Metadata>
 
 6. <Versioning>
@@ -63,6 +66,7 @@ Best practices for systematic and productive refactoring within a Rust workspace
      - Minor: new APIs or features added safely
      - Major: breaking changes or significant rewrites
    - Update version fields in each affected `Cargo.toml` and propagate through workspace dependencies if needed.
+
 </Versioning>
 
 7. <Completion>
@@ -71,6 +75,9 @@ Best practices for systematic and productive refactoring within a Rust workspace
      - Merge commits into `main` or your integration branch
      - Optionally squash trivial commits, preserving intent and history
      - Tag version if appropriate (e.g., `v0.5.0`)
+
 </Completion>
 
 </Instructions>
+
+</ProjectRule>

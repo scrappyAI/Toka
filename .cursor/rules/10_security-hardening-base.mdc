@@ -1,9 +1,5 @@
----
-description: 
-globs: 
-alwaysApply: false
----
 <ProjectRule name="HardenSecuritySurface">
+<Extends>Baseline</Extends>
 
 <Description>
 General-purpose rule for hardening application security. Helps agents eliminate vulnerabilities, enforce best practices, and build in layered defenses.

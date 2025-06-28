@@ -1,14 +1,8 @@
----
-description: 
-globs: 
-alwaysApply: false
----
 <ProjectRule name="DocGeneration">
+<Extends>Baseline</Extends>
 
 <Description>
-Prescribes a unified workflow for building, verifying, and publishing documentation across the
-Rust workspace.  Covers `cargo doc`, README extraction, mdBook site generation, and CI / local
-commands—so every contributor can produce identical docs with a single copy-paste.
+Prescribes a unified workflow for building, verifying, and publishing documentation across the Rust workspace.  Covers `cargo doc`, README extraction, mdBook site generation, and CI / local commands—so every contributor can produce identical docs with a single copy-paste.
 </Description>
 
 <Goals>
@@ -25,6 +19,7 @@ commands—so every contributor can produce identical docs with a single copy-pa
      cargo install --locked cargo-readme mdbook mdbook-mermaid
      ```
    - Ensure Graphviz is present for rustdoc `dot` diagrams (`brew install graphviz` on macOS).
+
 </Prereqs>
 
 2. <CoreCommands>
@@ -51,6 +46,7 @@ commands—so every contributor can produce identical docs with a single copy-pa
      ```bash
      ./scripts/gen-docs.sh          # calls the above in sequence
      ```
+
 </CoreCommands>
 
 3. <CIExample>
@@ -76,6 +72,7 @@ commands—so every contributor can produce identical docs with a single copy-pa
                  target/doc
                  docs/book/book
      ```
+
 </CIExample>
 
 4. <QualityChecks>
@@ -85,12 +82,14 @@ commands—so every contributor can produce identical docs with a single copy-pa
      cargo clippy --workspace --all-targets -- -D warnings
      ```
    - CI must fail on any new `missing_docs` warning.
+
 </QualityChecks>
 
 5. <Commits>
    - Prefix with `docs:` for doc-only changes:  
      - `docs(core): regen README.md via cargo-readme`
      - `docs(book): add mermaid sequence diagram for payment flow`
+
 </Commits>
 
 </Instructions>
