@@ -20,15 +20,16 @@ members = [
     # Events crate replacing `toka-vault`
     "crates/toka-events",
 
-    # Specialized Tooling
-
-    # Meta-crate
-    "crates/toka",
-
     # New member
     "crates/toka-bus",
     "crates/toka-memory",
     "crates/toka-storage",
+
+    # New member
+    "crates/toka-events-api",
+
+    # New member
+    "crates/toka-memory-api",
 ]
 
 [workspace.dependencies]

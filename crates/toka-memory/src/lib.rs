@@ -18,7 +18,7 @@ use tokio::sync::RwLock;
 use tokio::time::{Duration, Instant};
 use anyhow::Result;
 use async_trait::async_trait;
-use toka_memory_api::MemoryAdapter;
+pub use toka_memory_api::MemoryAdapter;
 
 // -------------------------------------------------------------------------------------------------
 // Default in-memory implementation
