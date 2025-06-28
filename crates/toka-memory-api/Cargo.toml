@@ -1,6 +1,6 @@
 [package]
 name = "toka-memory-api"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Trait contracts for the pluggable key–value memory subsystem used across Toka services. Minimal, no_std friendly."

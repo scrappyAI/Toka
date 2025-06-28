@@ -122,7 +122,7 @@ mod wasm {
             let instance = linker.instantiate(&mut store, &module)?;
 
             // Fetch exported `execute` function
-            let execute_func = instance.get_typed_func::<(i32, i32), (i32, i32), _>(&mut store, "execute")
+            let execute_func = instance.get_typed_func::<(i32, i32), (i32, i32)>(&mut store, "execute")
                 .context("`execute` export with (ptr, len) -> (ptr, len) signature not found")?;
 
             // Locate guest memory
@@ -148,9 +148,9 @@ mod wasm {
 
         /// Very naive guest allocator integration – looks for an exported `alloc`.
         fn alloc_in_guest(&self, store: &mut Store<()>, instance: &Instance, len: i32) -> Result<i32> {
-            let alloc = instance.get_typed_func::<i32, i32, _>(store, "alloc")
+            let alloc = instance.get_typed_func::<i32, i32>(&mut *store, "alloc")
                 .context("`alloc` export not found (needed to copy params)")?;
-            Ok(alloc.call(store, len)?)
+            Ok(alloc.call(&mut *store, len)?)
         }
     }
 
@@ -168,8 +168,7 @@ mod wasm {
 
         async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
             let json_in = serde_json::to_string(params)?;
-            let json_out = tokio::task::spawn_blocking(move || self.run_module(&json_in))
-                .await??;
+            let json_out = self.run_module(&json_in)?;
 
             Ok(ToolResult {
                 success: true,
@@ -189,12 +188,7 @@ mod wasm {
             Ok(())
         }
     }
-
-    pub use WasmTool;
 }
-
-#[cfg(feature = "wasm_loader")]
-use wasm::WasmTool;
 
 // -------------------------------------------------------------------------------------------------
 // JSON-RPC over HTTP tool wrapper --------------------------------------------------------------
@@ -339,4 +333,7 @@ mod stdio {
     }
 }
 
-use stdio::JsonRpcStdioTool; 
+use stdio::JsonRpcStdioTool;
+
+#[cfg(feature = "wasm_loader")]
+pub use wasm::WasmTool; 

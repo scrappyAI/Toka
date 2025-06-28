@@ -7,14 +7,14 @@
 | `toka-primitives-api`      | ① `no_std` primitives | Fundamental, dependency-free types (IDs, currency, etc.). |
 | `toka-events-api`          | ① contract-only       | Pure data types and traits for the canonical event subsystem. |
 | `toka-bus-api`             | ① contract-only       | Minimal, `no_std`-friendly event-bus traits and headers. |
-| `toka-memory-api`          | ① contract-only       | Trait for pluggable key-value caches. |
+| `toka-memory-api`          | ① contract-only       | Trait contract for agent memory adapters (byte-oriented get/put/delete, no_std). |
 | `toka-storage-api`         | ① contract-only       | Async key–value artefact storage contract. |
 | `toka-security-auth`       | ① + ③                | Capability-token primitives and auth helpers (JWT, Paseto, etc.). |
 | `toka-agents`              | ② optional deps       | Default agent implementations for the runtime. |
 | `toka-toolkit-core`        | ① light, reusable     | Tool trait and registry abstractions (zero heavy deps). |
 | `toka-tools`               | ② optional deps       | Standard library of agent tools (currently minimal `echo`). |
 | `toka-bus`                 | ② lightweight runtime | In-process, async event-bus implementation (Tokio broadcast). |
-| `toka-memory`              | ② lightweight runtime | Simple in-memory cache adapter built on `tokio` & `dashmap`. |
+| `toka-memory`              | ② lightweight runtime | Reference in-process adapter (Tokio + RwLock, suited for tests & prototyping). |
 | `toka-storage`             | ② heavy deps          | Local-filesystem storage adapter used by the runtime. |
 | `toka-events`              | ② heavy deps          | **Canonical event store** replacing the historical `toka-vault`. |
 | `toka-runtime`             | ② heavy deps          | Async host tying agents, tools, bus & event store together. |
