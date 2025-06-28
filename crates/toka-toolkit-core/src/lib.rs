@@ -106,3 +106,4 @@ impl ToolRegistry {
 }
 
 pub mod manifest;
+pub mod loader;

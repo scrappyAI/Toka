@@ -1,0 +1,38 @@
+{
+  "id": "mytool.echo",
+  "name": "Echo Tool",
+  "version": "1.0.0",
+  "description": "Echoes a message back to the caller",
+  "capability": "echo",
+  "side_effect": "none",
+  "input_schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "message": { "type": "string" }
+    },
+    "required": ["message"],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "echo": { "type": "string" }
+    },
+    "required": ["echo"],
+    "additionalProperties": false
+  },
+  "transports": [
+    {
+      "kind": "wasm",
+      "path": "./echo_tool.wasm"
+    }
+  ],
+  "protocols": [
+    {
+      "protocol": "mcp",
+      "function_name": "echo"
+    }
+  ]
+} 

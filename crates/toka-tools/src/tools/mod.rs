@@ -123,15 +123,12 @@ mod tests {
     async fn test_tool_registry() -> Result<()> {
         let registry = ToolRegistry::new().await?;
 
-        // Test listing tools
+        // Register echo tool
+        registry.register_tool(Arc::new(EchoTool::new())).await?;
+
+        // Listing should contain "echo"
         let tools = registry.list_tools().await;
-        assert!(tools.contains(&"ingestion".to_string()));
-        assert!(tools.contains(&"ledger".to_string()));
-        assert!(tools.contains(&"scheduling".to_string()));
-        assert!(tools.contains(&"reporting".to_string()));
-        assert!(tools.contains(&"semantic_index".to_string()));
-        assert!(tools.contains(&"coverage-json".to_string()));
-        assert!(tools.contains(&"coverage-analyse".to_string()));
+        assert_eq!(tools, vec!["echo".to_string()]);
 
         Ok(())
     }

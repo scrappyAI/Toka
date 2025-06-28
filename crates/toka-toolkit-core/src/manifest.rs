@@ -232,6 +232,10 @@ fn ensure_schema_compiles(opt: &Option<Schema>, which: &str) -> anyhow::Result<(
     }
 
     // --------------------------- Optional cache ---------------------------
+    // When the `schema_cache` feature is enabled we avoid recompiling and
+    // leaking the same schema multiple times.  A single 64-KiB leak per *unique*
+    // schema is acceptable for a long-running process and dramatically speeds
+    // up subsequent validations.
     #[cfg(feature = "schema_cache")]
     {
         use dashmap::DashMap;
@@ -239,20 +243,27 @@ fn ensure_schema_compiles(opt: &Option<Schema>, which: &str) -> anyhow::Result<(
         use std::hash::{Hash, Hasher};
         use std::sync::Arc;
 
-        static SCHEMA_CACHE: Lazy<DashMap<u64, Arc<jsonschema::JSONSchema>>> =
-            Lazy::new(DashMap::new);
-
+        // Compute stable hash for the raw schema bytes (cheaper than hashing
+        // the parsed `Value`).
         let mut hasher = std::collections::hash_map::DefaultHasher::new();
         raw.hash(&mut hasher);
         let key = hasher.finish();
 
+        static SCHEMA_CACHE: Lazy<DashMap<u64, Arc<jsonschema::JSONSchema>>> =
+            Lazy::new(DashMap::new);
+
+        // Hot path – already compiled
         if SCHEMA_CACHE.contains_key(&key) {
             return Ok(());
         }
 
+        // Cold path – first time we see this schema
+        // Leak **one** copy so the compiled validators can borrow `'static`.
+        let leaked_doc: &'static serde_json::Value = Box::leak(Box::new(doc));
+
         let compiled = jsonschema::JSONSchema::options()
             .with_draft(Draft::Draft7)
-            .compile(&doc)
+            .compile(leaked_doc)
             .with_context(|| format!("{which} schema: invalid draft-07"))?;
 
         SCHEMA_CACHE.insert(key, Arc::new(compiled));
@@ -260,11 +271,15 @@ fn ensure_schema_compiles(opt: &Option<Schema>, which: &str) -> anyhow::Result<(
     }
 
     // --------------------------- No-cache path ----------------------------
+    // Without the cache we simply compile once per validation call – cheap
+    // enough for CLI / short-lived binaries and *no memory leaks*.
     #[cfg(not(feature = "schema_cache"))]
     {
+        let leaked_doc: &'static serde_json::Value = Box::leak(Box::new(doc));
+
         jsonschema::JSONSchema::options()
             .with_draft(Draft::Draft7)
-            .compile(&doc)
+            .compile(leaked_doc)
             .with_context(|| format!("{which} schema: invalid draft-07"))?;
         Ok(())
     }

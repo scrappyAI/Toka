@@ -18,15 +18,23 @@ jsonschema = "0.17"
 # Optional dependencies for advanced schema validation features
 once_cell = { version = "1.19", optional = true }
 dashmap = { version = "5.5", optional = true }
+wasmtime = { version = "11", optional = true, default-features = false, features = ["wat"] }
 
+# Dev-dependencies
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 anyhow = "1"
 async-trait = "0.1"
 
 [features]
+# Enabled by default: fast, cached JSON-Schema compilation.
+default = ["schema_cache"]
+
 # Enables in-memory cache for compiled JSON Schemas to reduce validation cost.
 schema_cache = ["once_cell", "dashmap"]
 
 # Allows remote $ref resolution inside JSON Schemas (use with caution).
-allow_remote_refs = [] 
+allow_remote_refs = []
+
+# Enable dynamic WASM tool loading (pulls in `wasmtime`).
+wasm_loader = ["wasmtime"]
