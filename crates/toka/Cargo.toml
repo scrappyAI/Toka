@@ -13,12 +13,12 @@ default = ["auth", "events", "agents", "toolkit"]
 auth = ["dep:toka-security-auth"]
 events = ["dep:toka-events"]
 agents = ["dep:toka-agents"]
-# toolkit implies toolkit-core automatically via toka-toolkit's own deps.
-toolkit = ["dep:toka-toolkit"]
+# toolkit feature exposes the default tools crate.
+toolkit = ["dep:toka-tools"]
 
 [dependencies]
 # All dependencies are optional and tied to features above.
 toka-security-auth  = { path = "../toka-security-auth", optional = true }
 toka-events         = { path = "../toka-events",         optional = true }
 toka-agents         = { path = "../toka-agents",         optional = true }
-toka-toolkit        = { path = "../toka-toolkit",        optional = true } 
+toka-tools          = { path = "../toka-tools",          optional = true } 

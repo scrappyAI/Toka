@@ -12,17 +12,7 @@ use async_trait::async_trait;
 use std::path::PathBuf;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
-
-/// Extremely lightweight artefact store (blocking API kept async for symmetry).
-#[async_trait]
-pub trait StorageAdapter: Send + Sync {
-    /// Store raw bytes under `key` (opaque path segment).
-    async fn put(&self, key: &str, bytes: &[u8]) -> Result<()>;
-    /// Retrieve bytes previously stored under `key`.
-    async fn get(&self, key: &str) -> Result<Option<Vec<u8>>>;
-    /// Remove the file at `key` – returns `Ok(false)` if not found.
-    async fn delete(&self, key: &str) -> Result<()>;
-}
+pub use toka_storage_api::StorageAdapter;
 
 /// Local-filesystem implementation used by the runtime until a richer backend
 /// lands.  *Not* optimised and ignores concurrency holes.

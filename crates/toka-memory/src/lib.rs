@@ -18,18 +18,7 @@ use tokio::sync::RwLock;
 use tokio::time::{Duration, Instant};
 use anyhow::Result;
 use async_trait::async_trait;
-
-/// Core cache abstraction used across the Toka workspace.
-#[async_trait]
-pub trait MemoryAdapter: Send + Sync {
-    /// Retrieve previously stored bytes for `key`.  Returns `None` if the key
-    /// is absent **or** expired.
-    async fn get(&self, key: &str) -> Result<Option<Vec<u8>>>;
-
-    /// Store `val` under `key` with a time-to-live of `ttl_secs`.
-    /// A `ttl_secs` of `0` means *no expiration*.
-    async fn put(&self, key: &str, val: Vec<u8>, ttl_secs: u64) -> Result<()>;
-}
+pub use toka_memory_api::MemoryAdapter;
 
 // -------------------------------------------------------------------------------------------------
 // Default in-memory implementation

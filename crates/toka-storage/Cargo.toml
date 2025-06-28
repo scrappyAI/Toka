@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 anyhow = { workspace = true }
 async-trait = { workspace = true }
-tokio = { workspace = true, features = ["fs", "sync", "io-util"] } 
+tokio = { workspace = true, features = ["fs", "sync", "io-util"] }
+toka-storage-api = { path = "../toka-storage-api", features=["async"] } 

@@ -1,0 +1,18 @@
+[package]
+name = "toka-tools-api"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Tool trait and registry abstractions for the Toka platform (API crate)."
+
+[dependencies]
+anyhow = "1"
+async-trait = "0.1"
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["sync"] }
+tracing = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+anyhow = "1"
+async-trait = "0.1" 

@@ -7,4 +7,5 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 async-trait = "0.1"
 anyhow = "1"
-tokio = { version = "1", features = ["macros", "time", "sync", "rt"] } 
+tokio = { version = "1", features = ["macros", "time", "sync", "rt"] }
+toka-memory-api = { path = "../toka-memory-api", features=["async"] } 

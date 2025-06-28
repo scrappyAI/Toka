@@ -52,12 +52,10 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-// The new, consolidated modules
-// Legacy bus trait is deprecated – retained for transitional compilation only.
-#[deprecated(note = "EventBus has moved to the `toka-bus` crate – use that instead.")]
-pub mod bus;
-/// Persistence-only public traits (Slice 2).
-pub mod api;
+/// Re-export the canonical API contract from the lightweight `toka-events-api` crate.
+pub use toka_events_api as api;
+
+/// Local façade re-exporting event primitives + demo [`DomainEvent`] enum.
 pub mod events;
 pub mod memory;
 pub mod persistence;
@@ -67,9 +65,6 @@ pub mod strategy;
 pub mod prelude {
     // Persistence layer traits
     pub use crate::api::{EventSink, QueryApi};
-    // Legacy export kept for downstreams that haven't migrated yet.
-    #[allow(deprecated)]
-    pub use crate::bus::EventBus;
     pub use crate::Vault;
     pub use crate::events::{
         causal_hash, create_event_header, CausalDigest, DomainEvent, EventHeader, EventId,

@@ -1,0 +1,26 @@
+[package]
+name = "toka-primitives-api"
+version = "0.1.0"
+edition = "2021"
+description = "Minimal, no_std-friendly primitives (ids, currency) reused across the Toka workspace."
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rust_decimal = { version = "1.32", features = ["serde-str"] }
+rust_decimal_macros = "1.32"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+anyhow = "1.0"
+# Optional tooling
+schemars = { version = "0.8", features = ["derive", "rust_decimal", "uuid1"], optional = true }
+
+[features]
+# By default include basic primitives so downstream users can `use toka_primitives::*` without extra flags.
+default = ["ids", "currency"]
+
+ids = []
+currency = []
+# Enable JSON-schema generation for build-time tooling
+schema-gen = ["dep:schemars"] 
