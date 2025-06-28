@@ -1,6 +1,6 @@
 use anyhow::Result;
 use std::sync::Arc;
-use toka_toolkit::tools::{ItemMetadata, SemanticIndexTool, TaggedItem, Tool, ToolParams};
+use toka_tools::tools::{ItemMetadata, SemanticIndexTool, TaggedItem, Tool, ToolParams};
 use tokio::task;
 
 #[tokio::test]

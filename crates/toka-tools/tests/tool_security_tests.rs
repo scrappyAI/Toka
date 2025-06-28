@@ -4,7 +4,7 @@
 use anyhow::Result;
 use std::collections::HashMap;
 use tempfile::tempdir;
-use toka_toolkit::tools::{ToolParams, ToolRegistry};
+use toka_tools::tools::{ToolParams, ToolRegistry};
 
 #[tokio::test]
 async fn test_ingestion_tool_path_traversal_protection() -> Result<()> {
