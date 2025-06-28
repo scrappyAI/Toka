@@ -4,7 +4,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use std::sync::Arc;
 use tempfile::tempdir;
-use toka_agents::SymbolicAgent;  // Use BaseAgent instead; SymbolicAgent will be removed in a future release
+use toka_agents::BaseAgent;
 use toka_runtime::runtime::{Runtime, RuntimeConfig};
 use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolResult};
 
@@ -58,7 +58,7 @@ async fn runtime_agent_tool_storage_roundtrip() -> Result<()> {
         .await?;
 
     // Create agent
-    let mut agent = SymbolicAgent::new("a1");
+    let mut agent = BaseAgent::new("a1");
     agent.set_event_bus(toka_bus::MemoryBus::default());
 
     // Use storage adapter via runtime

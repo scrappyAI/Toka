@@ -1,4 +1,3 @@
-#![allow(deprecated)]
 #![allow(dead_code)]
 // Runtime module
 
@@ -16,7 +15,7 @@ use std::time::Duration;
 use crate::security::{self, Envelope};
 
 use crate::agents::Agent;
-use crate::agents::SymbolicAgent;
+use crate::agents::BaseAgent;
 use crate::tools::ToolRegistry;
 
 /// Runtime configuration
@@ -279,7 +278,7 @@ impl Runtime {
             let mut agent_map = self.agents.write().await;
             for id in agent_ids {
                 agent_map.entry(id).or_insert_with(|| {
-                    Box::new(SymbolicAgent::new("restored")) as Box<dyn Agent + Send + Sync>
+                    Box::new(BaseAgent::new("restored")) as Box<dyn Agent + Send + Sync>
                 });
             }
 
@@ -329,7 +328,7 @@ impl Drop for Runtime {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::agents::SymbolicAgent;
+    use crate::agents::BaseAgent;
     use std::sync::Arc;
     use tempfile::tempdir;
 
@@ -382,7 +381,7 @@ mod tests {
         let runtime1 = Arc::new(Runtime::new(config1).await?);
 
         // Test agent registration
-        let agent = Box::new(SymbolicAgent::new("test_agent"));
+        let agent = Box::new(BaseAgent::new("test_agent"));
         let agent_id = runtime1.register_agent(agent).await?;
         assert_eq!(runtime1.list_agents().await.len(), 1);
 

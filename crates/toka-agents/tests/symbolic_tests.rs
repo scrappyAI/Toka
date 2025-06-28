@@ -1,9 +1,9 @@
 use anyhow::Result;
-use toka_agents::{EventBus, Observation, SymbolicAgent}; // alias still works
+use toka_agents::{EventBus, Observation, BaseAgent};
 
 #[tokio::test]
 async fn belief_update_moves_probability() -> Result<()> {
-    let mut agent = SymbolicAgent::new("tester");
+    let mut agent = BaseAgent::new("tester");
     let bus = EventBus::new(16);
     agent.set_event_bus(bus);
 
