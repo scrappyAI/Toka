@@ -5,9 +5,11 @@
 //!
 //! # Features
 //!
-//! * `toolkit` – built-in tool registry integration.
-//! * `auth` – security-auth helpers & JWT validation.
-//! * `vault` – canonical event store integration.
+//! | Feature | Purpose | Additional crates |
+//! |---------|---------|-------------------|
+//! | `toolkit` *(opt)* | Enables [`ToolRegistry`](crate::tools) & default tools | `toka-toolkit-core`, `toka-tools` |
+//! | `auth` *(opt)*    | Capability-token validation & secret rotation | `toka-security-auth`, `jsonwebtoken` |
+//! | `vault` *(opt)*   | Embed the canonical event store | `toka-events` + `sled` |
 //!
 //! ## Quick-Start
 //! ```rust,no_run
