@@ -1,0 +1,140 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+<ProjectRule name="TokaWorkspaceEvolution">
+
+
+<Description>
+Reusable guidelines for evolving the `toka​-workspace` repository in a sustainable, modular, and LLM-friendly manner. Applies to new crates, directory layout, naming, versioning, and CI guard-rails. Follow these rules unless a documented exception is approved.
+</Description>
+
+
+<Objective>
+- Maintain clear boundaries between domain contracts, default implementations, and external adapters.
+- Minimise technical debt while allowing rapid experimentation.
+- Keep compile times reasonable and avoid crate explosion.
+- Provide predictable naming so humans and LLM agents navigate the codebase in seconds.
+</Objective>
+
+
+<Layers>
+
+
+	1.	
+
+<ApiLayer>
+Tag: `*-api`
+Purpose: Pure data types, traits, error enums. No heavy dependencies. `no_std` compatible where practical. 
+Dependencies: core Rust + optional `serde` behind the `serde` feature.
+
+
+</ApiLayer>
+
+
+	2.	
+
+<DefaultLayer>
+Tag: `<domain>` (no extra suffix)
+Purpose: Production-ready, in-process implementation that works out-of-the-box without external infrastructure.
+Dependencies: Matching `*-api` crate + light deps (tokio permitted).
+
+
+</DefaultLayer>
+
+
+	3.	
+
+<AdapterLayer>
+Tag pattern: `<domain>-<adapter>`
+Purpose: Connects the domain to external services (NATS, Redis, sled, WASM, etc.). May pull in heavy or optional dependencies.
+Dependencies: `*-api` ± default crate as needed.
+
+
+</AdapterLayer>
+
+
+</Layers>
+
+
+<NamingConvention>
+- Crate name pattern: `toka-<domain>[-api|-<adapter>]`.
+- Domains use kebab-case nouns: `events`, `agents`, `auth`, `agent-memory`, `cache`, etc.
+- Avoid redundant suffixes like `-core` unless the crate is language-agnostic code shared across bindings.
+</NamingConvention>
+
+
+<DirectoryLayout>
+```text
+toka-workspace/
+├─ Cargo.toml           # workspace manifest
+├─ crates/              # flat list of Rust packages
+│   ├─ toka-events-api/
+│   ├─ toka-events/
+│   ├─ toka-events-nats/
+│   ├─ toka-agent-memory-api/
+│   ├─ toka-agent-memory/
+│   └─ …
+├─ bindings/            # generated TS / Python etc.
+├─ docs/                # architecture & ADRs
+└─ .github/             # CI configs
+```
+If crates exceed ~30, create virtual manifests (`core/Cargo.toml`) rather than deep nested folders.
+</DirectoryLayout>
+
+
+<CrateSplitChecklist>
+Create a new crate only when **any** of the following are true:
+- Needs a heavy or optional dependency.
+- Will be consumed by ≥ 2 other crates or another language.
+- Requires an independent semver cadence.
+Otherwise, add a module or a `#[cfg(feature = "...")]` flag inside an existing crate.
+</CrateSplitChecklist>
+
+
+<Versioning>
+- `*-api` crates follow strict semver; breaking API changes bump MAJOR.
+- Other crates may bump MINOR freely, but must keep `>=` their dependent api’s MINOR.
+</Versioning>
+
+
+<CIGuardrails>
+- `cargo public-api` — block PRs that change `*-api` surface without semver bump.
+- `cargo deny` & `cargo udeps` — ban unwanted deps and detect unused ones.
+- `cargo test --all --workspace --all-features` required for merge.
+</CIGuardrails>
+
+
+<Examples>
+*Events*
+- `toka-events-api` → `Event`, `EventKind`, `serde` impls.
+- `toka-events` → in-proc broadcast queue using `tokio::sync`.
+- `toka-events-nats` → adapter using `async-nats` + TLS.
+
+
+Agent Memory
+	•	toka-agent-memory-api → MemoryCell, MemoryPolicy, trait MemoryStore.
+	•	toka-agent-memory → HashMap + LRU default store.
+	•	toka-agent-memory-sled → sled-backed adapter.
+
+Cache (generic)
+	•	toka-cache-api → Cache<K,V> trait.
+	•	toka-cache → in-proc LRU via moka.
+	•	toka-cache-redis → Redis driver with redis::aio.
+
+</Examples>
+
+
+<LLMNotes>
+Provide a one-line doc comment for every public item in `*-api` crates so retrieval-augmented agents can supply accurate code samples.
+</LLMNotes>
+
+
+<FutureEvolution>
+- Prefer feature flags over new crates until adapters surpass 300 LOC or require independent release workflow.
+- Periodically run `cargo bloat` and consolidate thin crates if compile time degrades.
+</FutureEvolution>
+
+
+</ProjectRule>

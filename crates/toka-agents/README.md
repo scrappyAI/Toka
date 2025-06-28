@@ -63,4 +63,4 @@ Behind the scenes every belief update is emitted as an `AgentEvent` and can be p
 
 Apache-2.0 OR MIT — choose whichever works for you.
 
-© 2024 Toka Contributors 
+© 2025 Toka Contributors 

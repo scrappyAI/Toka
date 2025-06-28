@@ -1,16 +1,3 @@
 { 
-  "snapshot": "POPULATED_FROM_SETTINGS",
-  "install": "cargo build --workspace",
-  "start": "sudo service docker start",
-  "terminals": [
-    {
-      "name": "Run database",
-      "command": "docker-compose up"
-    },
-    {
-      "name": "Start backend",
-      "command": "cargo run"
-    }
-  ],
-  "agentCanUpdateSnapshot": true
+ "agentCanUpdateSnapshot": true
 }
