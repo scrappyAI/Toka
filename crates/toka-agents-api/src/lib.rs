@@ -29,16 +29,15 @@ use alloc::string::String;
 
 #[cfg(feature = "serde")] use serde::{Serialize, Deserialize};
 #[cfg(feature = "serde")] use serde_json;
-#[cfg(feature = "serde")] use alloc::vec::Vec;
 
 // -----------------------------------------------------------------------------
 // Capability flags
 // -----------------------------------------------------------------------------
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 bitflags::bitflags! {
     /// Capability flags declare which subsystems an agent may access.
-    /// The flags can be combined using `|` and round-trip as their underlying
-    /// bit representation when `serde` is enabled.
+    /// The flags can be combined using `|` and will round-trip as their underlying
+    /// bit representation when `serde` support is enabled.
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
     #[cfg_attr(feature = "serde", serde(transparent))]
     pub struct Capability: u32 {
@@ -169,7 +168,6 @@ impl AgentBundle {
 
 #[cfg(feature = "async")]
 mod agent_trait {
-    use super::*;
     use toka_memory_api::MemoryAdapter;
     use async_trait::async_trait;
     use anyhow::Result;
@@ -196,6 +194,7 @@ mod agent_trait {
     }
 
     // Re-export so consumers use `toka_agents_api::Agent` directly.
+    #[allow(unused_imports)]
     pub use Agent as _;
 }
 
