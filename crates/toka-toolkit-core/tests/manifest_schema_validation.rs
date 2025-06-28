@@ -42,12 +42,24 @@ fn syntax_error_fails() {
     assert!(mani.validate().is_err());
 }
 
+#[cfg(not(feature = "allow_remote_refs"))]
 #[test]
 fn remote_ref_disallowed() {
     let mut mani = base_manifest();
     let schema = json!({ "$ref": "https://example.com/schema.json" });
     mani.input_schema = Some(Schema(schema.to_string()));
     assert!(mani.validate().is_err());
+}
+
+#[cfg(feature = "allow_remote_refs")]
+#[test]
+fn remote_ref_allowed_feature_enabled() -> Result<()> {
+    let mut mani = base_manifest();
+    let schema = json!({ "$ref": "https://example.com/schema.json" });
+    mani.input_schema = Some(Schema(schema.to_string()));
+    // Should validate successfully when the feature is enabled
+    mani.validate()?;
+    Ok(())
 }
 
 #[test]
