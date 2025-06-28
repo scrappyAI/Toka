@@ -142,17 +142,62 @@ async fn main() -> Result<()> {
 }
 
 async fn handle_agent(cmd: AgentCmd) -> Result<()> {
+    use toka_runtime::runtime::{Runtime, RuntimeConfig};
+    use toka_agents::BaseAgent;
+
+    // For now each CLI invocation boots a transient runtime connected to the
+    // default vault path (~/.toka unless overridden via TOKA_VAULT env var).
+    // This keeps the CLI stateless while allowing persistence across
+    // invocations.
+
+    let vault_path = std::env::var("TOKA_VAULT").unwrap_or_else(|_| "runtime_data".into());
+    let storage_root = std::env::var("TOKA_STORAGE").unwrap_or_else(|_| {
+        dirs::home_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join(".toka/storage")
+            .to_string_lossy()
+            .into_owned()
+    });
+
+    let cfg = RuntimeConfig {
+        vault_path,
+        storage_root,
+        ..RuntimeConfig::default()
+    };
+
+    let runtime = Runtime::new(cfg).await?;
+
     match cmd {
         AgentCmd::New { name } => {
-            println!("[TODO] Creating agent: {}", name);
+            let agent = Box::new(BaseAgent::new(&name));
+            let id = runtime.register_agent(agent).await?;
+            runtime.save_state().await?;
+            println!("✅ Agent created (id: {})", id);
         }
         AgentCmd::List => {
-            println!("[TODO] Listing agents…");
+            let ids = runtime.list_agents().await;
+            if ids.is_empty() {
+                println!("No agents found in vault.");
+            } else {
+                println!("Registered agents ({}):", ids.len());
+                for id in ids {
+                    println!(" - {}", id);
+                }
+            }
         }
         AgentCmd::Observe { agent_id } => {
-            println!("[TODO] Observing events for agent: {}", agent_id);
+            // Observation requires a running runtime; start it and subscribe.
+            runtime.start().await?;
+
+            println!("👀 Observing events for agent '{}'. Press Ctrl+C to exit.", agent_id);
+            // For now, we don't have a public stream for agent events –
+            // placeholder implementation prints runtime events.
+            // TODO: expose event bus in runtime publicly for observation.
+            println!("[not implemented] Event observation coming soon.");
+            runtime.stop().await?;
         }
     }
+
     Ok(())
 }
 

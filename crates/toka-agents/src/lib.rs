@@ -1,7 +1,7 @@
 #![warn(missing_docs)]
 //! Toka Agents – default agent implementations
 //!
-//! This crate provides out-of-the-box agents (e.g. `SymbolicAgent`) that can be compiled
+//! This crate provides out-of-the-box agents (currently `BaseAgent`) that can be compiled
 //! into `toka-runtime` when the `agents-core` feature is enabled.  The implementation is
 //! intentionally free of heavy external dependencies so the runtime can remain lean.
 
@@ -17,8 +17,7 @@ pub mod reasoning;
 #[doc(hidden)]
 pub mod system;
 
-#[allow(deprecated)]
-pub use agent::{BaseAgent, Belief, Observation, SymbolicAgent};
+pub use agent::{BaseAgent, Belief, Observation};
 pub use bundle::{AgentBundle, ToolSpec};
 pub use metadata::{AgentMetadata, Capability};
 pub use prelude::*;
@@ -63,7 +62,7 @@ pub trait Agent: Send + Sync {
 }
 
 // -----------------------------------------------------------------------------
-// Blanket implementation for `SymbolicAgent`
+// Blanket implementation for `BaseAgent`
 // -----------------------------------------------------------------------------
 
 #[async_trait]

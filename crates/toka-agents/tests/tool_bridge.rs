@@ -3,7 +3,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use std::sync::Arc;
-use toka_agents::{EventBus, SymbolicAgent};
+use toka_agents::{EventBus, BaseAgent};
 use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};
 
 
@@ -42,7 +42,7 @@ impl Tool for EchoTool {
 #[tokio::test]
 async fn agent_invoke_tool_emits_events() -> Result<()> {
     // Setup
-    let mut agent = SymbolicAgent::new("tester");
+    let mut agent = BaseAgent::new("tester");
     let bus = EventBus::new_default();
     agent.set_event_bus(bus.clone());
 

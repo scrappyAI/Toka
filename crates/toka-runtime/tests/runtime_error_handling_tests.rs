@@ -7,7 +7,7 @@ use anyhow::Result;
 use std::sync::Arc;
 use std::time::Duration;
 use tempfile::tempdir;
-use toka_agents::SymbolicAgent;  // Use BaseAgent instead; SymbolicAgent will be removed in a future release
+use toka_agents::BaseAgent;
 use toka_runtime::runtime::{Runtime, RuntimeConfig};
 
 #[tokio::test]
@@ -43,14 +43,14 @@ async fn test_max_agents_limit_enforcement() -> Result<()> {
     let runtime = Runtime::new(config).await?;
     
     // Register up to the limit
-    let agent1 = Box::new(SymbolicAgent::new("agent1"));
-    let agent2 = Box::new(SymbolicAgent::new("agent2"));
+    let agent1 = Box::new(BaseAgent::new("agent1"));
+    let agent2 = Box::new(BaseAgent::new("agent2"));
     
     runtime.register_agent(agent1).await?;
     runtime.register_agent(agent2).await?;
     
     // Third agent should fail
-    let agent3 = Box::new(SymbolicAgent::new("agent3"));
+    let agent3 = Box::new(BaseAgent::new("agent3"));
     let result = runtime.register_agent(agent3).await;
     assert!(result.is_err());
     
@@ -114,7 +114,7 @@ async fn test_runtime_restart_cycle() -> Result<()> {
     
     // Should still be functional after multiple cycles
     runtime.start().await?;
-    let agent = Box::new(SymbolicAgent::new("test_agent"));
+    let agent = Box::new(BaseAgent::new("test_agent"));
     runtime.register_agent(agent).await?;
     assert_eq!(runtime.list_agents().await.len(), 1);
     
@@ -138,7 +138,7 @@ async fn test_concurrent_agent_operations() -> Result<()> {
     for i in 0..50 {
         let runtime = Arc::clone(&runtime);
         let handle = tokio::spawn(async move {
-            let agent = Box::new(SymbolicAgent::new(&format!("agent_{}", i)));
+            let agent = Box::new(BaseAgent::new(&format!("agent_{}", i)));
             runtime.register_agent(agent).await
         });
         handles.push(handle);
@@ -176,7 +176,7 @@ async fn test_agent_removal_edge_cases() -> Result<()> {
     assert!(result.is_err());
     
     // Register an agent
-    let agent = Box::new(SymbolicAgent::new("test_agent"));
+    let agent = Box::new(BaseAgent::new("test_agent"));
     let agent_id = runtime.register_agent(agent).await?;
     
     // Remove it successfully
@@ -203,7 +203,7 @@ async fn test_state_persistence_failure_recovery() -> Result<()> {
     let runtime = Runtime::new(config.clone()).await?;
     
     // Register an agent
-    let agent = Box::new(SymbolicAgent::new("persistent_agent"));
+    let agent = Box::new(BaseAgent::new("persistent_agent"));
     let _agent_id = runtime.register_agent(agent).await?;
     
     // Save state
@@ -271,7 +271,7 @@ async fn test_runtime_drop_cleanup() -> Result<()> {
     
     // Register some agents
     for i in 0..3 {
-        let agent = Box::new(SymbolicAgent::new(&format!("agent_{}", i)));
+        let agent = Box::new(BaseAgent::new(&format!("agent_{}", i)));
         runtime.register_agent(agent).await?;
     }
     
@@ -302,7 +302,7 @@ async fn test_malformed_event_handling() -> Result<()> {
     runtime.start().await?;
     
     // Register an agent
-    let agent = Box::new(SymbolicAgent::new("test_agent"));
+    let agent = Box::new(BaseAgent::new("test_agent"));
     runtime.register_agent(agent).await?;
     
     // Send various malformed events
@@ -386,7 +386,7 @@ async fn test_resource_limits_and_cleanup() -> Result<()> {
     // Register many agents to test resource usage
     let mut agent_ids = Vec::new();
     for i in 0..100 {
-        let agent = Box::new(SymbolicAgent::new(&format!("stress_agent_{}", i)));
+        let agent = Box::new(BaseAgent::new(&format!("stress_agent_{}", i)));
         let agent_id = runtime.register_agent(agent).await?;
         agent_ids.push(agent_id);
     }
@@ -432,7 +432,7 @@ async fn test_runtime_configuration_edge_cases() -> Result<()> {
     let runtime = Runtime::new(extreme_config).await?;
     
     // Should not be able to register any agents
-    let agent = Box::new(SymbolicAgent::new("test_agent"));
+    let agent = Box::new(BaseAgent::new("test_agent"));
     let result = runtime.register_agent(agent).await;
     assert!(result.is_err());
     

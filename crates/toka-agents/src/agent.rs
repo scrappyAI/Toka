@@ -161,14 +161,7 @@ impl BaseAgent {
     }
 }
 
-// Temporary alias for backward compatibility – will be deprecated in a future release.
-#[allow(deprecated)]
-#[deprecated(note = "Use BaseAgent instead; SymbolicAgent will be removed in a future release.")]
-pub type SymbolicAgent = BaseAgent;
-
-// -------------------------------------------------------------------------
 // Toolkit bridge (only when `toolkit` feature enabled)
-// -------------------------------------------------------------------------
 #[cfg(feature = "toolkit")]
 impl BaseAgent {
     /// Invoke a registered tool via the runtime's `ToolRegistry` and emit
@@ -179,6 +172,7 @@ impl BaseAgent {
         params: toka_toolkit_core::ToolParams,
     ) -> anyhow::Result<toka_toolkit_core::ToolResult> {
         use toka_toolkit_core::ToolResult;
+
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
@@ -199,7 +193,9 @@ impl BaseAgent {
         }
 
         // Execute tool
-        let result: anyhow::Result<ToolResult> = registry.execute_tool(&params.name, &params).await;
+        let result: anyhow::Result<ToolResult> = registry
+            .execute_tool(&params.name, &params)
+            .await;
 
         // Emit completion/error event
         if let Some(bus) = &self.event_bus {
@@ -243,3 +239,5 @@ impl BaseAgent {
         result
     }
 }
+
+// -------------------------------------------------------------------------
