@@ -1,0 +1,114 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+<ProjectRule name="OptimizationHardening">
+
+<Description>
+Guidelines for methodically tightening performance and resource usage across the Rust workspace
+without sacrificing correctness, readability, or security.  Combines **data-driven profiling**,
+targeted micro-optimizations, compile-time lints, and regression guards to ensure improvements
+remain measurable and sustainable.
+</Description>
+
+<Goals>
+- Detect and prioritize true hot-spots using real data (not intuition).
+- Apply safe, idiomatic optimizations that **lower CPU time, memory footprint, and binary size**
+  while keeping public APIs stable.
+- Prevent regressions via automated benchmarks and CI thresholds.
+- Document the rationale behind each significant optimization.
+</Goals>
+
+<Instructions>
+
+1. <Plan>
+   - **Define the KPI**: e.g., request latency ≤ 10 ms P95, binary ≤ 5 MB, throughput ≥ 20 k ops/s.
+   - Select representative workloads; place them in `benchmarks/` or `examples/`.
+   - Add a tracking issue (label: `perf`) outlining target metrics and affected crates.
+</Plan>
+
+2. <Profile>
+   - **CPU flamegraph** (Linux/macOS):  
+     ```bash
+     cargo install flamegraph
+     cargo flamegraph --bin my_app --profile=release
+     ```
+   - **Heap / allocation** (jemalloc, dhat):  
+     ```bash
+     cargo install dhat
+     dhat -- target/release/my_app <args>
+     ```
+   - **Binary bloat**:  
+     ```bash
+     cargo install cargo-bloat
+     cargo bloat --release -n 20
+     ```
+   - Record findings in `/docs/perf/<crate>_<date>.md`.
+</Profile>
+
+3. <Optimize>
+   - Apply **zero-cost wins** first (remove clones, tighten lifetimes, inline small funcs
+     with `#[inline]`, leverage `Cow`, use `Vec::with_capacity`).
+   - Replace heavy deps (e.g., `serde_json` ➜ `simd-json` for hot paths) only after cost-benefit.
+   - Use algorithmic improvements (hash-brown, radix sort, bit-level tricks) before micro-tuning.
+   - Guard critical sections with comments:  
+     `// PERF: early return avoids extra hash lookups`
+</Optimize>
+
+4. <CompileChecks>
+   - Enable strict lints in fast targets:  
+     ```rust
+     #![deny(clippy::unwrap_used, clippy::expect_used)]
+     #![cfg_attr(not(debug_assertions), deny(clippy::dbg_macro))]
+     ```
+   - For nightly experiments, gate behind `cfg(feature = "nightly_perf")`.
+</CompileChecks>
+
+5. <Benchmarks>
+   - Use **Criterion.rs**:  
+     ```bash
+     cargo install cargo-criterion
+     cargo criterion
+     ```
+   - Commit baseline JSON reports in `benches/criterion_baseline/` (git-tracked, small diff).
+   - Add CI step (GitHub Actions):  
+     ```yaml
+     - run: cargo criterion --bench memory --message-format json > bench.json
+     - run: ./scripts/bench-regress.sh bench.json  # fail if >5% slower
+     ```
+</Benchmarks>
+
+6. <CIIntegration>
+   - Workflow `perf.yml` runs on push to `main` and PRs tagged `perf`.
+   - Upload flamegraphs & criterion reports as artifacts for reviewer download.
+   - Fail build if:
+     - Any benchmark exceeds threshold (`scripts/bench-regress.sh`),
+     - `cargo bloat` shows > 5 % size increase,
+     - `cargo clippy -- -D clippy::pedantic` raises new warnings in optimized code.
+</CIIntegration>
+
+7. <Commits>
+   - Prefix with `perf:` and reference issue:  
+     - `perf(core): halve allocation count in parser #123`
+     - `perf(wallet): switch to FxHashMap for small keys`
+   - Each commit must cite **before/after metrics** in the message body.
+</Commits>
+
+8. <Docs>
+   - Update crate root doc with **Performance Notes** section summarizing key optimizations.
+   - Include relevant flamegraph snippets or Mermaid sequence diagrams in
+     `/docs/perf/<crate>.md` for future maintainers.
+</Docs>
+
+9. <Review>
+   - Reviewer checklist:
+     - Verified metric improvement and no regression elsewhere.
+     - Code remains readable; no unsafe blocks without justification.
+     - Benchmarks updated & CI green.
+   - Approve only when all boxes ticked.
+</Review>
+
+</Instructions>
+
+</ProjectRule>
