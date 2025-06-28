@@ -30,4 +30,7 @@ pub use toka_security_auth as auth;
 #[cfg(feature = "events")]
 pub use toka_events as events;
 #[cfg(feature = "toolkit")]
+pub use toka_toolkit_core::{Tool, ToolRegistry, ToolParams, ToolResult};
 pub use toka_tools as toolkit;
+#[cfg(feature = "toolkit")]
+pub use toka_toolkit_core as toolkit_core;

@@ -104,3 +104,5 @@ impl ToolRegistry {
         map.keys().cloned().collect()
     }
 }
+
+pub mod manifest;
