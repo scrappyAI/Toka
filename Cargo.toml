@@ -10,7 +10,7 @@ members = [
     "apps/toka-cli",
 
     # Tools
-    "crates/toka-tools-api",
+    "crates/toka-toolkit-core",
     "crates/toka-tools",
 
     # Events crate replacing `toka-vault`

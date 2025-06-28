@@ -1,80 +1,60 @@
-use anyhow::{Context, Result};
-use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::PathBuf;
+//! Standard **toolkit** crate – currently empty.
+//!
+//! This crate provides two things:
+//! 1. `ToolRegistry` – thin wrapper around `toka_toolkit_core::ToolRegistry` so
+//!    downstream code can keep using `toka_tools::ToolRegistry` while we
+//!    rebuild the standard library of tools.
+//! 2. Authoring guidelines (`TOOL_GUIDELINES`) embedded as a constant string so
+//!    dev tooling can surface them programmatically.
+
+use anyhow::Result;
 use std::sync::Arc;
-use tokio::sync::RwLock;
-use tracing::info;
-
-mod coverage;
-mod ingestion;
-mod ledger;
-mod reporting;
-mod scheduling;
-mod semantic_index;
-
-pub use coverage::{CoverageAnalysisTool, CoverageJsonTool};
-pub use ingestion::IngestionTool;
-pub use ledger::LedgerTool;
-pub use reporting::ReportingTool;
-pub use scheduling::SchedulingTool;
-pub use semantic_index::{ItemMetadata, SemanticIndexTool, TaggedItem};
+use async_trait::async_trait;
 
 // Re-export canonical types from `toka_toolkit_core` so internal modules can
 // simply `use crate::tools::{Tool, ToolParams, …}` without caring about the
 // crate boundary.
-pub use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolResult};
+pub use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolRegistry as CoreRegistry, ToolResult};
 
-// Alias for brevity inside this module only
-use toka_toolkit_core as core;
-
-/// Concrete `ToolRegistry` that bundles all **standard** tools behind the
-/// `toka-tools` crate.  It delegates to the lightweight implementation in
-/// `toka_toolkit_core` while adding convenience constructors.
+/// Thin wrapper that delegates every call to an inner `CoreRegistry`.
+/// At the moment **no tools are registered by default** – callers must install
+/// their own tool instances.
 pub struct ToolRegistry {
-    inner: core::ToolRegistry,
+    inner: CoreRegistry,
+}
+
+impl Default for ToolRegistry {
+    fn default() -> Self {
+        Self { inner: CoreRegistry::new() }
+    }
 }
 
 impl ToolRegistry {
-    /// Create a new registry and eagerly register all default tools shipped by
-    /// this crate.  This mirrors the previous behaviour so existing callers can
-    /// keep using `ToolRegistry::new().await?`.
-    pub async fn new() -> Result<Self> {
-        let registry = Self {
-            inner: core::ToolRegistry::new(),
-        };
+    /// Create an *empty* registry.
+    pub fn new_empty() -> Self { Self::default() }
 
-        // Register default tools (feature-gated refactor TBD)
-        registry.register_tool(Arc::new(IngestionTool::new())).await?;
-        registry.register_tool(Arc::new(LedgerTool::new())).await?;
-        registry.register_tool(Arc::new(SchedulingTool::new())).await?;
-        registry.register_tool(Arc::new(ReportingTool::new())).await?;
-        registry.register_tool(Arc::new(SemanticIndexTool::new())).await?;
-        registry.register_tool(Arc::new(CoverageJsonTool::new())).await?;
-        registry.register_tool(Arc::new(CoverageAnalysisTool::new())).await?;
-        registry.register_tool(Arc::new(EchoTool::new())).await?;
+    /// Back-compat helper: historically `ToolRegistry::new()` shipped with
+    /// built-ins.  For now it's an alias for `new_empty` while the standard
+    /// toolkit is being rewritten.
+    pub async fn new() -> Result<Self> { Ok(Self::default()) }
 
-        Ok(registry)
+    pub async fn register_tool(&self, t: Arc<dyn Tool + Send + Sync>) -> Result<()> {
+        self.inner.register_tool(t).await
     }
 
-    /// Forwarder for manual registration of additional tools.
-    pub async fn register_tool(&self, tool: Arc<dyn Tool + Send + Sync>) -> Result<()> {
-        self.inner.register_tool(tool).await
+    pub async fn execute_tool(&self, name: &str, p: &ToolParams) -> Result<ToolResult> {
+        self.inner.execute_tool(name, p).await
     }
 
     pub async fn get_tool(&self, name: &str) -> Option<Arc<dyn Tool + Send + Sync>> {
         self.inner.get_tool(name).await
     }
 
-    pub async fn list_tools(&self) -> Vec<String> {
-        self.inner.list_tools().await
-    }
-
-    pub async fn execute_tool(&self, name: &str, params: &ToolParams) -> Result<ToolResult> {
-        self.inner.execute_tool(name, params).await
-    }
+    pub async fn list_tools(&self) -> Vec<String> { self.inner.list_tools().await }
 }
+
+/// Canonical guidelines for building agent tools – markdown formatted.
+pub const TOOL_GUIDELINES: &str = include_str!("../../TOOL_DEVELOPMENT.md");
 
 /// Example tool implementation
 pub struct EchoTool {
@@ -154,21 +134,5 @@ mod tests {
         assert!(tools.contains(&"coverage-analyse".to_string()));
 
         Ok(())
-    }
-}
-
-/// Resolve a URI to a concrete filesystem path.
-///
-/// Currently supports only the `local://` scheme which maps to
-/// `~/.toka/storage/…`.  For backwards-compatibility any string **without** a
-/// scheme is treated as an absolute/relative path untouched.
-pub fn resolve_uri_to_path(uri: &str) -> PathBuf {
-    if let Some(path) = uri.strip_prefix("local://") {
-        let root = directories::BaseDirs::new()
-            .map(|d| d.home_dir().join(".toka/storage"))
-            .unwrap_or_else(|| PathBuf::from(".toka/storage"));
-        root.join(path)
-    } else {
-        PathBuf::from(uri)
     }
 }

@@ -35,7 +35,7 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-toka-toolkit-core = "0.1.0"
+toka-toolkit-core = "0.1"
 ```
 
 ### Example

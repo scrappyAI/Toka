@@ -23,7 +23,7 @@ toka-events = { path = "../toka-events", optional = true }
 toka-tools = { path = "../toka-tools", optional = true }
 toka-agents = { path = "../toka-agents", optional = true }
 toka-security-auth = { path = "../toka-security-auth", optional = true }
-toka-toolkit-core = { path = "../toka-tools-api", optional = true }
+toka-toolkit-core = { path = "../toka-toolkit-core", optional = true }
 toka-bus = { path = "../toka-bus" }
 toka-storage = { path = "../toka-storage" }
 

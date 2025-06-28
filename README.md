@@ -26,7 +26,7 @@ The project is in early development. Interfaces may change at any time.
 | _Event Store_ | `toka-events` | **Canonical source of truth** – supports in-memory & sled back-ends. |
 | _Agents_ | `toka-agents` | Re-usable agent behaviours & lifecycles. |
 | _Runtime_ | `toka-runtime` | Async host that wires agents, vault, and toolkit together. |
-| _Toolkit_ | `toka-toolkit-core`, `toka-toolkit` | Trait + reference tool implementations. |
+| _Toolkit_ | `toka-toolkit-core`, `toka-tools` | Trait + reference tool implementations. |
 | _Security_ | `toka-security-auth` | Capability tokens & auth helpers. |
 | _CLI_ | `toka-cli` | Dev-friendly command-line interface. |
 | _Meta_ | `toka` | Convenience crate that re-exports a sensible default prelude. |

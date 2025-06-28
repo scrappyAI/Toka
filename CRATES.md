@@ -11,8 +11,8 @@
 | `toka-storage-api`         | ① contract-only       | Async key–value artefact storage contract. |
 | `toka-security-auth`       | ① + ③                | Capability-token primitives and auth helpers (JWT, Paseto, etc.). |
 | `toka-agents`              | ② optional deps       | Default agent implementations for the runtime. |
-| `toka-tools-api`           | ① light, reusable     | Tool trait and registry abstraction with zero heavy deps. |
-| `toka-tools`               | ② heavy deps          | Batteries-included tool implementations (shell, coverage, etc.). |
+| `toka-toolkit-core`        | ① light, reusable     | Tool trait and registry abstractions (zero heavy deps). |
+| `toka-tools`               | ② optional deps       | Standard library of agent tools (currently minimal `echo`). |
 | `toka-bus`                 | ② lightweight runtime | In-process, async event-bus implementation (Tokio broadcast). |
 | `toka-memory`              | ② lightweight runtime | Simple in-memory cache adapter built on `tokio` & `dashmap`. |
 | `toka-storage`             | ② heavy deps          | Local-filesystem storage adapter used by the runtime. |

@@ -17,7 +17,7 @@ semver = { version = "1", features = ["serde"] }
 bitflags = { version = "2", features = ["serde"] }
 toka-bus = { path = "../toka-bus" }
 toka-events = { path = "../toka-events", optional = true }
-toka-toolkit-core = { path = "../toka-tools-api", optional = true }
+toka-toolkit-core = { path = "../toka-toolkit-core", optional = true }
 toka-memory = { path = "../toka-memory" }
 toka-agents-api = { path = "../toka-agents-api" }
 
