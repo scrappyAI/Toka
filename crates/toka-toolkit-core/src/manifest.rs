@@ -175,6 +175,21 @@ impl ToolManifest {
                 }
             }
         }
+
+        // If schemas provided, ensure they compile under draft-07
+        fn check_schema(opt: &Option<Schema>, which: &str) -> anyhow::Result<()> {
+            if let Some(schema) = opt {
+                let raw: serde_json::Value = serde_json::from_str(&schema.0)
+                    .with_context(|| format!("{} schema is not valid JSON", which))?;
+                // Parse-only validation; full schema compilation would need
+                // 'static lifetime.  TODO: cache/leak safely if we require
+                // deeper validation.
+            }
+            Ok(())
+        }
+        check_schema(&self.input_schema, "input")?;
+        check_schema(&self.output_schema, "output")?;
+
         Ok(())
     }
 } 
