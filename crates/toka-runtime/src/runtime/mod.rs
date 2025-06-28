@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+#![allow(dead_code)]
 // Runtime module
 
 use anyhow::{Context, Result};

@@ -1,3 +1,4 @@
+#![warn(missing_docs)]
 //! Toka Meta-Crate
 //!
 //! This crate is a convenience layer that re-exports the most frequently used

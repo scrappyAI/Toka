@@ -19,6 +19,7 @@ toka-bus = { path = "../toka-bus" }
 toka-events = { path = "../toka-events", optional = true }
 toka-tools-api = { path = "../toka-tools-api", optional = true }
 toka-memory = { path = "../toka-memory" }
+toka-agents-api = { path = "../toka-agents-api" }
 
 [features]
 default = ["core"]

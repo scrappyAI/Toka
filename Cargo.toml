@@ -33,6 +33,9 @@ members = [
     # New member
     "crates/toka-storage-api",
 
+    # Agents API - newly extracted from toka-agents
+    "crates/toka-agents-api",
+
     # Primitives API (ids, currency)
     "crates/toka-primitives-api",
 ]

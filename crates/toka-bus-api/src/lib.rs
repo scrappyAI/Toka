@@ -42,18 +42,16 @@
 
 #![no_std]
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)]
 
 extern crate alloc;
 use alloc::boxed::Box;
-use alloc::format;
 
 #[cfg(feature = "serde-support")] use serde::{Serialize, Deserialize};
 #[cfg(feature = "async")] use async_trait::async_trait;
 #[cfg(feature = "async")] use anyhow::Result;
 #[cfg(feature = "serde-support")] use chrono::{DateTime, Utc};
 #[cfg(feature = "serde-support")] use uuid::Uuid;
-#[cfg(feature = "async")] use tokio::sync::broadcast;
 
 /// Blanket serialization bound required for bus payloads.
 #[cfg(feature = "serde-support")]

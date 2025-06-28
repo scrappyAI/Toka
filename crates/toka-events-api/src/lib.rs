@@ -35,12 +35,15 @@ use alloc::boxed::Box;
 // Type aliases & core traits
 // -------------------------------------------------------------------------------------------------
 #[cfg(feature = "serde-support")]
+/// Unique identifier for a committed event (UUID v4).
 pub type EventId = Uuid;
 
 #[cfg(feature = "serde-support")]
+/// Semantic identifier representing a high-level intent or task cluster.
 pub type IntentId = Uuid;
 
 #[cfg(feature = "serde-support")]
+/// Blake3 digest representing the causal hash chain of an event.
 pub type CausalDigest = [u8; 32];
 
 /// Marker trait implemented by all serialisable event payloads.
@@ -114,6 +117,7 @@ pub fn create_event_header<P: EventPayload>(
 // -------------------------------------------------------------------------------------------------
 #[cfg(feature = "async")]
 #[async_trait]
+/// Abstraction over an append-only event sink.
 pub trait EventSink: Send + Sync {
     /// Persist an [`EventHeader`] together with its serialized payload bytes.
     async fn commit(&self, header: &EventHeader, payload: &[u8]) -> anyhow::Result<()>;
@@ -121,6 +125,7 @@ pub trait EventSink: Send + Sync {
 
 #[cfg(feature = "async")]
 #[async_trait]
+/// Read-side query interface for event headers & payloads.
 pub trait QueryApi: Send + Sync {
     /// Fetch an [`EventHeader`] by identifier.
     async fn header(&self, id: &EventId) -> anyhow::Result<Option<EventHeader>>;
@@ -134,6 +139,7 @@ pub trait QueryApi: Send + Sync {
 // -------------------------------------------------------------------------------------------------
 #[cfg(feature = "serde-support")]
 pub mod prelude {
+    //! Convenient glob-import for the most common event types & traits.
     pub use super::{EventHeader, EventId, IntentId, CausalDigest, EventPayload};
     #[cfg(feature = "async")]
     pub use super::{EventSink, QueryApi};

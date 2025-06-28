@@ -1,16 +1,23 @@
+#![warn(missing_docs)]
 //! Toka Agents – default agent implementations
 //!
 //! This crate provides out-of-the-box agents (e.g. `SymbolicAgent`) that can be compiled
 //! into `toka-runtime` when the `agents-core` feature is enabled.  The implementation is
 //! intentionally free of heavy external dependencies so the runtime can remain lean.
 
+#[doc(hidden)]
 pub mod agent;
+#[doc(hidden)]
 pub mod bundle;
+#[doc(hidden)]
 pub mod metadata;
 pub mod prelude;
+#[doc(hidden)]
 pub mod reasoning;
+#[doc(hidden)]
 pub mod system;
 
+#[allow(deprecated)]
 pub use agent::{BaseAgent, Belief, Observation, SymbolicAgent};
 pub use bundle::{AgentBundle, ToolSpec};
 pub use metadata::{AgentMetadata, Capability};
