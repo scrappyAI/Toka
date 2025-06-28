@@ -12,7 +12,34 @@
 use serde::{Deserialize, Serialize};
 
 /// Current schema version – increment **major** on breaking changes.
-pub const SCHEMA_VERSION: &str = "1.0";
+pub const SCHEMA_VERSION: &str = "1.1";
+
+/// Supported higher-level protocol mapping (MCP / A2A) so external frameworks
+/// can automatically translate the manifest.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "protocol", rename_all = "lowercase")]
+pub enum ProtocolMapping {
+    /// Model Context Protocol (Anthropic) function mapping
+    /// – `function_name` becomes the MCP `call` field.
+    Mcp {
+        /// JSON-RPC method name advertised via MCP (often same as capability).
+        function_name: String,
+        /// Target MCP version (semver).  Default = "1".
+        #[serde(default = "default_mcp_version", skip_serializing_if = "is_default_mcp_version")]
+        version: String,
+    },
+    /// Google Agent-to-Agent protocol action mapping.
+    A2a {
+        /// The `action` identifier as defined by A2A spec.
+        action: String,
+        /// Optional A2A spec version.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        version: Option<String>,
+    },
+}
+
+fn default_mcp_version() -> String { "1".into() }
+fn is_default_mcp_version(v: &String) -> bool { v == "1" }
 
 /// Where & how the tool can be invoked.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,6 +105,14 @@ pub struct ToolManifest {
     /// Schema version for forward/backward compat.
     #[serde(default = "schema_version")]
     pub manifest_version: String,
+
+    /// Supported external protocol mappings (optional).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub protocols: Vec<ProtocolMapping>,
+
+    /// Arbitrary extension metadata for future or domain-specific keys.
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub metadata: std::collections::BTreeMap<String, String>,
 }
 
 fn schema_version() -> String {
