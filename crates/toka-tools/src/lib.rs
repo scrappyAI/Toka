@@ -48,4 +48,4 @@
 pub mod tools;
 
 // Re-export the important types so downstream code can simply `use toka_toolkit::{Tool, ToolRegistry}`
-pub use crate::tools::{Tool, ToolRegistry};
+pub use crate::tools::{Tool, ToolRegistry, ToolParams};
