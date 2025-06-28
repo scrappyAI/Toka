@@ -1,14 +1,44 @@
-//! Bus API crate – defines the contracts and core types for Toka's in-process
-//! event bus.  Keep this crate lean so it can be consumed by binaries,
-//! libraries, or even WASM targets without dragging in Tokio.
+//! `toka-bus-api` — minimal, **no_std-friendly** trait contracts and data types
+//! for the Toka **in-process event bus**.
 //!
-//! # Features
-//! * `serde-support` – enables `serde::{Serialize, Deserialize}` for all public
-//!   types.
-//! * `async` – pulls in `async_trait` + `anyhow` and exposes the async traits.
+//! This crate purposefully ships **zero** heavy dependencies; consumers can
+//! enable the following *opt-in* features:
 //!
-//! All features are opt-in – use `default-features = false` for strict `no_std`
-//! targets.
+//! | Feature | Enables | Notes |
+//! |---------|---------|-------|
+//! | `serde-support` | `serde::{Serialize, Deserialize}` impls on all public   
+//!                    types | Keeps default build lean if you only work with    
+//!                    opaque headers. |
+//! | `async` | • `async_trait` for the runtime traits  
+//!           | • `anyhow` for ergonomic `Result` types | Activates the async   
+//!           APIs; implies you are in a `tokio` (or compatible) env. |
+//! | `tokio` | `tokio::sync::broadcast::Receiver` in the `EventBus` API | Pulled
+//!            in automatically by `async` but can be enabled standalone. |
+//!
+//! ## Quick Example
+//! ```rust,ignore
+//! use toka_bus_api::{prelude::*, AgentEvent};
+//! use anyhow::Result;
+//!
+//! // Dummy implementation which just logs.
+//! struct LoggerBus;
+//! #[async_trait::async_trait]
+//! impl EventBus for LoggerBus {
+//!     async fn publish<P: EventPayload + ?Sized>(&self,
+//!         _payload: &P,
+//!         kind: &str) -> Result<BusEventHeader> {
+//!         println!("published {kind}");
+//!         Ok(BusEventHeader::new(kind))
+//!     }
+//!     fn subscribe(&self) -> tokio::sync::broadcast::Receiver<BusEventHeader> {
+//!         let (tx, rx) = tokio::sync::broadcast::channel(8);
+//!         let _ = tx; // tx would be stored and used by publish
+//!         rx
+//!     }
+//! }
+//! ```
+//!
+//! See `toka-bus` for the default in-memory implementation.
 
 #![no_std]
 #![forbid(unsafe_code)]
@@ -41,6 +71,14 @@ pub struct BusEventHeader {
     pub kind: alloc::string::String,
     /// Wall-clock timestamp when the event was published.
     pub timestamp: DateTime<Utc>,
+}
+
+impl BusEventHeader {
+    /// Convenience constructor when payload isn't required.
+    #[cfg(all(feature = "serde-support", feature = "async"))]
+    pub fn new(kind: &str) -> Self {
+        Self { id: Uuid::new_v4(), kind: alloc::string::String::from(kind), timestamp: Utc::now() }
+    }
 }
 
 /// Core abstraction – an async, multi-producer multi-consumer bus.
@@ -101,6 +139,8 @@ impl<T: EventBus + ?Sized> EventBusExt for T {}
 // -------------------------------------------------------------------------------------------------
 #[cfg(feature = "serde-support")]
 pub mod prelude {
+    //! Convenient glob-import for the most common items:
+    //! `use toka_bus_api::prelude::*;`
     pub use super::{BusEventHeader, AgentEvent, ToolEvent, EventPayload};
     #[cfg(feature = "async")]
     pub use super::{EventBus, EventBusExt};
