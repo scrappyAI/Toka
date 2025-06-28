@@ -1,10 +1,5 @@
----
-description: 
-globs: 
-alwaysApply: false
----
 <ProjectRule name="HardenSecuritySurfaceAgentTools">
-<Extends>HardenSecuritySurface</Extends>
+<Extends>Baseline, HardenSecuritySurface</Extends>
 
 <Description>
 Guidelines for building safe, composable, and auditable tools for use by AI agents. Tools are interfaces agents invoke to perform external actions or access privileged information.

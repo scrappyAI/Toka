@@ -1,10 +1,5 @@
----
-description: 
-globs: 
-alwaysApply: false
----
 <ProjectRule name="HardenSecuritySurfaceAgents">
-<Extends>HardenSecuritySurface</Extends>
+<Extends>Baseline, HardenSecuritySurface</Extends>
 
 <Description>
 Security-focused guidance for developing AI agents with execution capabilities, ensuring control, traceability, and fail-safe boundaries in autonomous and semi-autonomous behaviors.
@@ -72,7 +67,7 @@ Security-focused guidance for developing AI agents with execution capabilities, 
 </FailSafeDefaults>
 
 8. <Commit Discipline>
-   - Agent-related commits must document the agent’s:
+   - Agent-related commits must document the agent's:
      - Scope
      - Capabilities added or changed
      - Security assumptions

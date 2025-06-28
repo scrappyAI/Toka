@@ -1,9 +1,5 @@
----
-description: 
-globs: 
-alwaysApply: false
----
 <ProjectRule name="DebugRustErrors">
+<Extends>Baseline</Extends>
 
 <Description>
 Structured debugging protocol for identifying, diagnosing, and resolving errors in Rust codebases. Ensures fixes are principled, regression-resistant, and rooted in understanding, not guesswork.
@@ -46,14 +42,14 @@ Structured debugging protocol for identifying, diagnosing, and resolving errors 
 4. <FixWithJustification>
    - Fix the **root cause**, not just the symptom.
    - Include a comment or doc update that answers:  
-     “**Why** did this fail, and **why** is it safe now?”
+     "**Why** did this fail, and **why** is it safe now?"
    - Avoid speculative fixes without test-backed confidence.
 
 </FixWithJustification>
 
 5. <AddRegressionTests>
    - Lock in the fix:
-     - Add a minimal regression test that would’ve caught the original issue.
+     - Add a minimal regression test that would've caught the original issue.
      - Cover related edge cases or variants.
      - Use `#[should_panic]`, `matches!`, or `assert_err!` where appropriate.
 
@@ -71,7 +67,7 @@ Structured debugging protocol for identifying, diagnosing, and resolving errors 
    - Commit messages must:
      - Reference the failure cause
      - Include test ID if applicable
-     - Avoid “fixes bug” without explanation
+     - Avoid "fixes bug" without explanation
    - Example: `fix(config): handle missing TOML key with fallback + test`
 
 </CommittingFixes>

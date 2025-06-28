@@ -1,10 +1,5 @@
----
-description: 
-globs: 
-alwaysApply: false
----
 <ProjectRule name="HardenSecuritySurfaceAgentDebugging">
-<Extends>HardenSecuritySurface</Extends>
+<Extends>Baseline, HardenSecuritySurface</Extends>
 
 <Description>
 Secure guidelines for debugging AI agents and their interactions. Focuses on observability, traceability, and containment to prevent inadvertent harm or data leaks during troubleshooting.
@@ -53,7 +48,7 @@ Secure guidelines for debugging AI agents and their interactions. Focuses on obs
 5. <Crash Reproduction>
    - Capture minimum crash state:
      - Input + tool plan + stack trace
-   - Add reproduction harnesses to unit-test agent regressions (e.g., `agent_test!(“edge_case_42”)`).
+   - Add reproduction harnesses to unit-test agent regressions (e.g., `agent_test!("edge_case_42")`).
 
 </CrashReproduction>
 
