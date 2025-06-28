@@ -48,10 +48,18 @@ impl ToolRegistry {
 
         manifest.validate()?;
 
-        let transport = manifest
-            .transports
-            .get(0)
-            .ok_or_else(|| anyhow!("manifest.transports must not be empty"))?;
+        // Pick the **first transport we know how to handle** instead of
+        // blindly taking index 0. This prevents accidentally using an
+        // insecure or unsupported option when the manifest lists multiple
+        // transports.
+        let supported_transport = manifest.transports.iter().find(|t| match t {
+            Transport::Wasm { .. } => cfg!(feature = "wasm_loader"),
+            // Additional transports go here as they become available.
+            _ => false,
+        });
+
+        let transport = supported_transport
+            .ok_or_else(|| anyhow!("None of the declared transports are supported in this build"))?;
 
         match transport {
             Transport::Wasm { path } => {
@@ -80,13 +88,19 @@ impl ToolRegistry {
 #[cfg(feature = "wasm_loader")]
 mod wasm {
     use super::*;
-    use wasmtime::{Engine, Module, Store, Caller, Linker, Func, Memory, Config, Instance};
+    use wasmtime::{Engine, Module, Store, Linker, Instance};
+
+    /// Maximum number of bytes a WASM tool is allowed to return in a single
+    /// call. 1 MiB should be plenty for structured JSON output while
+    /// preventing accidental or malicious memory exhaustion.
+    const MAX_WASM_OUTPUT_BYTES: usize = 1 * 1024 * 1024; // 1 MiB
 
     /// Simple WASM-hosted tool wrapper.
     pub struct WasmTool {
         manifest: ToolManifest,
-        module_path: String,
         engine: Engine,
+        module: std::sync::Arc<Module>,
+        param_validator: Option<std::sync::Arc<jsonschema::JSONSchema>>, // Pre-compiled schema for runtime checks
     }
 
     impl WasmTool {
@@ -98,17 +112,32 @@ mod wasm {
 
             // Use default Wasmtime config for now (no WASI, no I/O).
             let engine = Engine::default();
-            Ok(Self { manifest, module_path, engine })
+
+            // Compile module **once** at registration time – this is CPU
+            // intensive so we avoid doing it on every invocation.
+            let module = Module::from_file(&engine, &module_path)
+                .with_context(|| format!("Compiling WASM module at {}", module_path))?;
+
+            // Pre-compile the JSON-Schema (if any) for fast param validation.
+            let param_validator = if let Some(schema) = &manifest.input_schema {
+                let doc: serde_json::Value = serde_json::from_str(&schema.0)?;
+                Some(std::sync::Arc::new(jsonschema::JSONSchema::compile(&doc)?))
+            } else { None };
+
+            Ok(Self {
+                manifest,
+                engine,
+                module: std::sync::Arc::new(module),
+                param_validator,
+            })
         }
 
-        /// Blocking helper – compile & instantiate the module, invoke `execute`.
+        /// Blocking helper – instantiate the module & invoke `execute`.
         fn run_module(&self, json_in: &str) -> Result<String> {
-            // Compile module (could be cached per module_path in future).
-            let module = Module::from_file(&self.engine, &self.module_path)
-                .with_context(|| format!("Compiling WASM module at {}", self.module_path))?;
+            // Instantiate the pre-compiled module.
             let mut store = Store::new(&self.engine, ());
             let linker = Linker::new(&self.engine);
-            let instance = linker.instantiate(&mut store, &module)?;
+            let instance = linker.instantiate(&mut store, &*self.module)?;
 
             // Fetch exported `execute` function
             let execute_func = instance.get_typed_func::<(i32, i32), (i32, i32), _>(&mut store, "execute")
@@ -126,6 +155,11 @@ mod wasm {
 
             // Call execute
             let (out_ptr, out_len) = execute_func.call(&mut store, (ptr, len))?;
+
+            // Enforce length limits **before** allocating the buffer.
+            if (out_len as usize) > MAX_WASM_OUTPUT_BYTES {
+                anyhow::bail!("WASM tool returned {out_len} bytes which exceeds the hard limit of {MAX_WASM_OUTPUT_BYTES} bytes");
+            }
 
             // Read output JSON
             let mut out_buf = vec![0u8; out_len as usize];
@@ -156,9 +190,50 @@ mod wasm {
         }
 
         async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
+            // Serialize params first. The tool is only allowed to receive the
+            // `args` object per the schema – we forward the full struct for
+            // backwards compatibility.
             let json_in = serde_json::to_string(params)?;
-            let json_out = tokio::task::spawn_blocking(move || self.run_module(&json_in))
-                .await??;
+
+            // We run the heavy Wasmtime work in a blocking task, but pass only
+            // cheap, reference-counted handles – not `self` by move – to avoid
+            // duplicating state.
+            let engine = self.engine.clone();
+            let module = self.module.clone();
+            let json_in_owned = json_in.clone();
+            let run = move || {
+                // Local shim replicating `run_module`, borrowing the moved
+                // engine & module.
+                let mut store = Store::new(&engine, ());
+                let linker = Linker::new(&engine);
+                let instance = linker.instantiate(&mut store, &module)?;
+
+                let execute_func = instance.get_typed_func::<(i32, i32), (i32, i32), _>(&mut store, "execute")
+                    .context("`execute` export with (ptr, len) -> (ptr, len) signature not found")?;
+
+                let memory = instance.get_memory(&mut store, "memory")
+                    .context("`memory` export not found")?;
+
+                let in_bytes = json_in_owned.as_bytes();
+                let len = in_bytes.len() as i32;
+                // Re-use helper to allocate – we need an instance-specific call.
+                let alloc = instance.get_typed_func::<i32, i32, _>(&mut store, "alloc")
+                    .context("`alloc` export not found (needed to copy params)")?;
+                let ptr = alloc.call(&mut store, len)?;
+                memory.write(&mut store, ptr as usize, in_bytes)?;
+
+                let (out_ptr, out_len) = execute_func.call(&mut store, (ptr, len))?;
+
+                if (out_len as usize) > MAX_WASM_OUTPUT_BYTES {
+                    anyhow::bail!("WASM tool returned {out_len} bytes which exceeds the hard limit of {MAX_WASM_OUTPUT_BYTES} bytes");
+                }
+
+                let mut out_buf = vec![0u8; out_len as usize];
+                memory.read(&mut store, out_ptr as usize, &mut out_buf)?;
+                Ok::<_, anyhow::Error>(String::from_utf8(out_buf)?)
+            };
+
+            let json_out = tokio::task::spawn_blocking(run).await??;
 
             Ok(ToolResult {
                 success: true,
@@ -173,8 +248,13 @@ mod wasm {
             })
         }
 
-        fn validate_params(&self, _params: &ToolParams) -> Result<()> {
-            // For now we rely on WASM guest to validate – registry has already validated against schema.
+        fn validate_params(&self, params: &ToolParams) -> Result<()> {
+            if let Some(validator) = &self.param_validator {
+                let value = serde_json::to_value(&params.args)?;
+                validator
+                    .validate(&value)
+                    .map_err(|e| anyhow!("parameter validation failed: {e}"))?;
+            }
             Ok(())
         }
     }

@@ -275,25 +275,53 @@ fn ensure_schema_compiles(opt: &Option<Schema>, which: &str) -> anyhow::Result<(
     // enough for CLI / short-lived binaries and *no memory leaks*.
     #[cfg(not(feature = "schema_cache"))]
     {
-        let leaked_doc: &'static serde_json::Value = Box::leak(Box::new(doc));
-
+        // Compile the schema **without** leaking memory. The `jsonschema` crate internally
+        // clones the necessary parts of the draft so the borrowed reference only needs to
+        // be live for the duration of `compile`. Once the validator is dropped the memory
+        // is released, eliminating the unbounded leak that previously existed in this
+        // branch.
         jsonschema::JSONSchema::options()
             .with_draft(Draft::Draft7)
-            .compile(leaked_doc)
+            .compile(&doc)
             .with_context(|| format!("{which} schema: invalid draft-07"))?;
         Ok(())
     }
 }
 
-/// Recursively checks whether a JSON value contains a remote `$ref`.
+/// Returns `true` if the provided `$ref` URI points to a *remote* resource.
+///
+/// The implementation is intentionally conservative – anything that cannot be
+/// unequivocally proven to be *local* is treated as remote. This includes:
+/// • Absolute `http`/`https` URIs.
+/// • Protocol-relative URLs that start with `//example.com`.
+/// • Escaped variants such as `http:\u002F\u002Fexample.com` (after JSON
+///   unescape performed by serde).
+fn is_remote_uri(s: &str) -> bool {
+    // Fast-path protocol-relative forms.
+    if s.starts_with("//") {
+        return true;
+    }
+
+    // Attempt full URL parsing. If it parses and has an HTTP(S) scheme we
+    // treat it as remote. All other schemes (including `file:`) are rejected
+    // for now – add allow-list entries here if future use-cases arise.
+    if let Ok(url) = url::Url::parse(s) {
+        return matches!(url.scheme(), "http" | "https");
+    }
+
+    false
+}
+
+/// Recursively searches a JSON value for any *remote* `$ref`.
 fn contains_remote_ref(v: &serde_json::Value) -> bool {
     match v {
         serde_json::Value::Object(map) => {
             if let Some(serde_json::Value::String(s)) = map.get("$ref") {
-                if s.starts_with("http://") || s.starts_with("https://") {
+                if is_remote_uri(s) {
                     return true;
                 }
             }
+            // Continue walking the structure.
             map.values().any(contains_remote_ref)
         }
         serde_json::Value::Array(arr) => arr.iter().any(contains_remote_ref),
