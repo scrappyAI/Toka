@@ -30,6 +30,12 @@ members = [
 
     # New member
     "crates/toka-memory-api",
+
+    # New member
+    "crates/toka-bus-api",
+
+    # New member
+    "crates/toka-storage-api",
 ]
 
 [workspace.dependencies]
