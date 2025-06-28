@@ -1,7 +1,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use std::sync::Arc;
-use toka_tools_api::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};
+use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};
 use tokio::time::{sleep, Duration};
 
 struct EchoTool;

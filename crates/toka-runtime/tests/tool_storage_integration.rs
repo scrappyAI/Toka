@@ -6,7 +6,7 @@ use std::sync::Arc;
 use tempfile::tempdir;
 use toka_agents::SymbolicAgent;  // Use BaseAgent instead; SymbolicAgent will be removed in a future release
 use toka_runtime::runtime::{Runtime, RuntimeConfig};
-use toka_tools_api::{Tool, ToolMetadata, ToolParams, ToolResult};
+use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolResult};
 
 struct EchoTool;
 

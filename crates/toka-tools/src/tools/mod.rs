@@ -21,143 +21,58 @@ pub use reporting::ReportingTool;
 pub use scheduling::SchedulingTool;
 pub use semantic_index::{ItemMetadata, SemanticIndexTool, TaggedItem};
 
-/// Tool execution result with metadata
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolResult {
-    pub success: bool,
-    pub output: String,
-    pub metadata: ToolMetadata,
-}
+// Re-export canonical types from `toka_toolkit_core` so internal modules can
+// simply `use crate::tools::{Tool, ToolParams, …}` without caring about the
+// crate boundary.
+pub use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolResult};
 
-/// Metadata for tool execution
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolMetadata {
-    pub execution_time_ms: u64,
-    pub tool_version: String,
-    pub timestamp: u64,
-}
+// Alias for brevity inside this module only
+use toka_toolkit_core as core;
 
-/// Tool execution parameters
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolParams {
-    pub name: String,
-    pub args: HashMap<String, String>,
-}
-
-/// Core trait that all tools must implement
-#[async_trait]
-pub trait Tool: Send + Sync {
-    /// Get the tool's name
-    fn name(&self) -> &str;
-
-    /// Get the tool's description
-    fn description(&self) -> &str;
-
-    /// Get the tool's version
-    fn version(&self) -> &str;
-
-    /// Execute the tool with given parameters
-    async fn execute(&self, params: &ToolParams) -> Result<ToolResult>;
-
-    /// Validate the tool parameters
-    fn validate_params(&self, params: &ToolParams) -> Result<()>;
-}
-
-/// Tool registry for managing available tools
+/// Concrete `ToolRegistry` that bundles all **standard** tools behind the
+/// `toka-tools` crate.  It delegates to the lightweight implementation in
+/// `toka_toolkit_core` while adding convenience constructors.
 pub struct ToolRegistry {
-    tools: Arc<RwLock<HashMap<String, Arc<dyn Tool + Send + Sync>>>>,
+    inner: core::ToolRegistry,
 }
 
 impl ToolRegistry {
-    /// Create a new tool registry with all default tools
+    /// Create a new registry and eagerly register all default tools shipped by
+    /// this crate.  This mirrors the previous behaviour so existing callers can
+    /// keep using `ToolRegistry::new().await?`.
     pub async fn new() -> Result<Self> {
         let registry = Self {
-            tools: Arc::new(RwLock::new(HashMap::new())),
+            inner: core::ToolRegistry::new(),
         };
 
-        // Register default tools
-        registry
-            .register_tool(Arc::new(IngestionTool::new()))
-            .await?;
+        // Register default tools (feature-gated refactor TBD)
+        registry.register_tool(Arc::new(IngestionTool::new())).await?;
         registry.register_tool(Arc::new(LedgerTool::new())).await?;
-        registry
-            .register_tool(Arc::new(SchedulingTool::new()))
-            .await?;
-        registry
-            .register_tool(Arc::new(ReportingTool::new()))
-            .await?;
-        registry
-            .register_tool(Arc::new(SemanticIndexTool::new()))
-            .await?;
-        registry
-            .register_tool(Arc::new(CoverageJsonTool::new()))
-            .await?;
-        registry
-            .register_tool(Arc::new(CoverageAnalysisTool::new()))
-            .await?;
+        registry.register_tool(Arc::new(SchedulingTool::new())).await?;
+        registry.register_tool(Arc::new(ReportingTool::new())).await?;
+        registry.register_tool(Arc::new(SemanticIndexTool::new())).await?;
+        registry.register_tool(Arc::new(CoverageJsonTool::new())).await?;
+        registry.register_tool(Arc::new(CoverageAnalysisTool::new())).await?;
         registry.register_tool(Arc::new(EchoTool::new())).await?;
 
         Ok(registry)
     }
 
-    /// Register a new tool
+    /// Forwarder for manual registration of additional tools.
     pub async fn register_tool(&self, tool: Arc<dyn Tool + Send + Sync>) -> Result<()> {
-        let name = tool.name().to_string();
-        let mut tools = self.tools.write().await;
-
-        if tools.contains_key(&name) {
-            return Err(anyhow::anyhow!("Tool already registered: {}", name));
-        }
-
-        tools.insert(name.clone(), tool);
-        info!("Registered tool: {}", name);
-        Ok(())
+        self.inner.register_tool(tool).await
     }
 
-    /// Get a tool by name
     pub async fn get_tool(&self, name: &str) -> Option<Arc<dyn Tool + Send + Sync>> {
-        let tools = self.tools.read().await;
-        tools.get(name).cloned()
+        self.inner.get_tool(name).await
     }
 
-    /// List all registered tools
     pub async fn list_tools(&self) -> Vec<String> {
-        let tools = self.tools.read().await;
-        tools.keys().cloned().collect()
+        self.inner.list_tools().await
     }
 
-    /// Execute a tool by name with parameters
     pub async fn execute_tool(&self, name: &str, params: &ToolParams) -> Result<ToolResult> {
-        let tool = self
-            .get_tool(name)
-            .await
-            .ok_or_else(|| anyhow::anyhow!("Tool not found: {}", name))?;
-
-        let start_time = std::time::Instant::now();
-
-        // Validate parameters
-        tool.validate_params(params)?;
-
-        // Execute tool
-        let result = tool
-            .execute(params)
-            .await
-            .with_context(|| format!("Failed to execute tool: {}", name))?;
-
-        let execution_time = start_time.elapsed().as_millis() as u64;
-
-        Ok(ToolResult {
-            success: result.success,
-            output: result.output,
-            metadata: ToolMetadata {
-                execution_time_ms: execution_time,
-                tool_version: tool.version().to_string(),
-                timestamp: std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs(),
-            },
-        })
+        self.inner.execute_tool(name, params).await
     }
 }
 

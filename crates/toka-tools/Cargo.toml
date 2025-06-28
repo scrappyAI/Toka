@@ -21,7 +21,7 @@ base64 = "0.21"
 directories = "5.0"
 tracing = "0.1"
 typetag = "0.2"
-toka-tools-api = { path = "../toka-tools-api" }
+toka-toolkit-core = { path = "../toka-tools-api" }
 
 [dev-dependencies]
 # Async test runtime and utilities

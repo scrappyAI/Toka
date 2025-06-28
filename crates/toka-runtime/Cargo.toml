@@ -23,7 +23,7 @@ toka-events = { path = "../toka-events", optional = true }
 toka-tools = { path = "../toka-tools", optional = true }
 toka-agents = { path = "../toka-agents", optional = true }
 toka-security-auth = { path = "../toka-security-auth", optional = true }
-toka-tools-api = { path = "../toka-tools-api", optional = true }
+toka-toolkit-core = { path = "../toka-tools-api", optional = true }
 toka-bus = { path = "../toka-bus" }
 toka-storage = { path = "../toka-storage" }
 
@@ -41,7 +41,7 @@ tokio-test = "0.4"
 [features]
 default = []
 # enable full toolkit (cli + typetag + external crate)
-toolkit = ["toka-tools", "clap", "typetag", "toka-agents", "toka-agents/toolkit", "toka-tools-api"]
+toolkit = ["toka-tools", "clap", "typetag", "toka-agents", "toka-agents/toolkit", "toka-toolkit-core"]
 # secure local event store
 vault = ["dep:toka-events", "rmp-serde"]
 # auth capability tokens utilities

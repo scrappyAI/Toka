@@ -6,4 +6,4 @@
 #![cfg(feature = "toolkit")]
 
 pub use toka_tools::*;
-pub use toka_tools_api::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};
+pub use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};
