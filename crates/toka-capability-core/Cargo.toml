@@ -1,0 +1,16 @@
+[package]
+name = "toka-capability-core"
+version = "0.2.0-alpha"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Core, no-std capability token primitives – Claims struct and capability traits shared by all implementation crates."
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+
+[features]
+# Opt into no_std mode by disabling default std feature via --no-default-features
+default = ["std"]
+std = []

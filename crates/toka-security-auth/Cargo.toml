@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Lightweight capability-token primitives for Toka platform auth."
+[package.metadata]
+deprecated = true
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }

@@ -1,6 +1,7 @@
 # Capability Tokens – v0.1 Specification
+# Capability Tokens – v0.2 Specification
 
-> Status: **Draft–Ready** | Version: 0.1 | Last-updated: 2025-06-29
+> Status: **Stable** | Version: 0.2 | Last-updated: 2025-06-29
 
 ---
 
@@ -23,11 +24,7 @@ The remainder of this document focuses on the *internal* flavour.
 
 ## 2  Token Format
 
-Internally we encode capabilities as JSON Web Tokens (RFC 7519) because:
-
-1. Ubiquitous library support – no bespoke crypto.
-2. Self-contained claims; no round-trip to a database on every call.
-3. Compact, URL-safe, human-readable for debugging.
+Internally we encode capabilities as JSON Web Tokens (RFC 7519) by default via the *HS256* implementation crate [`toka-capability-jwt-hs256`]. Alternative algorithms can be plugged in without affecting this spec.
 
 ### 2.1  Header
 
@@ -109,19 +106,18 @@ let claims = validator.validate(token.as_str()).await?;
 assert_eq!(claims.vault, "vault_123");
 ```
 
-The full API lives in `crates/toka-security-auth`.
+The reference Rust implementation lives in `crates/toka-capability-jwt-hs256` with the shared traits residing in `crates/toka-capability-core`.
 
 ---
 
 ## 7  Compatibility & Migration
 
-Nothing to migrate; v0.1 is the first public release. Future version 0.2 will add:
+The transition from v0.1 to v0.2 is *source compatible* for most callers via the legacy re-export crate `toka-capability`.
 
+New features slated for v0.3:
 * EdDSA signing & verification.
 * Optional Biscuit token format with offline delegation.
 * Opaque-token mode backed by Postgres for instant revocation.
-
-All additions will be *backwards compatible*.
 
 ---
 

@@ -1,33 +1,20 @@
 #![forbid(unsafe_code)]
-//! Toka Capability – v0.2 primitives
-//!
-//! This crate provides *no-std*-friendly primitives for **capability tokens**
-//! that internal Toka services use for authorisation.  The public interface is
-//! deliberately small and stable so that downstream crates can swap the
-//! underlying crypto or transport without major refactors.
-//!
-//! ## Versioning
-//! This is the **0.2-alpha** rewrite that supersedes the former
-//! `toka-security-auth` crate (v0.1).  It aligns with the draft
-//! specification in `docs/40_capability_tokens_spec_v0.1.md` and introduces
-//! cleaner boundaries ready for future extensions like EdDSA, Biscuit and
-//! opaque-token revocation.
-//!
-//! Differences to v0.1:
-//! * Crate renamed to `toka-capability`.
-//! * Moved revocation & CVM concerns into sibling crates so this one stays
-//!   focused on **creation** and **validation** only.
-//! * Internal validation API tightened – no more default clock leeway.
-//!
-//! ---
-//! This crate is memory safe (no `unsafe`) and has **zero required runtime
-//! allocations** on the happy path.
+#![deprecated(note = "toka-capability has been split into toka-capability-core + toka-capability-jwt-hs256. Depend on those crates directly.")]
 
-pub mod token;
-pub mod validator;
+//! DEPRECATED – use `toka-capability-core` + `toka-capability-jwt-hs256` instead.
 
-pub mod prelude;
+pub use toka_capability_core as core;
+pub use toka_capability_jwt_hs256::*;
 
-pub use prelude::*;
+// Backwards compatibility: keep original names via re-export.
+pub use toka_capability_core::prelude::Claims;
+pub use toka_capability_jwt_hs256::token::JwtHs256Token as CapabilityToken;
+pub use toka_capability_jwt_hs256::validator::JwtHs256Validator as JwtValidator;
+// Keep selective re-exports to avoid naming clashes.
+pub use toka_capability_core::prelude::{TokenValidator};
 
-pub use token::CapabilityToken;
+/// Prelude retaining the legacy (v0.1) surface while delegating to new crates.
+pub mod prelude {
+    pub use super::{Claims, CapabilityToken, JwtValidator};
+    pub use toka_capability_core::prelude::TokenValidator;
+}

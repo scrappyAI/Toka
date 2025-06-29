@@ -44,6 +44,10 @@ members = [
 
     # Primitives API (ids, currency)
     "crates/toka-primitives-api",
+
+    # New member
+    "crates/toka-capability-core",
+    "crates/toka-capability-jwt-hs256",
 ]
 
 [workspace.dependencies]
