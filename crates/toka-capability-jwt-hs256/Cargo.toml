@@ -1,0 +1,18 @@
+[package]
+name = "toka-capability-jwt-hs256"
+version = "0.2.0-alpha"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "HS256 JWT implementation of Toka capability tokens (v0.2)."
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+async-trait = { workspace = true }
+jsonwebtoken = { workspace = true }
+uuid = { workspace = true }
+toka-capability-core = { path = "../toka-capability-core" }
+
+[features]
+# std feature by default. Disable for no_std use-case.
+default = ["std"]
+std = []

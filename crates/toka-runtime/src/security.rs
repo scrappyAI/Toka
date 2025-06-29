@@ -17,12 +17,12 @@
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use anyhow::Result;
 use parking_lot::RwLock;
 use rand::{distributions::Alphanumeric, Rng};
 use toka_capability::prelude::{JwtValidator, TokenValidator};
 use tracing_subscriber::{fmt::MakeWriter, fmt, prelude::*};
 use std::io::{self, Write};
+use toka_capability::core::{Result, Error as CapError};
 
 /// Maximum number of retired secrets kept alive for validation.
 const MAX_OLD_SECRETS: usize = 4;
@@ -132,7 +132,7 @@ impl TokenValidator for MultiValidator {
                 return Ok(c);
             }
         }
-        Err(anyhow::anyhow!("token validation failed for all secrets"))
+        Err(CapError::new("token validation failed for all secrets"))
     }
 }
 
