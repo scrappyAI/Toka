@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 use anyhow::{Result, anyhow};
 use jsonwebtoken::{encode, decode, Algorithm, Header, Validation, EncodingKey, DecodingKey, TokenData};
+use uuid::Uuid;
 
 /// JWT claim-set used by capability tokens.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -16,6 +17,8 @@ pub struct Claims {
     pub iat: usize,
     /// Expiration timestamp (seconds since Unix epoch).
     pub exp: usize,
+    /// Unique token identifier for audit / replay-protection.
+    pub jti: String,
 }
 
 /// Thin wrapper around a JWT-encoded capability token.
@@ -44,10 +47,12 @@ impl CapabilityToken {
             permissions,
             iat: issued_at,
             exp: expires_at,
+            jti: Uuid::new_v4().to_string(),
         };
 
         // Default header = HS256
-        let header = Header::new(Algorithm::HS256);
+        let mut header = Header::new(Algorithm::HS256);
+        header.typ = Some("toka.cap+jwt".into());
         let jwt = encode(
             &header,
             &claims,
