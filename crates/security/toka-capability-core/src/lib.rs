@@ -1,3 +1,25 @@
+//! **toka-capability-core**
+//!
+//! Core, `no_std`‐friendly building blocks for capability‐based security in
+//! the Toka platform.  The crate owns the canonical [`Claims`] data structure
+//! and the two foundational traits – [`CapabilityToken`] and
+//! [`TokenValidator`].  It is intentionally *crypto-agnostic* and free of I/O
+//! so that alternative formats (JWT, Biscuit, Paseto, …) can be layered on
+//! top without incurring additional dependencies.
+//!
+//! The wire-format details live in sibling *implementation* crates such as
+//! `toka-capability-jwt-hs256`.  For architectural background refer to
+//! `docs/40_capability_tokens_spec_v0.1.md` and
+//! `docs/41_capability_tokens_architecture.md`.
+//!
+//! # Crate Features
+//! * `std` *(default)* – Enables the Rust standard library and lives in
+//!   regular server/workstation builds.
+//! * *no feature* – Compiles in pure `no_std` + `alloc` mode for embedded or
+//!   constrained WASM targets.
+//!
+//! This crate forbids `unsafe_code` and aims to stay dependency-light.
+
 #![forbid(unsafe_code)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
