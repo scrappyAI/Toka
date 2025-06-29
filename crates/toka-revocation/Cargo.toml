@@ -1,0 +1,23 @@
+[package]
+name = "toka-revocation"
+version = "0.2.0-alpha"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Revocation primitives (RFC 7009) for capability tokens in the Toka platform."
+
+[dependencies]
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+chrono = { workspace = true }
+uuid = { workspace = true }
+parking_lot = { version = "0.12", optional = true }
+
+[features]
+default = ["memory-store"]
+
+# Simple in-memory store for testing / local dev.
+memory-store = ["dep:parking_lot"]
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

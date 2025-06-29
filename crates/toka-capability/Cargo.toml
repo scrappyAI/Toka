@@ -1,0 +1,18 @@
+[package]
+name = "toka-capability"
+version = "0.2.0-alpha"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Capability token primitives (v0.2) for internal auth across the Toka platform."
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+jsonwebtoken = { workspace = true }
+uuid = { workspace = true }
+
+[features]
+# Core primitives only by default. In the future we may expose `biscuits`, `paseto`, etc.
+default = ["core"]
+core = []

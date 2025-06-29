@@ -14,7 +14,7 @@
 //! |------------|------------------------|------------------------|
 //! | **default** | `agents`, `auth`, `events`, `toolkit` | see below |
 //! | `agents`   | `toka-agents`        | `tokio`, `anyhow`, … |
-//! | `auth`     | `toka-security-auth` | `jsonwebtoken` |
+//! | `auth`     | `toka-capability`    | `jsonwebtoken` |
 //! | `events`   | `toka-events`        | `sled`, `blake3`, … |
 //! | `toolkit`  | `toka-toolkit-core` + `toka-tools` | `wasmtime` (optional) |
 //!
@@ -51,7 +51,7 @@ pub mod prelude {
     #[cfg(feature = "agents")]
     pub use toka_agents::prelude::*;
     #[cfg(feature = "auth")]
-    pub use toka_security_auth::prelude::*;
+    pub use toka_capability::prelude::*;
     #[cfg(feature = "events")]
     pub use toka_events::prelude::*;
     // Future: add toolkit prelude when available.
@@ -63,7 +63,7 @@ pub mod prelude {
 #[cfg(feature = "agents")]
 pub use toka_agents as agents;
 #[cfg(feature = "auth")]
-pub use toka_security_auth as auth;
+pub use toka_capability as auth;
 #[cfg(feature = "events")]
 pub use toka_events as events;
 #[cfg(feature = "toolkit")]

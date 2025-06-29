@@ -2,7 +2,13 @@
 resolver = "2"
 members = [
     # Security
+    # Deprecated security v0.1 – kept for compatibility only
     "crates/toka-security-auth",
+
+    # New security crates (v0.2-alpha)
+    "crates/toka-capability",
+    "crates/toka-revocation",
+    "crates/toka-cvm",
 
     # Agents & Runtime
     "crates/toka-agents",
