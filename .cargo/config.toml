@@ -1,0 +1,26 @@
+[build]
+# Limit parallel jobs to reduce memory usage
+jobs = 1
+
+[profile.dev]
+# Reduce optimization level to save memory during development builds
+opt-level = 0
+# Reduce debuginfo to save memory
+debug = 1
+# Disable incremental compilation to save disk space and memory
+incremental = false
+
+[profile.dev.build-override]
+# Reduce build script optimization to save memory
+opt-level = 0
+debug = false
+
+[env]
+# Use mold linker if available (faster and uses less memory)
+# Fallback to lld if mold is not available
+RUSTFLAGS = "-C link-arg=-fuse-ld=lld"
+
+[target.aarch64-unknown-linux-gnu]
+# Use lld linker which is generally more memory efficient
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"] 
