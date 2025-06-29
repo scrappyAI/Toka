@@ -15,7 +15,7 @@ features.
 |------------|------------------------|------------------------|
 | **default** | `agents`, `auth`, `events`, `toolkit` | see below |
 | `agents`   | `toka-agents`        | `tokio`, `anyhow`, … |
-| `auth`     | `toka-security-auth` | `jsonwebtoken` |
+| `auth`     | `toka-capability` | `jsonwebtoken` |
 | `events`   | `toka-events`        | `sled`, `blake3`, … |
 | `toolkit`  | `toka-toolkit-core` + `toka-tools` | `wasmtime` (optional) |
 

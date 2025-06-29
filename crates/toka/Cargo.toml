@@ -18,7 +18,7 @@ toolkit = ["dep:toka-toolkit-core", "dep:toka-tools"]
 
 [dependencies]
 # All dependencies are optional and tied to features above.
-toka-capability     = { path = "../toka-capability", optional = true }
+toka-capability     = { path = "../security/toka-capability", optional = true }
 toka-events         = { path = "../toka-events",         optional = true }
 toka-agents         = { path = "../toka-agents",         optional = true }
 toka-tools          = { path = "../toka-tools",          optional = true }

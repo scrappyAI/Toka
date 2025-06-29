@@ -2,13 +2,12 @@
 resolver = "2"
 members = [
     # Security
-    # Deprecated security v0.1 – kept for compatibility only
-    "crates/toka-security-auth",
-
-    # New security crates (v0.2-alpha)
-    "crates/toka-capability",
-    "crates/toka-revocation",
-    "crates/toka-cvm",
+    # Security crates (v0.2-alpha)
+    "crates/security/toka-capability",
+    "crates/security/toka-capability-core",
+    "crates/security/toka-capability-jwt-hs256",
+    "crates/security/toka-revocation",
+    "crates/security/toka-cvm",
 
     # Agents & Runtime
     "crates/toka-agents",
@@ -44,10 +43,6 @@ members = [
 
     # Primitives API (ids, currency)
     "crates/toka-primitives-api",
-
-    # New member
-    "crates/toka-capability-core",
-    "crates/toka-capability-jwt-hs256",
 ]
 
 [workspace.dependencies]

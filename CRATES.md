@@ -9,7 +9,7 @@
 | `toka-bus-api`             | ① contract-only       | Minimal, `no_std`-friendly event-bus traits and headers. |
 | `toka-memory-api`          | ① contract-only       | Trait contract for agent memory adapters (byte-oriented get/put/delete, no_std). |
 | `toka-storage-api`         | ① contract-only       | Async key–value artefact storage contract. |
-| `toka-security-auth`       | ① + ③                | Capability-token primitives and auth helpers (JWT, Paseto, etc.). |
+| `toka-capability`          | ② implementation     | Aggregator crate re-exporting capability primitives (deprecated shim). |
 | `toka-capability-core`     | ① `no_std` primitives | Canonical Claims struct + capability traits (no crypto). |
 | `toka-capability-jwt-hs256`| ② implementation      | HS256 JWT implementation of capability tokens. |
 | `toka-agents`              | ② optional deps       | Default agent implementations for the runtime. |
@@ -22,7 +22,6 @@
 | `toka-runtime`             | ② heavy deps          | Async host tying agents, tools, bus & event store together. |
 | `toka`                     | – aggregate crate     | Meta-crate re-exporting common preludes for quick onboarding. |
 | `toka-cli` (app)           | ② heavy deps          | Command-line interface for interacting with the runtime. |
-| `toka-security-auth` (deprecated) | ① legacy           | Transitional re-export crate – will be removed after v0.3. |
 
 *Rule-of-Thumb Keys*
 ① Usable from `no_std` / lean targets  
