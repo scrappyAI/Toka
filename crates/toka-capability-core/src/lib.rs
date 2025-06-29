@@ -11,8 +11,8 @@ use alloc::{string::String, vec::Vec};
 use std::{string::String, vec::Vec};
 
 use serde::{Deserialize, Serialize};
-use anyhow::Result;
 use async_trait::async_trait;
+use alloc::boxed::Box;
 
 /// Canonical claim-set used by capability tokens across the Toka platform.
 ///
@@ -34,6 +34,30 @@ pub struct Claims {
     /// Unique token identifier (e.g. UUIDv4) for audit / replay-protection.
     pub jti: String,
 }
+
+/// Result type used throughout **toka-capability-core**.
+pub type Result<T> = core::result::Result<T, Error>;
+
+/// Minimal error type keeping the crate `no_std` + `alloc` friendly.
+#[derive(Debug)]
+pub struct Error {
+    msg: alloc::string::String,
+}
+
+impl Error {
+    pub fn new(msg: &str) -> Self {
+        Self { msg: msg.into() }
+    }
+}
+
+impl core::fmt::Display for Error {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        self.msg.fmt(f)
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}
 
 /// Behaviour common to **all** concrete capability token formats.
 ///
