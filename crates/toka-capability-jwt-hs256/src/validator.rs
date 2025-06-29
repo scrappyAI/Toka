@@ -1,7 +1,7 @@
-use anyhow::Result;
 use async_trait::async_trait;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use toka_capability_core::prelude::{Claims, TokenValidator};
+use toka_capability_core::{Result, Error};
 
 /// HS256 JWT validator.
 #[derive(Clone, Debug)]
@@ -28,7 +28,7 @@ impl TokenValidator for JwtHs256Validator {
             raw,
             &DecodingKey::from_secret(self.secret.as_bytes()),
             &self.validation,
-        )?;
+        ).map_err(|e| Error::new(&e.to_string()))?;
         Ok(data.claims)
     }
 }

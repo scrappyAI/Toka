@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
-use anyhow::{Result, anyhow};
 use jsonwebtoken::{encode, decode, Algorithm, Header, Validation, EncodingKey, DecodingKey, TokenData};
 use uuid::Uuid;
+use toka_capability_core::{Result, Error};
 use toka_capability_core::prelude::{Claims, CapabilityToken};
 use async_trait::async_trait;
 
@@ -15,7 +15,9 @@ pub struct JwtHs256Token {
 impl JwtHs256Token {
     /// Decode and validate, returning Claims (strict expiry).
     pub fn claims(&self, secret: &str) -> Result<Claims> {
-        Ok(Self::decode_internal(&self.token, secret)?.claims)
+        Self::decode_internal(&self.token, secret)
+            .map(|d| d.claims)
+            .map_err(|e| Error::new(&e.to_string()))
     }
 
     /// Authenticity + expiry quick check.
@@ -50,7 +52,7 @@ impl JwtHs256Token {
         let mut header = Header::new(Algorithm::HS256);
         header.typ = Some("toka.cap+jwt".into());
         let jwt = encode(&header, &claims, &EncodingKey::from_secret(secret.as_bytes()))
-            .map_err(|e| anyhow!(e))?;
+            .map_err(|e| Error::new(&e.to_string()))?;
         Ok(Self { token: jwt })
     }
 }
@@ -64,7 +66,7 @@ impl CapabilityToken for JwtHs256Token {
             &header,
             claims,
             &EncodingKey::from_secret(key),
-        ).map_err(|e| anyhow!(e))?;
+        ).map_err(|e| Error::new(&e.to_string()))?;
         Ok(Self { token: jwt })
     }
 
@@ -75,7 +77,10 @@ impl CapabilityToken for JwtHs256Token {
 
 /// Helper to build standard claims with right timestamps.
 pub fn build_claims(subject: &str, vault: &str, permissions: Vec<String>, ttl_secs: u64) -> Result<Claims> {
-    let issued_at = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+    let issued_at = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|e| Error::new(&e.to_string()))?
+        .as_secs();
     Ok(Claims {
         sub: subject.to_owned(),
         vault: vault.to_owned(),
