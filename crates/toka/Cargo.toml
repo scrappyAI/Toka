@@ -10,7 +10,7 @@ description = "Top-level meta-crate that re-exports the most commonly used parts
 # Downstream users can cherry-pick (e.g. `default-features = false, features = ["auth"]`).
 default = ["auth", "events", "agents", "toolkit"]
 
-auth = ["dep:toka-security-auth"]
+auth = ["dep:toka-capability"]
 events = ["dep:toka-events"]
 agents = ["dep:toka-agents"]
 # toolkit feature exposes the default tools crate.
@@ -18,7 +18,7 @@ toolkit = ["dep:toka-toolkit-core", "dep:toka-tools"]
 
 [dependencies]
 # All dependencies are optional and tied to features above.
-toka-security-auth  = { path = "../toka-security-auth", optional = true }
+toka-capability     = { path = "../toka-capability", optional = true }
 toka-events         = { path = "../toka-events",         optional = true }
 toka-agents         = { path = "../toka-agents",         optional = true }
 toka-tools          = { path = "../toka-tools",          optional = true }

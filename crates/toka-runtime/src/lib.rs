@@ -8,7 +8,7 @@
 //! | Feature | Purpose | Additional crates |
 //! |---------|---------|-------------------|
 //! | `toolkit` *(opt)* | Enables [`ToolRegistry`](crate::tools) & default tools | `toka-toolkit-core`, `toka-tools` |
-//! | `auth` *(opt)*    | Capability-token validation & secret rotation | `toka-security-auth`, `jsonwebtoken` |
+//! | `auth` *(opt)*    | Capability-token validation & secret rotation | `toka-capability`, `jsonwebtoken` |
 //! | `vault` *(opt)*   | Embed the canonical event store | `toka-events` + `sled` |
 //!
 //! ## Quick-Start
@@ -27,7 +27,7 @@
 
 pub use toka_bus as events;
 #[cfg(feature = "auth")]
-pub use toka_security_auth as auth;
+pub use toka_capability as auth;
 #[cfg(all(feature = "toolkit", feature = "vault"))]
 #[doc(hidden)]
 pub mod runtime;

@@ -20,7 +20,7 @@ use std::time::{Duration, Instant};
 use anyhow::Result;
 use parking_lot::RwLock;
 use rand::{distributions::Alphanumeric, Rng};
-use toka_security_auth::prelude::{JwtValidator, TokenValidator};
+use toka_capability::prelude::{JwtValidator, TokenValidator};
 use tracing_subscriber::{fmt::MakeWriter, fmt, prelude::*};
 use std::io::{self, Write};
 
@@ -126,7 +126,7 @@ pub struct MultiValidator {
 
 #[async_trait::async_trait]
 impl TokenValidator for MultiValidator {
-    async fn validate(&self, raw: &str) -> Result<toka_security_auth::Claims> {
+    async fn validate(&self, raw: &str) -> Result<toka_capability::Claims> {
         for v in &self.validators {
             if let Ok(c) = v.validate(raw).await {
                 return Ok(c);
