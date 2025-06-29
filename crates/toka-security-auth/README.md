@@ -6,14 +6,16 @@ Lightweight **capability-token** primitives shared by the runtime, agents and to
 
 ## Why Capability Tokens?
 
-The platform's security model is _capability-based_: every actor receives an unforgeable token that spells out **exactly** which vault, tools or resources it may access.  This crate implements those tokens without pulling in heavyweight crypto libraries – just a keyed Blake2 signature for now.
+The platform's security model is _capability-based_: every actor receives an unforgeable token that spells out **exactly** which vault, tools or resources it may access.  This crate implements those tokens using compact [JSON Web Tokens (JWT)](https://datatracker.ietf.org/doc/html/rfc7519).  By default we sign with symmetric **HS256** for maximum portability, while the public-key **EdDSA** variant will land in a future release (tracked in the roadmap).
 
 ---
 
 ## Features
 
-* `CapabilityToken` struct with *time-boxed*, *tamper-evident* signature.
-* Constant-time signature comparison to mitigate timing attacks.
+* `CapabilityToken` struct wrapping an RFC 7519 JWT.
+* Built-in TTL — tokens expire automatically via the `exp` claim.
+* Fast runtime validation with zero allocations in the happy-path.
+* Constant-time signature checks to mitigate timing attacks.
 * `#![forbid(unsafe_code)]` – security starts with memory safety.
 
 ---

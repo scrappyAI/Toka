@@ -1,3 +1,4 @@
+#![forbid(unsafe_code)]
 //! Toka Auth Core
 //!
 //! This crate provides *no-std*-friendly primitives for capability tokens that
