@@ -19,10 +19,12 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use parking_lot::RwLock;
 use rand::{distributions::Alphanumeric, Rng};
-use toka_capability::prelude::{JwtValidator, TokenValidator};
+use toka_capability_jwt_hs256::validator::JwtHs256Validator as JwtValidator;
+use toka_capability_core::prelude::TokenValidator;
+use toka_capability_core::Claims;
 use tracing_subscriber::{fmt::MakeWriter, fmt, prelude::*};
 use std::io::{self, Write};
-use toka_capability::core::{Result, Error as CapError};
+use toka_capability_core::{Result, Error as CapError};
 
 /// Maximum number of retired secrets kept alive for validation.
 const MAX_OLD_SECRETS: usize = 4;
@@ -126,7 +128,7 @@ pub struct MultiValidator {
 
 #[async_trait::async_trait]
 impl TokenValidator for MultiValidator {
-    async fn validate(&self, raw: &str) -> Result<toka_capability::Claims> {
+    async fn validate(&self, raw: &str) -> Result<Claims> {
         for v in &self.validators {
             if let Ok(c) = v.validate(raw).await {
                 return Ok(c);

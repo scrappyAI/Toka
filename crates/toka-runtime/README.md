@@ -14,36 +14,6 @@ Async host that wires **agents**, the **canonical event store** (`toka-events`) 
 | *(none)* | Pure runtime scaffold (async loops, `EventBus`) | `tokio`, `tracing` |
 | `vault` | Secure local event store backend (sled or in-mem) | `toka-events` |
 | `toolkit` | `ToolRegistry`, CLI, type-erased `serde` plugin system | `toka-toolkit`, `clap`, `typetag` |
-| `auth` | Capability token helpers | `toka-capability` |
+| `auth` | Capability token helpers | `toka-capability-jwt-hs256` |
 
-The matrix composes – e.g. `features = ["vault", "toolkit"]` gives you a full local dev stack.
-
----
-
-## Quick Start
-
-```toml
-[dependencies]
-toka-runtime = { version = "0.1", features = ["vault", "toolkit"] }
-```
-
-For a basic runtime without the toolkit:
-
-```toml
-[dependencies]
-toka-runtime = { version = "0.1", default-features = false, features = ["vault"] }
-```
-
----
-
-## Status
-
-Early alpha (≥ v0.2.0-alpha). Expect sharp edges and breaking changes while we stabilise the lifecycle APIs.
-
----
-
-## License
-
-Apache-2.0 OR MIT
-
-© 2025 Toka Contributors
+The matrix composes – e.g. `

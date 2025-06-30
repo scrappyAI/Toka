@@ -3,7 +3,6 @@ resolver = "2"
 members = [
     # Security
     # Security crates (v0.2-alpha)
-    "crates/security/toka-capability",
     "crates/security/toka-capability-core",
     "crates/security/toka-capability-jwt-hs256",
     "crates/security/toka-revocation",

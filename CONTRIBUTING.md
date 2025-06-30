@@ -96,5 +96,5 @@ Toka is organized as a workspace with multiple crates:
 - `toka-agents`: Agent implementation
 - `toka-runtime`: Runtime for agents and tools
 - `toka-toolkit`: Collection of standard tools
-- `toka-capability` + sibling crates: Capability token primitives
+- `toka-capability-core` + `toka-capability-jwt-hs256`: Capability token primitives
 - `toka-secrets`: Secure vault implementation

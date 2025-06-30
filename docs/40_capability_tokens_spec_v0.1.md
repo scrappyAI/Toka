@@ -112,7 +112,7 @@ The reference Rust implementation lives in `crates/toka-capability-jwt-hs256` wi
 
 ## 7  Compatibility & Migration
 
-The transition from v0.1 to v0.2 is *source compatible* for most callers via the legacy re-export crate `toka-capability`.
+The transition from v0.1 to v0.2 requires updating dependencies to use `toka-capability-core` and `toka-capability-jwt-hs256` directly.
 
 New features slated for v0.3:
 * EdDSA signing & verification.

@@ -17,7 +17,7 @@ work.
 
 * `validate(token: &str)` – minimal FFI boundary for guests.
 * **EdDSA** and **Biscuit** support once upstream.
-* Tight integration with `toka-capability` and `toka-revocation`.
+* Tight integration with `toka-capability-core` and `toka-revocation`.
 
 ---
 

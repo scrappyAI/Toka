@@ -27,7 +27,7 @@
 
 pub use toka_bus as events;
 #[cfg(feature = "auth")]
-pub use toka_capability as auth;
+pub use toka_capability_jwt_hs256 as auth;
 #[cfg(all(feature = "toolkit", feature = "vault"))]
 #[doc(hidden)]
 pub mod runtime;

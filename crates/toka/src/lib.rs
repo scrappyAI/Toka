@@ -51,7 +51,7 @@ pub mod prelude {
     #[cfg(feature = "agents")]
     pub use toka_agents::prelude::*;
     #[cfg(feature = "auth")]
-    pub use toka_capability::prelude::*;
+    pub use toka_capability_jwt_hs256::prelude::*;
     #[cfg(feature = "events")]
     pub use toka_events::prelude::*;
     // Future: add toolkit prelude when available.
@@ -63,7 +63,7 @@ pub mod prelude {
 #[cfg(feature = "agents")]
 pub use toka_agents as agents;
 #[cfg(feature = "auth")]
-pub use toka_capability as auth;
+pub use toka_capability_jwt_hs256 as auth;
 #[cfg(feature = "events")]
 pub use toka_events as events;
 #[cfg(feature = "toolkit")]

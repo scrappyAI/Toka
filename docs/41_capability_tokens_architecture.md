@@ -66,7 +66,7 @@ toka-security-auth = "0.1"
 [dependencies]
 toka-capability = "0.2"           # deprecated shim
 # or migrate directly
-# toka-capability-jwt-hs256 = "0.2"
+toka-capability-jwt-hs256 = "0.2"
 ```
 
 ---
