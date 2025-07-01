@@ -1,3 +1,7 @@
+//! Lightweight, in-memory event **bus** used by the kernel for the v0.1
+//! milestone.  It provides a simple broadcast channel so any subsystem can
+//! subscribe to live `KernelEvent`s.
+
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
 use anyhow::Result;
@@ -5,7 +9,10 @@ use std::sync::Arc;
 
 use toka_types::{EntityId, TaskSpec, AgentSpec, Role};
 
-/// Typed kernel event enumeration (v0.1).
+/// Typed kernel event enumeration emitted by the kernel after a successful
+/// state transition.  Each variant mirrors one opcode family from
+/// `toka-types::Operation`.
+#[allow(missing_docs)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Event {
     /* — financial — */

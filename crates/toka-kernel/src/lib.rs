@@ -39,6 +39,7 @@ pub struct WorldState {
 //─────────────────────────────
 
 /// Deterministic error codes produced by the kernel.
+#[allow(missing_docs)]
 #[derive(Debug, thiserror::Error, PartialEq)]
 pub enum KernelError {
     /// Submitted capability token is not authorised.

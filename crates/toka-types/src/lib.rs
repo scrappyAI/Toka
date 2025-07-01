@@ -56,6 +56,7 @@ pub enum Role {
 //─────────────────────────────
 
 /// Canonical list of operations understood by the kernel.
+#[allow(missing_docs)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Operation {
     /* — financial — */
