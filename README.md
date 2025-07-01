@@ -1,41 +1,47 @@
-# Toka OS – Agentic Operating System (v0.1)
+# Toka OS – **Agentic Operating System** (v0.1)
 
-> **Status:** Early preview & architectural prototype.  Expect rapid iteration until the v0.1 milestone is finalised.
+> **Status:** *v0.1 – Kernel feature-freeze*  | *Documentation overhaul in progress*
 
-Toka OS is an **agent–centric**, capability‐secured runtime built in Rust.  It aims to offer a minimal yet expressive foundation for autonomous agents to **perceive**, **reason**, and **act** within secure boundaries.
+Toka OS is an **agent-centric**, capability‐secured operating system written in Rust.  At its heart sits the deterministic [`toka-kernel`](crates/toka-kernel), a pure state-machine that applies **Operations** (opcodes) against a canonical **WorldState** and emits verifiable domain events.
+
+The 0.1 kernel spec – captured in [`docs/42_toka_kernel_spec_v0.1.md`](docs/42_toka_kernel_spec_v0.1.md) – introduces three foundational primitive families:
+
+1. **Financial primitives** – balance-safe asset minting, burning & transfers
+2. **Agent primitives**    – task scheduling, spawning and observation hooks
+3. **User primitives (β)**  – human actors with assignable roles
+
+Everything above the kernel (storage back-ends, networking, advanced tooling) is intentionally out of scope for 0.1 and will ship incrementally.
+
+# Vision
+
+Toka's long-term goal is a **self-contained Agentic OS** where autonomous programs collaborate, transact and evolve within cryptographically enforced boundaries.  Economic primitives are first-class citizens: every resource is account-ed, every capability is explicit, and every state transition is transparently logged.
 
 Key design pillars:
 
-1. **Deterministic Kernel** – `toka-kernel` executes signed `Operation`s against an in-memory `WorldState`, emitting rich domain events.
-2. **Capability-Based Security** – `toka-auth` verifies fine-grained capability tokens on every kernel invocation.
-3. **Unified Type System** – `toka-types` exports common IDs, time-stamps, and envelope types leveraged by every crate.
-4. **Event-Sourced Persistence** – `toka-events` stores an append-only log of kernel events to guarantee auditability and replay.
-5. **Pluggable Tools & WASM** – `toka-tools` + `toka-toolkit-core` provide a sandbox for custom, versioned tools (native or WASM).
-6. **Developer CLI** – `apps/toka-cli` offers an ergonomic interface for interacting with the runtime and scaffolding new projects.
+| Pillar | Manifestation |
+|--------|--------------|
+| **Determinism** | Single-threaded kernel → same input, same output |
+| **Capability security** | `toka-auth` validates unforgeable permission tokens |
+| **Event sourcing** | Append-only log (`toka-events`) enables replay & audits |
+| **Extensibility** | New opcodes are additive – no breaking removals |
+| **Minimal surface** | Everything non-essential (storage, WASM, networking) lives outside the kernel |
 
-All first-party crates are `#![forbid(unsafe_code)]` and strictly audited for third-party dependencies (see `/SECURITY.md`).
+# Workspace Overview (July 2025)
 
----
+| Crate | Status | Purpose |
+|-------|--------|---------|
+| **toka-types** | ✅ | Shared primitives (`EntityId`, `Operation`, etc.) |
+| **toka-kernel** | ✅ | Deterministic state-machine core |
+| **toka-events** | ✅ | Canonical event bus & store |
+| **toka-auth** | ✅ | Capability token issuance & validation |
+| **toka-toolkit-core** | ✅ | Tool trait + registry (no heavy deps) |
+| **toka-tools** | 🟡 | Standard library of reference tools (minimal) |
+| **toka-agents** | ⬜ *planned* | Default agent implementations layered atop the kernel |
+| **toka-cli** | 🟡 | Developer CLI for interacting with the runtime |
 
-## Workspace Crates (2025-07)
+> Legend: ✅ implemented 🟡 minimal / WIP ⬜ missing
 
-| Crate | Purpose |
-|-------|---------|
-| **toka-kernel** | Deterministic state-machine core; validates capability claims & dispatches `Operation`s. |
-| **toka-types** | Shared primitives (`EntityId`, `Operation`, envelopes, timestamps). |
-| **toka-events** | Canonical event store & typed event bus. |
-| **toka-auth** | Capability token issuance & verification (HS256 JWT β). |
-| **toka-tools** | Standard library of agent tools (currently: `echo`). |
-| **toka-toolkit-core** | Tool registry, loader abstraction, WASM helpers. |
-| **toka-events-api** | Pure contracts for event handling (optional `serde` support). |
-| **toka-agents** *(planned)* | Default agent implementations layered on top of the kernel. |
-| **toka-cli** | Reference CLI (create agents, invoke kernel ops, inspect events). |
-
-> *Planned:* a dedicated **`toka-agents`** crate will land before the `v0.1` tag to house reusable agent behaviours.
-
----
-
-## Quick Start
+# Quick Start
 
 ```bash
 # Validate build – requires stable Rust 1.78+
@@ -45,37 +51,40 @@ cargo check --workspace --all-features
 cargo run -p toka-cli -- --help
 ```
 
----
-
-## Architecture Diagram
-
 ```mermaid
 graph TD
-  subgraph Core
-    types[toka-types]
-    auth[toka-auth]
-    kernel[toka-kernel]
-    events[toka-events]
+  subgraph Application
+    Agents
+    CLI
   end
 
-  tools[toka-tools & toolkit] -->|invoke| kernel
-  cli[toka-cli] --> kernel
+  subgraph Kernel
+    K[toka-kernel]
+  end
+
+  subgraph Infrastructure
+    Types[toka-types]
+    Auth[toka-auth]
+    Events[toka-events]
+  end
+
+  Agents -->|Messages| K
+  CLI -->|Messages| K
+  K --> Events
+  K -. verifies .-> Auth
+  K -. uses .-> Types
 ```
 
----
+## Roadmap (towards v0.1 stable)
 
-## Vision & Roadmap
+| Phase | Goal | Target Date |
+|-------|------|------------|
+| **K-1** | Kernel v0.1 feature-freeze (done) | 2025-06-30 ✅ |
+| **A-1** | Land `toka-agents` crate with default behaviours | ⬜ 2025-07-15 |
+| **S-1** | Persist event store on disk (SQLite & RocksDB adapters) | ⬜ 2025-07-30 |
+| **W-1** | WASM tool execution via `wasmtime` | ⬜ 2025-08-10 |
+| **D-1** | Harden documentation & examples (`cargo doc` must pass `#![deny(missing_docs)]`) | 🟡 rolling |
 
-Toka OS envisions a world where **autonomous agents** collaborate securely, governed by transparent capability grants and deterministic execution.  Our immediate roadmap:
-
-- ✅ Kernel v0.1 feature-freeze (capability checks, event emission)
-- ⬜ Introduce `toka-agents` crate with reference agent behaviours
-- ⬜ Persist event store on disk (SQLite or Sled backend)
-- ⬜ Add WASM tool execution via `wasmtime`
-- ⬜ Harden documentation & examples (`cargo doc` must pass with `#![deny(missing_docs)]`)
-
-Community contributions are welcome – see [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines.
-
----
+> The full roadmap lives in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 © 2025 Toka Contributors · MIT OR Apache-2.0
