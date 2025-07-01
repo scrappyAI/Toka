@@ -10,3 +10,6 @@ description.workspace = true
 [dependencies]
 toka-types = { path = "../toka-types" }
 serde = { workspace = true, features = ["derive"] }
+async-trait = { workspace = true }
+jsonwebtoken = { workspace = true }
+uuid = { workspace = true }
