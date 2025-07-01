@@ -4,13 +4,13 @@
 
 Toka OS is an **agent-centric**, capability‐secured operating system written in Rust.  At its heart sits the deterministic [`toka-kernel`](crates/toka-kernel), a pure state-machine that applies **Operations** (opcodes) against a canonical **WorldState** and emits verifiable domain events.
 
-The 0.1 kernel spec – captured in [`docs/42_toka_kernel_spec_v0.1.md`](docs/42_toka_kernel_spec_v0.1.md) – introduces three foundational primitive families:
+The v0.1 **pure kernel** – see [`docs/42_toka_kernel_spec_v0.1.md`](docs/42_toka_kernel_spec_v0.1.md) – focuses on a **single primitive family**:
 
-1. **Financial primitives** – balance-safe asset minting, burning & transfers
-2. **Agent primitives**    – task scheduling, spawning and observation hooks
-3. **User primitives (β)**  – human actors with assignable roles
+1. **Agent primitives** – task scheduling, spawning and observation hooks
 
-Everything above the kernel (storage back-ends, networking, advanced tooling) is intentionally out of scope for 0.1 and will ship incrementally.
+Financial & user concerns are now provided by *external toolkits* that plug into the kernel via well-defined messages.  This keeps the kernel minimal, deterministic and audit-friendly.
+
+Everything above the kernel (storage back-ends, networking, finance, user management) is intentionally out of scope for 0.1 and ships in accessory crates.
 
 # Vision
 
