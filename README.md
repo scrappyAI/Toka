@@ -1,6 +1,6 @@
 # Toka OS – **Agentic Operating System** (v0.1)
 
-> **Status:** *v0.1 – Kernel feature-freeze*  | *Documentation overhaul in progress*
+> **Status:** *v0.1 – Kernel feature-freeze*  | 🚧 **Experimental – APIs WILL break** 🚧  | *Documentation overhaul in progress*
 
 Toka OS is an **agent-centric**, capability‐secured operating system written in Rust.  At its heart sits the deterministic [`toka-kernel`](crates/toka-kernel), a pure state-machine that applies **Operations** (opcodes) against a canonical **WorldState** and emits verifiable domain events.
 

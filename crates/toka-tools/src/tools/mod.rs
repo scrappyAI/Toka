@@ -9,6 +9,7 @@
 
 use anyhow::Result;
 use async_trait::async_trait;
+#[cfg(test)]
 use std::sync::Arc;
 
 // Re-export canonical types from `toka_toolkit_core` so internal modules can

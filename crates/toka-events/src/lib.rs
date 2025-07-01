@@ -52,6 +52,13 @@
 //! 🔗 **Related docs**: Kernel semantics in [`docs/42_toka_kernel_spec_v0.1.md`](../../../docs/42_toka_kernel_spec_v0.1.md)
 //! enumerate the event families emitted by the kernel and consumed by runtime
 //! projections.
+//!
+//! ⚠️ **Experimental** – This crate is **pre-stable** and its surface may evolve rapidly as the
+//! overall Toka architecture solidifies.  Do **not** rely on it for production workloads yet.
+//!
+//! _Changes in v0.1_: The former `toka-events-api` crate has been **merged into** this crate.  The
+//! public traits & helper types are now exposed under [`crate::api`].  Please migrate any imports
+//! such as `toka_events_api::EventSink` → `toka_events::api::EventSink`.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
@@ -176,4 +183,27 @@ impl QueryApi for Vault {
             Self::Memory(v) => v.payload(digest).await,
         }
     }
+}
+
+// Provide no-op stubs so that downstream code can always import `crate::strategy::*` even when
+// the costly intent-clustering machinery is disabled.
+#[cfg(not(feature = "intent-cluster"))]
+pub mod strategy {
+    use async_trait::async_trait;
+
+    /// Marker trait implemented by (potentially no-op) intent strategies.
+    #[async_trait]
+    pub trait IntentStrategy: Send + Sync {
+        /// Returns the current number of discovered intent clusters.
+        async fn cluster_count(&self) -> usize {
+            0
+        }
+    }
+
+    /// A *do-nothing* strategy used when the `intent-cluster` feature is disabled.
+    #[derive(Debug, Clone, Copy)]
+    pub struct NilIntentStrategy;
+
+    #[async_trait]
+    impl IntentStrategy for NilIntentStrategy {}
 } 
