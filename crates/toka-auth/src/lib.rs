@@ -9,6 +9,9 @@
 //!
 //! Future releases can provide additional algorithms (Biscuit, Paseto, …)
 //! via crate features while reusing the same trait contracts.
+//!
+//! 🔗 See [`docs/42_toka_kernel_spec_v0.1.md`](../../../docs/42_toka_kernel_spec_v0.1.md) for how capability tokens
+//! gate **Operations** inside the kernel.
 
 use serde::{Deserialize, Serialize};
 use async_trait::async_trait;

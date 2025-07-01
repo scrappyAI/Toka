@@ -1,9 +1,19 @@
-//! # Toka Tools
+#![forbid(unsafe_code)]
+#![warn(missing_docs)]
 //!
-//! **Standard library of agent tools** bundled with the Toka platform.
-//! The crate ships a thin [`ToolRegistry`] wrapper plus a growing set of
-//! ready-made tools (each one behind its own cargo **feature flag** so you
-//! only compile what you need).
+//! **toka-tools** – Standard library of _agent tools_ for **Toka OS**.
+//!
+//! The crate complements the deterministic [`toka-kernel`](../../toka-kernel) by providing
+//! reusable building blocks that agents can invoke _at arm's length_.  Tools **never** bypass the
+//! kernel's capability checks – they are regular Rust (or WASM) functions that prepare
+//! [`Operation`](toka_types::Operation)s and submit authenticated [`Message`](toka_types::Message)s.
+//!
+//! 📜 For the canonical opcode semantics see [`docs/42_toka_kernel_spec_v0.1.md`](../../../docs/42_toka_kernel_spec_v0.1.md).
+//!
+//! _Design goals_
+//! * **Modularity** – every tool lives behind its own Cargo feature flag.
+//! * **Determinism** – tools must be side-effect free unless explicitly documented.
+//! * **Minimal deps** – keep the dependency graph shallow so agents can vendor-select.
 //!
 //! ## Feature Flags
 //! | Feature        | Tool / Capability | Extra Deps |
