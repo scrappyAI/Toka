@@ -15,6 +15,8 @@ Version 0.1 focuses exclusively on:
 * **Agent primitives** – task orchestration & observation
 * **User primitives (minimal)** – human actors as first-class entities
 
+*The kernel provides the **grounding layer** that binds *agents*, *tools* and *economic primitives* into a single coherent, capability-secured state machine.*
+
 Everything else (storage back-ends, networking, advanced tooling) is deliberately out of
 scope for this first milestone.
 
@@ -70,6 +72,7 @@ graph TD
         Events[toka-events]
         Auth[toka-auth]
         Tools[toka-tools]
+        AgentsCrate[toka-agents]
     end
 
     U -->|submit(Message)| K
@@ -77,6 +80,7 @@ graph TD
     K --> Events
     K --> Auth
     Tools --> K
+    AgentsCrate --> K
 
     K_dispatcher --> K_validator --> K_executor --> K_state --> K_emitter --> Events
 ```
@@ -91,6 +95,8 @@ graph TD
 | `toka-types` | Shared data structures (`EntityId`, `Operation`, `Event`) | – |
 | `toka-events` | Event bus abstraction + event definitions | `toka-types` |
 | `toka-auth` | Capability tokens & validation traits | `toka-types` |
+| `toka-agents` | Agent runtime & task orchestration built on the kernel | `toka-kernel`, `toka-auth`, `toka-events`, `toka-types` |
+| `toka-tools` | Tool registry, invocation helpers & economic asset metadata | `toka-kernel`, `toka-types`, `toka-auth` |
 
 ---
 
