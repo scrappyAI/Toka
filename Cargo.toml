@@ -6,7 +6,6 @@ members = [
     "crates/toka-auth",
     "crates/toka-events",
     "crates/toka-kernel",
-    "crates/toka-agents",
     "crates/toka-tools",
 
     # Applications / demos
