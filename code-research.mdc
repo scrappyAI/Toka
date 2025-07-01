@@ -1,0 +1,136 @@
+# Toka Project – Architecture Clarity Q&A Report
+
+*Date: 2025-07-01*
+
+---
+
+## Introduction
+This document answers the open architectural questions raised on 2025-07-01, synthesising the current **Toka** codebase state, [`42_toka_kernel_spec_v0.1.md`](docs/42_toka_kernel_spec_v0.1.md) and the latest [Workspace Research Report](docs/research/2025-07-01_workspace_report.md).  Each answer is followed by concrete recommendations that feed into the roadmap.
+
+---
+
+## Q&A
+
+### 1  Collapse `toka-events-api` into `toka-events`?
+**Answer:** Yes. Maintaining two crates for event contracts and their bus adds indirection without clear upside. A single `toka-events` crate that exposes:
+* `Event` definitions & schemas (core events)
+* `EventBus` trait + default in-memory implementation
+* Feature-gated extras (e.g. persistence adapters, intent clustering)
+…is sufficient at this stage and keeps the public surface discoverable.
+
+**Action:**
+1. Deprecate `toka-events-api` (publish yanked 0.x release).
+2. Move any missing types into `toka-events` and update imports.
+3. Add re-export stubs for backward compatibility one minor version.
+
+---
+
+### 2  Can we drop `toka-toolkit-core`?
+**Answer:** Probably yes. The crate currently holds thin helper wrappers (see unused-dep report) and does not justify a separate package. Fold its contents into `toka-tools` (or the unified crate discussed in Q3) to reduce cognitive load.
+
+---
+
+### 3  Merge **toolkit** and **tools** crates?
+**Answer:** Recommended. The distinction is blurry (helpers vs. concrete tools) and both crates are small (<200 LOC combined). A single `toka-tools` crate with clear module boundaries (`helpers`, `registry`, `financial`, …) simplifies dependency management and aligns with *Simplicity Over Complexity*.
+
+---
+
+### 4  Strip **intent strategies & clustering** from the kernel path?
+**Answer:** Yes. Event ordering & persistence are core kernel concerns; intent clustering is an **analytics-layer** feature.
+
+**Plan:**
+* Remove the `strategy.rs` module from the default build.
+* Gate intent-related code behind a cargo feature (`intent-cluster`) that is *off by default* and documented as experimental.
+* Public roadmap: re-introduce advanced analytics post-v0.2 once event sourcing is battle-tested.
+
+---
+
+### 5  Risk of co-locating financial, agent & user primitives in one kernel?
+**Answer:** Acceptable **if** we enforce *capability-scoped modules* and keep immutable event contracts.  The alternative—multiple kernels—adds orchestration overhead without clear benefit given the tight coupling of money, agents and users in the OS vision.
+
+---
+
+### 6  How many **core events** do we need?
+**Proposal:**
+1. **Ledger events** – `FundsTransferred`, `AssetMinted`, `AssetBurned`
+2. **Agent lifecycle** – `AgentSpawned`, `AgentRetired`, `TaskScheduled`, `ObservationEmitted`
+3. **User lifecycle** – `UserCreated`, `UserDeleted`, `RoleAssigned`
+4. **Tool registry** – `ToolRegistered`, `ToolRetired`
+5. **System** – `SnapshotTaken`, `KernelUpgraded`
+
+Keep the initial set small and additive; extend via semantic versioning.
+
+---
+
+### 7  Single vs. multi-threaded kernel?
+**Answer:**
+* **Determinism path (default):** single-threaded executor ensures reproducibility.
+* **Production path:** multi-threaded *ingress* with a single deterministic state machine thread (similar to TiKV raftstore) or deterministic parallelism via command batching.  Roadmap item for v0.3.
+
+---
+
+### 8  Separate kernels vs. unified kernel?
+**Answer:** Unified kernel preferred. Partitioning leads to cross-kernel atomicity problems and duplicate infra. Use **capabilities** + **namespaces** inside one kernel to emulate soft isolation.
+
+---
+
+### 9  Is "vault" still the right metaphor?
+**Answer:** If "vault" maps one-to-one with *persistent agent state* and *resource repository*, then it stays. If it overlaps with "tool registry" or "capability store", rename to avoid ambiguity.  Decision gate: draft a glossary comparing *Vault*, *Tool*, *Resource*, *Memory*.
+
+---
+
+### 10  Clarify **tasks** vs. **tools**
+* **Task** – a *goal description* + dependency graph (tools, data, agent).
+* **Tool** – an *executable capability* (function or service) that tasks invoke.
+
+Analogy: *Makefile* (tasks) vs. *CLI programs* (tools).  Ensure that `TaskSpec` references tools by ID, not vice-versa, to avoid circular coupling.
+
+---
+
+### 11  Are we mixing abstractions?
+Minor overlaps exist (e.g., `TaskSpec` lives in `toka-types` alongside low-level kernel types).  Move orchestration-level concepts (`TaskSpec`, agent schedulers) to the upcoming `toka-agents` crate to keep kernel core lean.
+
+---
+
+### 12  Opcodes vs. Tools friction?
+**Observation:** Opcodes are *kernel-level verbs*; tools are *user-space helpers*.  Unify through **capabilities**: a tool obtains a capability that authorises specific opcodes.  No direct friction if this layering is respected.
+
+---
+
+### 13  How to bring the OS vision closer & clean the mud?
+1. Collapse redundant crates (Q1-Q3).
+2. Harden event sourcing (remove clustering, finalise core events).
+3. Introduce `toka-agents` with real agents demonstrating end-to-end flows.
+4. Draft **Kernel API v0.2** with storage adapter trait & deterministic multithreading plan.
+5. Enforce `#![deny(missing_docs)]` and expand coverage to ≥60 %.
+
+---
+
+## Roadmap
+
+| Milestone | Target | Key Deliverables |
+|-----------|--------|------------------|
+| **A-1** | 2025-07-15 | Merge `toka-events-api` → `toka-events`; drop `toka-toolkit-core`; compile |
+| **A-2** | 2025-07-22 | Unified `toka-tools`; capability-scoped modules; docs pass |
+| **K-1** | 2025-08-01 | Kernel core event set frozen; clustering feature gated off |
+| **K-2** | 2025-08-15 | StorageAdapter trait + Postgres impl prototype |
+| **AG-1** | 2025-08-20 | `toka-agents` crate with `EchoAgent`, `RebalancerAgent` |
+| **OPS-1** | 2025-08-30 | CI: doc-lint, coverage gate, research workflow artefact upload |
+
+---
+
+## Action Checklist
+- [ ] Deprecate `toka-events-api` and migrate code (A-1)
+- [ ] Delete `toka-toolkit-core`; merge helpers into `toka-tools` (A-1)
+- [ ] Remove intent clustering from default build; gate under `intent-cluster` (K-1)
+- [ ] Finalise and document core event enum (K-1)
+- [ ] Create glossary entry for **Vault** vs. related terms (A-2)
+- [ ] Relocate `TaskSpec`, `AgentSpec` to `toka-agents` (AG-1)
+- [ ] Implement StorageAdapter with Postgres backend (K-2)
+- [ ] Raise test coverage to ≥60 % across workspace (OPS-1)
+- [ ] CI: enable `missing_docs` deny lint for all crates (OPS-1)
+- [ ] Write integration tests for end-to-end agent flow (AG-1)
+
+---
+
+© 2025 Toka Project – Apache-2.0 / MIT
