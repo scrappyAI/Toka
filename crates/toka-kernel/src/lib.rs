@@ -72,6 +72,11 @@ impl Kernel {
         Self { state: Arc::new(RwLock::new(state)), auth, bus }
     }
 
+    /// Expose internal state pointer (read-only usage outside kernel).
+    pub fn state_ptr(&self) -> Arc<RwLock<WorldState>> {
+        Arc::clone(&self.state)
+    }
+
     /// Submit a message, triggering capability validation, execution and event emission.
     pub async fn submit(&self, msg: Message) -> Result<KernelEvent> {
         // 1. Capability validation

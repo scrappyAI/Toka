@@ -18,110 +18,49 @@
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use serde_json::json;
+use std::sync::Arc;
 
-#[derive(Parser)]
-#[command(
-    name = "toka",
-    version = env!("CARGO_PKG_VERSION"),
-    author = "Toka Contributors <opensource@toka.sh>",
-    about = "Toka – unified CLI for agents, tools & vaults",
-    propagate_version = true,
-)]
+use toka_types::{EntityId, Operation, Message};
+use toka_kernel::{Kernel, WorldState};
+use toka_auth::{TokenValidator, Claims};
+use toka_events::bus::{InMemoryBus};
+use async_trait::async_trait;
+
+#[derive(Parser, Debug)]
+#[command(name = "toka-cli", version, about = "Toka OS demo CLI", author = "Toka Project")]
 struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    cmd: Commands,
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 enum Commands {
-    /// Agent management operations
-    Agent {
-        #[command(subcommand)]
-        sub: AgentCmd,
-    },
-    /// Tool registry operations
-    Tool {
-        #[command(subcommand)]
-        sub: ToolCmd,
-    },
-    /// Secure vault interactions
-    Vault {
-        #[command(subcommand)]
-        sub: VaultCmd,
-    },
-    /// Authentication & security utilities
-    Auth {
-        #[command(subcommand)]
-        sub: AuthCmd,
-    },
-    /// Launch an interactive playground (REPL) wired to a temporary runtime
-    Playground,
-    /// Manifest utilities
-    Manifest {
-        #[command(subcommand)]
-        sub: ManifestCmd,
-    },
-}
-
-#[derive(Subcommand)]
-enum AgentCmd {
-    /// Create a new agent with the given name
-    New {
-        /// Human-readable agent name
-        name: String,
-    },
-    /// List all registered agents
-    List,
-    /// Observe an agent's event stream (follow mode)
-    Observe {
-        /// Agent identifier (UUID or name)
-        agent_id: String,
-    },
-}
-
-#[derive(Subcommand)]
-enum ToolCmd {
-    /// List all available tools
-    List,
-    /// Run a tool with a JSON payload
-    Run {
-        /// Tool identifier
-        tool_id: String,
-        /// JSON-encoded parameters passed verbatim to the tool
+    /// Mint new asset supply and credit an entity
+    Mint {
+        /// Asset entity ID
         #[arg(long)]
-        payload: String,
-    },
-}
-
-#[derive(Subcommand)]
-enum VaultCmd {
-    /// Get a value from the vault
-    Get {
-        /// Key path to retrieve (e.g. "user/session")
-        key: String,
-    },
-    /// Put a value into the vault
-    Put {
-        /// Key path to store data at
-        key: String,
-        /// JSON-encoded value to store under the key
+        asset: u128,
+        /// Recipient entity ID
         #[arg(long)]
-        value: String,
+        to: u128,
+        /// Amount to mint
+        #[arg(long)]
+        amount: u64,
     },
-}
-
-#[derive(Subcommand)]
-enum AuthCmd {
-    /// Rotate the active capability-token secret immediately.
-    RotateSecret,
-}
-
-#[derive(Subcommand)]
-enum ManifestCmd {
-    /// Validate a Tool manifest JSON/YAML file
-    Lint {
-        /// Path to manifest file (JSON)
-        path: String,
+    /// Transfer funds between entities
+    Transfer {
+        #[arg(long)]
+        from: u128,
+        #[arg(long)]
+        to: u128,
+        #[arg(long)]
+        amount: u64,
+    },
+    /// Query current balance for an entity
+    Balance {
+        #[arg(long)]
+        entity: u128,
     },
 }
 
@@ -129,285 +68,59 @@ enum ManifestCmd {
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    match cli.command {
-        Commands::Agent { sub } => handle_agent(sub).await?,
-        Commands::Tool { sub } => handle_tool(sub).await?,
-        Commands::Vault { sub } => handle_vault(sub).await?,
-        Commands::Auth { sub } => handle_auth(sub).await?,
-        Commands::Playground => run_playground().await?,
-        Commands::Manifest { sub } => handle_manifest(sub).await?,
-    }
+    // Boot demo kernel (allow-all auth, in-memory bus)
+    let kernel = bootstrap_kernel();
 
-    Ok(())
-}
-
-async fn handle_agent(cmd: AgentCmd) -> Result<()> {
-    use toka_runtime::runtime::{Runtime, RuntimeConfig};
-    use toka_agents::BaseAgent;
-
-    // For now each CLI invocation boots a transient runtime connected to the
-    // default vault path (~/.toka unless overridden via TOKA_VAULT env var).
-    // This keeps the CLI stateless while allowing persistence across
-    // invocations.
-
-    let vault_path = std::env::var("TOKA_VAULT").unwrap_or_else(|_| "runtime_data".into());
-    let storage_root = std::env::var("TOKA_STORAGE").unwrap_or_else(|_| {
-        dirs::home_dir()
-            .unwrap_or_else(|| std::path::PathBuf::from("."))
-            .join(".toka/storage")
-            .to_string_lossy()
-            .into_owned()
-    });
-
-    let cfg = RuntimeConfig {
-        vault_path,
-        storage_root,
-        ..RuntimeConfig::default()
-    };
-
-    let runtime = Runtime::new(cfg).await?;
-
-    match cmd {
-        AgentCmd::New { name } => {
-            let agent = Box::new(BaseAgent::new(&name));
-            let id = runtime.register_agent(agent).await?;
-            runtime.save_state().await?;
-            println!("✅ Agent created (id: {})", id);
+    match cli.cmd {
+        Commands::Mint { asset, to, amount } => {
+            let msg = Message {
+                origin: EntityId(to),
+                capability: "allow".into(),
+                op: Operation::MintAsset { asset: EntityId(asset), to: EntityId(to), amount },
+            };
+            let ev = kernel.submit(msg).await?;
+            println!("{}", serde_json::to_string_pretty(&ev)?);
         }
-        AgentCmd::List => {
-            let ids = runtime.list_agents().await;
-            if ids.is_empty() {
-                println!("No agents found in vault.");
-            } else {
-                println!("Registered agents ({}):", ids.len());
-                for id in ids {
-                    println!(" - {}", id);
-                }
-            }
+        Commands::Transfer { from, to, amount } => {
+            let msg = Message {
+                origin: EntityId(from),
+                capability: "allow".into(),
+                op: Operation::TransferFunds { from: EntityId(from), to: EntityId(to), amount },
+            };
+            let ev = kernel.submit(msg).await?;
+            println!("{}", serde_json::to_string_pretty(&ev)?);
         }
-        AgentCmd::Observe { agent_id } => {
-            // Observation requires a running runtime; start it and subscribe.
-            runtime.start().await?;
-
-            println!("👀 Observing events for agent '{}'. Press Ctrl+C to exit.", agent_id);
-            // For now, we don't have a public stream for agent events –
-            // placeholder implementation prints runtime events.
-            // TODO: expose event bus in runtime publicly for observation.
-            println!("[not implemented] Event observation coming soon.");
-            runtime.stop().await?;
+        Commands::Balance { entity } => {
+            let state_arc = kernel.state_ptr();
+            let state = state_arc.read().await;
+            let bal = state.balances.get(&EntityId(entity)).copied().unwrap_or(0);
+            println!("{}", json!({ "entity": entity, "balance": bal }).to_string());
         }
     }
 
     Ok(())
 }
 
-async fn handle_tool(cmd: ToolCmd) -> Result<()> {
-    match cmd {
-        ToolCmd::List => {
-            println!("[TODO] Listing tools…");
-        }
-        ToolCmd::Run { tool_id, payload } => {
-            println!(
-                "[TODO] Running tool '{}' with payload: {}",
-                tool_id, payload
-            );
-        }
-    }
-    Ok(())
+//──────────────────── helper bootstrap ────────────────────
+
+fn bootstrap_kernel() -> Kernel {
+    let auth = Arc::new(AllowAllValidator);
+    let bus = Arc::new(InMemoryBus::default());
+    Kernel::new(WorldState::default(), auth, bus)
 }
 
-async fn handle_vault(cmd: VaultCmd) -> Result<()> {
-    match cmd {
-        VaultCmd::Get { key } => {
-            println!("[TODO] Vault GET for key: {}", key);
-        }
-        VaultCmd::Put { key, value } => {
-            println!("[TODO] Vault PUT for key: {} with value: {}", key, value);
-        }
-    }
-    Ok(())
-}
-
-async fn handle_auth(cmd: AuthCmd) -> Result<()> {
-    match cmd {
-        AuthCmd::RotateSecret => {
-            use toka_runtime::runtime::{Runtime, RuntimeConfig};
-            let rt = Runtime::new(RuntimeConfig::default()).await?;
-            rt.rotate_secrets();
-            println!("✅ Secret rotated successfully");
-        }
-    }
-    Ok(())
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Interactive playground implementation
-// ─────────────────────────────────────────────────────────────────────────────
-
-use std::sync::Arc;
-use tokio::io::{self, AsyncBufReadExt};
-use tracing::Level;
-
-use async_trait::async_trait;
-
-use toka_runtime::runtime::{Runtime, RuntimeConfig};
-use toka_runtime::tools::{Tool, ToolParams, ToolResult, ToolMetadata};
-
-use toka_agents::Agent;
-
-/// Simple system tool that echoes the provided "message" argument verbatim.
-struct EchoTool;
+struct AllowAllValidator;
 
 #[async_trait]
-impl Tool for EchoTool {
-    fn name(&self) -> &str {
-        "echo"
-    }
-
-    fn description(&self) -> &str {
-        "Echoes the provided 'message' argument. Useful for smoke-testing tool plumbing."
-    }
-
-    fn version(&self) -> &str {
-        "0.1.0"
-    }
-
-    async fn execute(&self, params: &ToolParams) -> anyhow::Result<ToolResult> {
-        let msg = params
-            .args
-            .get("message")
-            .cloned()
-            .unwrap_or_default();
-
-        Ok(ToolResult {
-            success: true,
-            output: msg.clone(),
-            metadata: ToolMetadata {
-                execution_time_ms: 0,
-                tool_version: self.version().to_string(),
-                timestamp: std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs(),
-            },
+impl TokenValidator for AllowAllValidator {
+    async fn validate(&self, _raw: &str) -> std::result::Result<Claims, toka_auth::Error> {
+        Ok(Claims {
+            sub: "cli".into(),
+            vault: "demo".into(),
+            permissions: vec!["*".into()],
+            iat: 0,
+            exp: u64::MAX,
+            jti: "cli".into(),
         })
     }
-
-    fn validate_params(&self, _params: &ToolParams) -> anyhow::Result<()> {
-        // No strict validation – echo happily accepts empty input.
-        Ok(())
-    }
-}
-
-/// Minimal agent that prints any `user_input` events to STDOUT.
-struct PrinterAgent {
-    id: String,
-}
-
-impl PrinterAgent {
-    fn new(id: &str) -> Self {
-        Self { id: id.to_string() }
-    }
-}
-
-#[async_trait]
-impl Agent for PrinterAgent {
-    fn name(&self) -> &str {
-        &self.id
-    }
-
-    async fn process_event(&mut self, event_type: &str, event_data: &str) -> anyhow::Result<()> {
-        if event_type == "user_input" {
-            println!("📨 Agent '{}' received: {}", self.id, event_data);
-        }
-        Ok(())
-    }
-
-    async fn save_state(
-        &self,
-        _adapter: &dyn toka_agents::MemoryAdapter,
-    ) -> anyhow::Result<()> {
-        Ok(())
-    }
-
-    async fn load_state(
-        &mut self,
-        _adapter: &dyn toka_agents::MemoryAdapter,
-    ) -> anyhow::Result<()> {
-        Ok(())
-    }
-}
-
-/// Starts an interactive REPL backed by a fresh in-memory runtime.
-async fn run_playground() -> anyhow::Result<()> {
-    // Pretty‐print tracing events to STDOUT so the user can observe behaviour.
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
-        .with_target(false)
-        .try_init();
-
-    // 1️⃣  Boot the runtime with default config.
-    let runtime = Runtime::new(RuntimeConfig::default()).await?;
-    runtime.start().await?;
-
-    // 2️⃣  Register a couple of basic system tools.
-    runtime
-        .tool_registry()
-        .register_tool(Arc::new(EchoTool))
-        .await?;
-
-    // 3️⃣  Create & register a trivial agent that prints user input.
-    runtime
-        .register_agent(Box::new(PrinterAgent::new("printer")))
-        .await?;
-
-    println!("🟢 Playground ready. Type messages, or 'exit' / 'quit' to leave.");
-
-    let mut lines = io::BufReader::new(io::stdin()).lines();
-
-    while let Some(line) = lines.next_line().await? {
-        let line = line.trim();
-        if line.eq_ignore_ascii_case("exit") || line.eq_ignore_ascii_case("quit") {
-            break;
-        }
-
-        // Emit as a runtime event so agents can react.
-        runtime
-            .emit_event("user_input".to_string(), line.to_string())
-            .await?;
-
-        // Example: also demonstrate the echo tool by invoking it directly.
-        let params = ToolParams {
-            name: "echo".to_string(),
-            args: std::iter::once(("message".to_string(), line.to_string()))
-                .collect(),
-        };
-
-        let result = runtime
-            .tool_registry()
-            .execute_tool("echo", &params)
-            .await?;
-
-        println!("🛠️  Tool result: {}", result.output);
-    }
-
-    runtime.stop().await?;
-    println!("👋 Playground terminated.");
-
-    Ok(())
-}
-
-async fn handle_manifest(cmd: ManifestCmd) -> Result<()> {
-    match cmd {
-        ManifestCmd::Lint { path } => {
-            use std::fs;
-            use toka_toolkit_core::manifest::ToolManifest;
-
-            let data = fs::read_to_string(&path)?;
-            let manifest: ToolManifest = serde_json::from_str(&data)?;
-            manifest.validate()?;
-            println!("✅ Manifest valid: {} (capability: {})", manifest.name, manifest.capability);
-        }
-    }
-    Ok(())
 }
