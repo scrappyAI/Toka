@@ -60,6 +60,7 @@ pub mod events;
 pub mod memory;
 pub mod persistence;
 pub mod strategy;
+pub mod bus;
 
 /// A convenient prelude for importing the most common types.
 pub mod prelude {
@@ -70,6 +71,8 @@ pub mod prelude {
         causal_hash, create_event_header, CausalDigest, DomainEvent, EventHeader, EventId,
         EventPayload, IntentId,
     };
+    // Kernel v0.1 bus
+    pub use crate::bus::{Event as KernelEvent, EventBus, InMemoryBus};
     #[cfg(feature = "memory-vault")]
     pub use crate::memory::MemoryVault;
 

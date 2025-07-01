@@ -1,47 +1,15 @@
 [workspace]
 resolver = "2"
 members = [
-    # Security
-    # Security crates (v0.2-alpha)
-    "crates/security/toka-capability-core",
-    "crates/security/toka-capability-jwt-hs256",
-    "crates/security/toka-revocation",
-    "crates/security/toka-cvm",
-
-    # Agents & Runtime
-    "crates/toka-agents",
-    "crates/toka-runtime",
-    "apps/toka-cli",
-
-    # Tools
-    "crates/toka-toolkit-core",
+    # Core kernel ecosystem (v0.1)
+    "crates/toka-types",
+    "crates/toka-auth",
+    "crates/toka-events",
+    "crates/toka-kernel",
     "crates/toka-tools",
 
-    # Events crate replacing `toka-vault`
-    "crates/toka-events",
-
-    # New member
-    "crates/toka-bus",
-    "crates/toka-memory",
-    "crates/toka-storage",
-
-    # New member
-    "crates/toka-events-api",
-
-    # New member
-    "crates/toka-memory-api",
-
-    # New member
-    "crates/toka-bus-api",
-
-    # New member
-    "crates/toka-storage-api",
-
-    # Agents API - newly extracted from toka-agents
-    "crates/toka-agents-api",
-
-    # Primitives API (ids, currency)
-    "crates/toka-primitives-api",
+    # Applications / demos
+    "apps/toka-cli",
 ]
 
 [workspace.dependencies]
