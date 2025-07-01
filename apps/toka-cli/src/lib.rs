@@ -1,3 +1,24 @@
+#![forbid(unsafe_code)]
+#![warn(missing_docs)]
+//!
+//! **toka-cli** – Developer command-line interface for **Toka OS**.
+//!
+//! The CLI is a thin, synchronous wrapper around an in-memory [`toka-kernel`](../../crates/toka-kernel)
+//! instance.  Its primary goal is to provide **human-oriented ergonomics** for exploring the kernel
+//! opcodes and for driving integration tests.
+//!
+//! It purposefully avoids introducing network stacks or persistent storage – everything runs
+//! in-process so that the command latency & behaviour mirrors the deterministic kernel semantics.
+//!
+//! Example (mint asset then query balance):
+//! ```bash
+//! toka-cli mint --asset 1 --to 42 --amount 1000
+//! toka-cli balance --entity 42
+//! ```
+//!
+//! The CLI will progress alongside the roadmap; future milestones will add sub-commands for agent
+//! management and event inspection.
+
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use serde_json::json;

@@ -6,6 +6,18 @@
 //! The kernel validates capability tokens, executes opcode handlers on an
 //! in-memory `WorldState`, and emits typed events onto the shared event bus.
 //! All operations are synchronous and **deterministic** for v0.1.
+//!
+//! 📜 **Spec reference:** see [`docs/42_toka_kernel_spec_v0.1.md`](../../../docs/42_toka_kernel_spec_v0.1.md)
+//! which outlines opcode semantics, architectural principles and open
+//! questions for upcoming milestones.
+//!
+//! *Scope* (v0.1):
+//! - Deterministic execution – single thread, no async side-effects inside handlers.
+//! - Capability-guarded syscall surface exposed via [`Operation`](toka_types::Operation).
+//! - In-memory state only; durable storage adapters arrive in v0.2.
+//!
+//! Anything outside these bounds (networking, storage, WASM execution) is
+//! intentionally deferred to keep the kernel minimal and auditable.
 
 use std::collections::HashMap;
 use std::sync::Arc;

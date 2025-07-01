@@ -1,6 +1,18 @@
-//! Toka Toolkit Core
+#![forbid(unsafe_code)]
+#![warn(missing_docs)]
 //!
-//! Defines the `Tool` trait, data structures, and a lightweight `ToolRegistry`.
+//! **toka-toolkit-core** – Minimal **tool runtime** & registry powering agent tooling in
+//! Toka OS.
+//!
+//! Whereas [`toka-tools`](../toka-tools) ships _concrete_ reference tools, this crate defines the
+//! **contracts** (traits, manifests, loaders) so that third-party crates can implement their own
+//! tools without depending on heavy Toka internals.
+//!
+//! The toolkit is intentionally storage-agnostic; execution happens _inside_ the agent process and
+//! side-effects are expressed via kernel [`Operation`](toka_types::Operation)s.
+//!
+//! See also the v0.1 kernel spec: [`docs/42_toka_kernel_spec_v0.1.md`](../../../docs/42_toka_kernel_spec_v0.1.md).
+//!
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;

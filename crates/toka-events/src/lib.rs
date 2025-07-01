@@ -48,6 +48,10 @@
 //! # Ok(())
 //! # }
 //! ```
+//!
+//! 🔗 **Related docs**: Kernel semantics in [`docs/42_toka_kernel_spec_v0.1.md`](../../../docs/42_toka_kernel_spec_v0.1.md)
+//! enumerate the event families emitted by the kernel and consumed by runtime
+//! projections.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
