@@ -27,21 +27,21 @@ pub struct EntityId(pub u128);
 //─────────────────────────────
 
 /// Specification of a task to be executed by an agent.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TaskSpec {
     /// Human-readable description (v0.1 placeholder).
     pub description: String,
 }
 
 /// Blueprint for spawning a sub-agent.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AgentSpec {
     /// Optional display name.
     pub name: String,
 }
 
 /// Simple role model used by the *user* opcode family.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Role {
     /// Read-only observer.
     Observer,

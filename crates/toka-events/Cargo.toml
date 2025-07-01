@@ -29,6 +29,9 @@ parking_lot = { version = "0.12", optional = true }
 # Add new dependency on the lean API crate
 toka-events-api = { path = "../toka-events-api", features=["serde-support", "digest", "async"] }
 
+# Add dependency on toka-types
+toka-types = { path = "../toka-types" }
+
 [dev-dependencies]
 tempfile = "3.8"
 tokio-test = "0.4"
