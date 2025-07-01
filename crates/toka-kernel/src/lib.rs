@@ -14,6 +14,8 @@
 //! *Scope* (v0.1):
 //! - Deterministic execution – single thread, no async side-effects inside handlers.
 //! - Capability-guarded syscall surface exposed via [`Operation`](toka_types::Operation).
+//! - *Only* agent primitives are enabled by default.  Financial & user families are
+//!   available via the optional `finance` / `user` feature flags.
 //! - In-memory state only; durable storage adapters arrive in v0.2.
 //!
 //! Anything outside these bounds (networking, storage, WASM execution) is
@@ -25,7 +27,9 @@ use std::sync::Arc;
 use anyhow::Result;
 use tokio::sync::RwLock;
 
-use toka_types::{EntityId, Message, Operation, TaskSpec, AgentSpec, Role};
+use toka_types::{EntityId, Message, Operation, TaskSpec, AgentSpec};
+#[cfg(feature = "user")]
+use toka_types::Role;
 use toka_events::bus::{Event as KernelEvent, EventBus};
 use toka_auth::{TokenValidator, Claims};
 
@@ -36,13 +40,16 @@ use toka_auth::{TokenValidator, Claims};
 /// In-memory tables representing the canonical world-state.
 #[derive(Debug, Default)]
 pub struct WorldState {
-    /// Simple ledger – maps entity → balance (single asset for v0.1).
+    /// Simple ledger – maps entity → balance (single asset).
+    #[cfg(feature = "finance")]
     pub balances: HashMap<EntityId, u64>,
     /// Total supply tracked per asset entity.
+    #[cfg(feature = "finance")]
     pub supply: HashMap<EntityId, u64>,
     /// Agent inboxes (queued tasks).
     pub agent_tasks: HashMap<EntityId, Vec<TaskSpec>>,
-    /// Basic user registry (`alias`, role).
+    /// Basic user registry (`alias`, role`).
+    #[cfg(feature = "user")]
     pub users: HashMap<EntityId, (String, Role)>,
 }
 
@@ -66,6 +73,9 @@ pub enum KernelError {
     /// Invalid operation semantic (e.g. negative amount).
     #[error("invalid operation: {0}")]
     InvalidOperation(String),
+    /// Operation family not compiled into the kernel.
+    #[error("unsupported operation in current kernel build")]
+    UnsupportedOperation,
 }
 
 //─────────────────────────────
@@ -100,16 +110,23 @@ impl Kernel {
             .map_err(|_| KernelError::CapabilityDenied)?;
 
         // 2. Dispatch → handler
+        #[allow(unreachable_patterns)]
         let evt = match msg.op {
+            // ───────── finance ops (optional) ─────────
+            #[cfg(feature = "finance")]
             Operation::TransferFunds { from, to, amount } => {
                 self.handle_transfer(from, to, amount).await?
             }
+            #[cfg(feature = "finance")]
             Operation::MintAsset { asset, to, amount } => {
                 self.handle_mint(asset, to, amount).await?
             }
+            #[cfg(feature = "finance")]
             Operation::BurnAsset { asset, from, amount } => {
                 self.handle_burn(asset, from, amount).await?
             }
+
+            // ───────── agent ops (always on) ─────────
             Operation::ScheduleAgentTask { agent, task } => {
                 self.handle_schedule_task(agent, task).await?
             }
@@ -119,12 +136,19 @@ impl Kernel {
             Operation::EmitObservation { agent, data } => {
                 self.handle_observation(agent, data).await?
             }
+
+            // ───────── user ops (optional) ─────────
+            #[cfg(feature = "user")]
             Operation::CreateUser { alias } => {
                 self.handle_create_user(alias).await?
             }
+            #[cfg(feature = "user")]
             Operation::AssignRole { user, role } => {
                 self.handle_assign_role(user, role).await?
             }
+
+            // Anything else → unsupported
+            _ => return Err(KernelError::UnsupportedOperation.into()),
         };
 
         // 3. Emit event
@@ -134,6 +158,7 @@ impl Kernel {
 
     //───────────────────── handlers ─────────────────────
 
+    #[cfg(feature = "finance")]
     async fn handle_transfer(&self, from: EntityId, to: EntityId, amount: u64) -> Result<KernelEvent> {
         let mut state = self.state.write().await;
         let src_balance = *state.balances.get(&from).unwrap_or(&0);
@@ -145,6 +170,7 @@ impl Kernel {
         Ok(KernelEvent::FundsTransferred { from, to, amount })
     }
 
+    #[cfg(feature = "finance")]
     async fn handle_mint(&self, asset: EntityId, to: EntityId, amount: u64) -> Result<KernelEvent> {
         let mut state = self.state.write().await;
         *state.supply.entry(asset).or_insert(0) += amount;
@@ -152,6 +178,7 @@ impl Kernel {
         Ok(KernelEvent::AssetMinted { asset, to, amount })
     }
 
+    #[cfg(feature = "finance")]
     async fn handle_burn(&self, asset: EntityId, from: EntityId, amount: u64) -> Result<KernelEvent> {
         let mut state = self.state.write().await;
         let src_balance = *state.balances.get(&from).unwrap_or(&0);
@@ -182,6 +209,7 @@ impl Kernel {
         Ok(KernelEvent::ObservationEmitted { agent, data })
     }
 
+    #[cfg(feature = "user")]
     async fn handle_create_user(&self, alias: String) -> Result<KernelEvent> {
         let mut state = self.state.write().await;
         let new_id = EntityId(rand::random());
@@ -189,6 +217,7 @@ impl Kernel {
         Ok(KernelEvent::UserCreated { alias, id: new_id })
     }
 
+    #[cfg(feature = "user")]
     async fn handle_assign_role(&self, user: EntityId, role: Role) -> Result<KernelEvent> {
         let mut state = self.state.write().await;
         if let Some((alias, _)) = state.users.get_mut(&user) {
@@ -204,8 +233,8 @@ impl Kernel {
 //  Tests
 //─────────────────────────────
 
-#[cfg(test)]
-mod tests {
+#[cfg(all(test, feature = "finance"))]
+mod tests_finance {
     use super::*;
     use tokio::runtime::Runtime;
     use async_trait::async_trait;

@@ -9,7 +9,6 @@ members = [
     "crates/toka-tools",
 
     # Applications / demos
-    "apps/toka-cli",
 ]
 
 [workspace.dependencies]

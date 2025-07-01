@@ -54,8 +54,17 @@
 //! This crate forbids `unsafe` and keeps its public API intentionally small
 //! so that downstream workspaces can vendor or fork individual tools without
 //! pulling the entire Toka dependency graph.
+//!
+//! ⚠️ **Experimental crate** – public APIs are subject to change without notice.  Expect **breaking
+//! changes** until the project reaches `v1.0` maturity.
+//!
+//! _Note_: The former **`toka-toolkit-core`** crate has been fully merged into *toka-tools* as of
+//! July 2025.  All core abstractions now live under [`crate::core`]. Downstream crates should
+//! simply depend on `toka-tools` instead of the removed legacy crate.
+
+pub mod core;
 
 pub mod tools;
 
-// Re-export the important types so downstream code can simply `use toka_toolkit::{Tool, ToolRegistry}`
-pub use crate::tools::{Tool, ToolRegistry, ToolParams};
+// Re-export the important types so downstream code can simply `use toka_tools::{Tool, ToolRegistry}`
+pub use crate::core::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};

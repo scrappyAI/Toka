@@ -1,13 +1,10 @@
-//! Tool Manifest / Specification
+//! Tool Manifest / Specification – migrated from `toka-toolkit-core`.
 //!
 //! Provides versioned, serialisable data-structures that describe a tool's
 //! public contract.  Stored as JSON (or embedded YAML/TOML) and compatible with
-//! existing ecosystems:
-//!   • JSON-RPC 2.0 (method names map to `capability`)
-//!   • Google A2A / App Actions (`action_id`) – experimental
-//!   • MCP (Multipurpose Control Protocol) – transport enumeration
-//!
-//! The manifest is *stable*-ish: breaking changes bump `SCHEMA_VERSION`.
+//! existing ecosystems (JSON-RPC 2.0, MCP, Google A2A …).
+
+#![allow(dead_code)]
 
 use serde::{Deserialize, Serialize};
 
@@ -19,8 +16,8 @@ pub const SCHEMA_VERSION: &str = "1.1";
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "protocol", rename_all = "lowercase")]
 pub enum ProtocolMapping {
-    /// Model Context Protocol (Anthropic) function mapping
-    /// – `function_name` becomes the MCP `call` field.
+    /// Model Context Protocol (Anthropic) function mapping – `function_name`
+    /// becomes the MCP `call` field.
     Mcp {
         /// JSON-RPC method name advertised via MCP (often same as capability).
         function_name: String,
@@ -38,8 +35,12 @@ pub enum ProtocolMapping {
     },
 }
 
-fn default_mcp_version() -> String { "1".into() }
-fn is_default_mcp_version(v: &String) -> bool { v == "1" }
+fn default_mcp_version() -> String {
+    "1".into()
+}
+fn is_default_mcp_version(v: &String) -> bool {
+    v == "1"
+}
 
 /// Where & how the tool can be invoked.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,7 +50,7 @@ pub enum Transport {
     JsonRpcHttp { endpoint: String },
     /// JSON-RPC 2.0 over stdio (command-line programs).
     JsonRpcStdio { exec: String },
-    /// In-process Rust struct implementing the [`Tool`](crate::Tool) trait.
+    /// In-process Rust struct implementing the [`Tool`](crate::core::Tool) trait.
     InProcess,
     /// WebAssembly module exposing `execute` function.
     Wasm { path: String },
@@ -67,8 +68,7 @@ pub enum SideEffect {
     Privileged, // requires elevated authz/sandbox
 }
 
-/// Input or output schema description.
-/// For now this is opaque JSON Schema (draft-07) represented as a raw string.
+/// Input or output schema description (opaque JSON Schema draft-07 string).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Schema(pub String);
 
@@ -120,14 +120,7 @@ fn schema_version() -> String {
 }
 
 impl ToolManifest {
-    /// Perform static validation of the manifest.
-    ///
-    /// This **does not** validate JSON Schema payloads – only structural
-    /// rules enforced by Toka:
-    ///  * `id`, `name`, `version`, `capability` non-empty
-    ///  * at least one transport
-    ///  * when `Transport::JsonRpcHttp` endpoint must be valid URL
-    ///  * protocols list may be empty but mapping consistency is checked when present.
+    /// Perform static validation of the manifest. See original docs for rules.
     pub fn validate(&self) -> anyhow::Result<()> {
         use anyhow::{anyhow, Context};
         if self.id.trim().is_empty() {
@@ -188,23 +181,12 @@ impl ToolManifest {
 const MAX_SCHEMA_BYTES: usize = 65_536; // 64 KiB
 
 // Feature-gated constants controlling optional behaviour.
-
-// Remote `$ref`s are **rejected** unless the `allow_remote_refs` feature is
-// enabled.  This prevents unbounded network fetches during manifest loading
-// and aligns with the HardenSecuritySurface guidelines.
 #[cfg(feature = "allow_remote_refs")]
 const ALLOW_REMOTE_REFS: bool = true;
 #[cfg(not(feature = "allow_remote_refs"))]
 const ALLOW_REMOTE_REFS: bool = false;
 
 /// Ensures that an optional schema string compiles under JSON-Schema draft-07.
-///
-/// Security & UX guarantees:
-///  • Rejects oversized schemas (> 64 KiB) to mitigate DoS vectors.
-///  • Denies remote `$ref` unless `allow_remote_refs` feature is active.
-///  • Provides precise error context for tool authors.
-///  • Optional LRU-style cache behind the `schema_cache` feature to amortise
-///    compile overhead across manifests.
 fn ensure_schema_compiles(opt: &Option<Schema>, which: &str) -> anyhow::Result<()> {
     use anyhow::Context;
     use jsonschema::Draft;
@@ -215,15 +197,15 @@ fn ensure_schema_compiles(opt: &Option<Schema>, which: &str) -> anyhow::Result<(
     };
 
     if raw.len() > MAX_SCHEMA_BYTES {
-        anyhow::bail!("{which} schema exceeds {MAX_SCHEMA_BYTES} bytes ({} bytes)", raw.len());
+        anyhow::bail!(
+            "{which} schema exceeds {MAX_SCHEMA_BYTES} bytes ({} bytes)",
+            raw.len()
+        );
     }
 
-    // Fast JSON parse – we need a `serde_json::Value` anyway for the compiler.
     let doc: serde_json::Value = serde_json::from_str(raw)
         .with_context(|| format!("{which} schema: invalid JSON"))?;
 
-    // Shallow scan for remote `$ref` before expensive compilation to avoid
-    // network IO surprises.  We only need to walk objects & arrays.
     if !ALLOW_REMOTE_REFS && contains_remote_ref(&doc) {
         anyhow::bail!(
             "{which} schema: remote $ref URLs are disabled – enable the \
@@ -231,11 +213,6 @@ fn ensure_schema_compiles(opt: &Option<Schema>, which: &str) -> anyhow::Result<(
         );
     }
 
-    // --------------------------- Optional cache ---------------------------
-    // When the `schema_cache` feature is enabled we avoid recompiling and
-    // leaking the same schema multiple times.  A single 64-KiB leak per *unique*
-    // schema is acceptable for a long-running process and dramatically speeds
-    // up subsequent validations.
     #[cfg(feature = "schema_cache")]
     {
         use dashmap::DashMap;
@@ -243,8 +220,6 @@ fn ensure_schema_compiles(opt: &Option<Schema>, which: &str) -> anyhow::Result<(
         use std::hash::{Hash, Hasher};
         use std::sync::Arc;
 
-        // Compute stable hash for the raw schema bytes (cheaper than hashing
-        // the parsed `Value`).
         let mut hasher = std::collections::hash_map::DefaultHasher::new();
         raw.hash(&mut hasher);
         let key = hasher.finish();
@@ -252,13 +227,10 @@ fn ensure_schema_compiles(opt: &Option<Schema>, which: &str) -> anyhow::Result<(
         static SCHEMA_CACHE: Lazy<DashMap<u64, Arc<jsonschema::JSONSchema>>> =
             Lazy::new(DashMap::new);
 
-        // Hot path – already compiled
         if SCHEMA_CACHE.contains_key(&key) {
             return Ok(());
         }
 
-        // Cold path – first time we see this schema
-        // Leak **one** copy so the compiled validators can borrow `'static`.
         let leaked_doc: &'static serde_json::Value = Box::leak(Box::new(doc));
 
         let compiled = jsonschema::JSONSchema::options()
@@ -270,13 +242,9 @@ fn ensure_schema_compiles(opt: &Option<Schema>, which: &str) -> anyhow::Result<(
         return Ok(());
     }
 
-    // --------------------------- No-cache path ----------------------------
-    // Without the cache we simply compile once per validation call – cheap
-    // enough for CLI / short-lived binaries and *no memory leaks*.
     #[cfg(not(feature = "schema_cache"))]
     {
         let leaked_doc: &'static serde_json::Value = Box::leak(Box::new(doc));
-
         jsonschema::JSONSchema::options()
             .with_draft(Draft::Draft7)
             .compile(leaked_doc)
@@ -299,4 +267,4 @@ fn contains_remote_ref(v: &serde_json::Value) -> bool {
         serde_json::Value::Array(arr) => arr.iter().any(contains_remote_ref),
         _ => false,
     }
-} 
+}

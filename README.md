@@ -1,16 +1,16 @@
 # Toka OS – **Agentic Operating System** (v0.1)
 
-> **Status:** *v0.1 – Kernel feature-freeze*  | *Documentation overhaul in progress*
+> **Status:** *v0.1 – Kernel feature-freeze*  | 🚧 **Experimental – APIs WILL break** 🚧  | *Documentation overhaul in progress*
 
 Toka OS is an **agent-centric**, capability‐secured operating system written in Rust.  At its heart sits the deterministic [`toka-kernel`](crates/toka-kernel), a pure state-machine that applies **Operations** (opcodes) against a canonical **WorldState** and emits verifiable domain events.
 
-The 0.1 kernel spec – captured in [`docs/42_toka_kernel_spec_v0.1.md`](docs/42_toka_kernel_spec_v0.1.md) – introduces three foundational primitive families:
+The v0.1 **pure kernel** – see [`docs/42_toka_kernel_spec_v0.1.md`](docs/42_toka_kernel_spec_v0.1.md) – focuses on a **single primitive family**:
 
-1. **Financial primitives** – balance-safe asset minting, burning & transfers
-2. **Agent primitives**    – task scheduling, spawning and observation hooks
-3. **User primitives (β)**  – human actors with assignable roles
+1. **Agent primitives** – task scheduling, spawning and observation hooks
 
-Everything above the kernel (storage back-ends, networking, advanced tooling) is intentionally out of scope for 0.1 and will ship incrementally.
+Financial & user concerns are now provided by *external toolkits* that plug into the kernel via well-defined messages.  This keeps the kernel minimal, deterministic and audit-friendly.
+
+Everything above the kernel (storage back-ends, networking, finance, user management) is intentionally out of scope for 0.1 and ships in accessory crates.
 
 # Vision
 
@@ -34,8 +34,7 @@ Key design pillars:
 | **toka-kernel** | ✅ | Deterministic state-machine core |
 | **toka-events** | ✅ | Canonical event bus & store |
 | **toka-auth** | ✅ | Capability token issuance & validation |
-| **toka-toolkit-core** | ✅ | Tool trait + registry (no heavy deps) |
-| **toka-tools** | 🟡 | Standard library of reference tools (minimal) |
+| **toka-tools** | ✅ | Core tool abstractions **+** standard reference tools |
 | **toka-agents** | ⬜ *planned* | Default agent implementations layered atop the kernel |
 | **toka-cli** | 🟡 | Developer CLI for interacting with the runtime |
 
