@@ -56,14 +56,13 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-/// Re-export the canonical API contract from the lightweight `toka-events-api` crate.
-pub use toka_events_api as api;
+pub mod api;
 
 /// Local façade re-exporting event primitives + demo [`DomainEvent`] enum.
 pub mod events;
 pub mod memory;
 pub mod persistence;
-pub mod strategy;
+#[cfg(feature = "intent-cluster")] pub mod strategy;
 pub mod bus;
 
 /// A convenient prelude for importing the most common types.

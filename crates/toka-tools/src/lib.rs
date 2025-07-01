@@ -55,7 +55,9 @@
 //! so that downstream workspaces can vendor or fork individual tools without
 //! pulling the entire Toka dependency graph.
 
+pub mod core;
+
 pub mod tools;
 
-// Re-export the important types so downstream code can simply `use toka_toolkit::{Tool, ToolRegistry}`
-pub use crate::tools::{Tool, ToolRegistry, ToolParams};
+// Re-export the important types so downstream code can simply `use toka_tools::{Tool, ToolRegistry}`
+pub use crate::core::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};

@@ -21,7 +21,13 @@ sha2 = { version = "0.10", optional = true }
 base64 = { version = "0.21", optional = true }
 tracing = { version = "0.1" }
 typetag = { version = "0.2", optional = true }
-toka-toolkit-core = { path = "../toka-toolkit-core" }
+# new deps from former toolkit-core
+url = "2"
+jsonschema = "0.17"
+once_cell = { version = "1.19", optional = true }
+dashmap = { version = "5.5", optional = true }
+wasmtime = { version = "11", optional = true, features = ["wat"] }
+reqwest = { version = "0.11", optional = true, default-features = false, features = ["json", "rustls-tls"] }
 
 [dev-dependencies]
 # Async test runtime and utilities
@@ -35,4 +41,10 @@ tempfile = "3.10"
 # Phase-0: clean slate – only the `echo` demo tool.
 echo = []
 minimal = ["echo"]
+# additional features ported from toolkit-core
+schema_cache = ["once_cell", "dashmap"]
+allow_remote_refs = []
+wasm_loader = ["wasmtime"]
+http_transport = ["reqwest"]
+
 default = ["minimal"]

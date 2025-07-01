@@ -8,50 +8,18 @@
 //!    dev tooling can surface them programmatically.
 
 use anyhow::Result;
-use std::sync::Arc;
 use async_trait::async_trait;
+use std::sync::Arc;
 
 // Re-export canonical types from `toka_toolkit_core` so internal modules can
 // simply `use crate::tools::{Tool, ToolParams, …}` without caring about the
 // crate boundary.
-pub use toka_toolkit_core::{Tool, ToolMetadata, ToolParams, ToolRegistry as CoreRegistry, ToolResult};
+pub use crate::core::{Tool, ToolMetadata, ToolParams, ToolResult};
 
 /// Thin wrapper that delegates every call to an inner `CoreRegistry`.
 /// At the moment **no tools are registered by default** – callers must install
 /// their own tool instances.
-pub struct ToolRegistry {
-    inner: CoreRegistry,
-}
-
-impl Default for ToolRegistry {
-    fn default() -> Self {
-        Self { inner: CoreRegistry::new() }
-    }
-}
-
-impl ToolRegistry {
-    /// Create an *empty* registry.
-    pub fn new_empty() -> Self { Self::default() }
-
-    /// Back-compat helper: historically `ToolRegistry::new()` shipped with
-    /// built-ins.  For now it's an alias for `new_empty` while the standard
-    /// toolkit is being rewritten.
-    pub async fn new() -> Result<Self> { Ok(Self::default()) }
-
-    pub async fn register_tool(&self, t: Arc<dyn Tool + Send + Sync>) -> Result<()> {
-        self.inner.register_tool(t).await
-    }
-
-    pub async fn execute_tool(&self, name: &str, p: &ToolParams) -> Result<ToolResult> {
-        self.inner.execute_tool(name, p).await
-    }
-
-    pub async fn get_tool(&self, name: &str) -> Option<Arc<dyn Tool + Send + Sync>> {
-        self.inner.get_tool(name).await
-    }
-
-    pub async fn list_tools(&self) -> Vec<String> { self.inner.list_tools().await }
-}
+pub type ToolRegistry = crate::core::ToolRegistry;
 
 /// Canonical guidelines for building agent tools – markdown formatted.
 pub const TOOL_GUIDELINES: &str = include_str!("../../TOOL_DEVELOPMENT.md");

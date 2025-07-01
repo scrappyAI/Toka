@@ -7,7 +7,7 @@
 
 // Re-export the primitives so existing downstreams using `crate::events::*`
 // continue to compile unchanged.
-pub use toka_events_api::{causal_hash, create_event_header, CausalDigest, EventHeader, EventId, EventPayload, IntentId};
+pub use crate::api::{causal_hash, create_event_header, CausalDigest, EventHeader, EventId, EventPayload, IntentId};
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

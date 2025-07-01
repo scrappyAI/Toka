@@ -34,8 +34,7 @@ Key design pillars:
 | **toka-kernel** | ✅ | Deterministic state-machine core |
 | **toka-events** | ✅ | Canonical event bus & store |
 | **toka-auth** | ✅ | Capability token issuance & validation |
-| **toka-toolkit-core** | ✅ | Tool trait + registry (no heavy deps) |
-| **toka-tools** | 🟡 | Standard library of reference tools (minimal) |
+| **toka-tools** | ✅ | Core tool abstractions **+** standard reference tools |
 | **toka-agents** | ⬜ *planned* | Default agent implementations layered atop the kernel |
 | **toka-cli** | 🟡 | Developer CLI for interacting with the runtime |
 
