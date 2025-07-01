@@ -11,3 +11,8 @@ description.workspace = true
 toka-types = { path = "../toka-types" }
 toka-auth = { path = "../toka-auth" }
 toka-events = { path = "../toka-events" }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features=["sync","rt-multi-thread","macros"] }
+async-trait = { workspace = true }
+rand = { workspace = true }
