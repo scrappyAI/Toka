@@ -4,23 +4,13 @@
 
 | Crate Name                 | Rule-of-Thumb Reason* | One-line Purpose |
 |----------------------------|-----------------------|------------------|
-| `toka-primitives-api`      | ① `no_std` primitives | Fundamental, dependency-free types (IDs, currency, etc.). |
-| `toka-events-api`          | ① contract-only       | Pure data types and traits for the canonical event subsystem. |
-| `toka-bus-api`             | ① contract-only       | Minimal, `no_std`-friendly event-bus traits and headers. |
-| `toka-memory-api`          | ① contract-only       | Trait contract for agent memory adapters (byte-oriented get/put/delete, no_std). |
-| `toka-storage-api`         | ① contract-only       | Async key–value artefact storage contract. |
-| `toka-capability-core`     | ① `no_std` primitives | Canonical Claims struct + capability traits (no crypto). |
-| `toka-capability-jwt-hs256`| ② implementation      | HS256 JWT implementation of capability tokens. |
-| `toka-agents`              | ② optional deps       | Default agent implementations for the runtime. |
-| `toka-toolkit-core`        | ① light, reusable     | Tool trait and registry abstractions (zero heavy deps). |
-| `toka-tools`               | ② optional deps       | Standard library of agent tools (currently minimal `echo`). |
-| `toka-bus`                 | ② lightweight runtime | In-process, async event-bus implementation (Tokio broadcast). |
-| `toka-memory`              | ② lightweight runtime | Reference in-process adapter (Tokio + RwLock, suited for tests & prototyping). |
-| `toka-storage`             | ② heavy deps          | Local-filesystem storage adapter used by the runtime. |
-| `toka-events`              | ② heavy deps          | **Canonical event store** replacing the historical `toka-vault`. |
-| `toka-runtime`             | ② heavy deps          | Async host tying agents, tools, bus & event store together. |
-| `toka`                     | – aggregate crate     | Meta-crate re-exporting common preludes for quick onboarding. |
-| `toka-cli` (app)           | ② heavy deps          | Command-line interface for interacting with the runtime. |
+| `toka-types`               | ① `no_std` primitives | Fundamental, dependency-light types (EntityId, Operation, Message). |
+| `toka-kernel`              | ② core runtime        | Deterministic state-machine core with capability validation and agent primitives. |
+| `toka-auth`                | ② crypto deps         | JWT-based capability token validation and claims processing. |
+| `toka-events`              | ② heavy deps          | Canonical event store with persistent storage (sled) and bus integration. |
+| `toka-runtime`             | ② heavy deps          | Async host orchestrating kernel, agents, tools, and event bus. |
+| `toka-tools`               | ② optional deps       | Standard library of agent tools and utility helpers. |
+| `security`                 | ③ independent         | Security-related utilities and cryptographic primitives. |
 
 *Rule-of-Thumb Keys*
 ① Usable from `no_std` / lean targets  
@@ -31,7 +21,13 @@
 
 ## Workspace Evolution 2025
 
-The 2025 *Great Consolidation* introduced the new [`toka-events`](crates/toka-events) crate as the single, canonical event store and simplified inter-crate boundaries. All retired crates (`toka-vault`, `toka-ledger-*`, etc.) have now been **fully removed** from the repository. Historical notes live in `/docs/history/` for posterity.
+The 2025 *Kernel Refactor* (v0.2) removed finance and user opcode families from the core kernel, establishing a **minimal, agent-centric nucleus**. Domain-specific functionality is expected to live in extension crates that plug into the kernel via the new `OpcodeHandler` registry.
+
+### Key Changes
+- **`toka-kernel`** now contains only agent primitives (`ScheduleAgentTask`, `SpawnSubAgent`, `EmitObservation`)
+- **Finance & user families** removed from core; will be re-established as extension crates
+- **`toka-types`** simplified to core operation enum without domain-specific variants
+- **Extension mechanism** introduced via `OpcodeHandler` trait for pluggable opcode families
 
 ---
 
