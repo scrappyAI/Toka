@@ -10,7 +10,7 @@
 //! slim and avoids tight coupling.
 
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::RwLock;
 
 use anyhow::Result;
 use once_cell::sync::Lazy;
@@ -32,14 +32,14 @@ pub trait OpcodeHandler: Send + Sync + 'static {
 
 /// Global registry mapping *tags* to boxed handler instances.  The tag is
 /// informational only for now (it helps with debugging / introspection).
-static REGISTRY: Lazy<RwLock<HashMap<&'static str, Arc<dyn OpcodeHandler>>>> = Lazy::new(|| RwLock::new(HashMap::new()));
+static REGISTRY: Lazy<RwLock<HashMap<&'static str, Box<dyn OpcodeHandler>>>> = Lazy::new(|| RwLock::new(HashMap::new()));
 
 /// Register a new opcode `handler` under the provided human-readable `tag`.
 ///
 /// Calling this function **after the kernel has started processing messages is
 /// still safe** – the underlying `RwLock` ensures any concurrent lookup sees a
 /// fully initialized handler instance.
-pub fn register_handler(tag: &'static str, handler: Arc<dyn OpcodeHandler>) {
+pub fn register_handler(tag: &'static str, handler: Box<dyn OpcodeHandler>) {
     REGISTRY.write().expect("registry poisoned").insert(tag, handler);
 }
 
