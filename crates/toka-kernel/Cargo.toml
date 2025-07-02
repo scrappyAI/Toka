@@ -15,10 +15,4 @@ anyhow = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features=["sync","rt-multi-thread","macros"] }
 async-trait = { workspace = true }
-rand = { workspace = true }
-
-[features]
-default = []
-# Opt-in families – keep the kernel pure by default.
-finance = []
-user = []
+once_cell = { workspace = true }

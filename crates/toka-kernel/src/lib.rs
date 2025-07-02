@@ -28,10 +28,11 @@ use anyhow::Result;
 use tokio::sync::RwLock;
 
 use toka_types::{EntityId, Message, Operation, TaskSpec, AgentSpec};
-#[cfg(feature = "user")]
-use toka_types::Role;
 use toka_events::bus::{Event as KernelEvent, EventBus};
 use toka_auth::{TokenValidator, Claims};
+
+mod registry;
+pub use registry::{register_handler, OpcodeHandler};
 
 //─────────────────────────────
 //  World-state
@@ -40,17 +41,8 @@ use toka_auth::{TokenValidator, Claims};
 /// In-memory tables representing the canonical world-state.
 #[derive(Debug, Default)]
 pub struct WorldState {
-    /// Simple ledger – maps entity → balance (single asset).
-    #[cfg(feature = "finance")]
-    pub balances: HashMap<EntityId, u64>,
-    /// Total supply tracked per asset entity.
-    #[cfg(feature = "finance")]
-    pub supply: HashMap<EntityId, u64>,
     /// Agent inboxes (queued tasks).
     pub agent_tasks: HashMap<EntityId, Vec<TaskSpec>>,
-    /// Basic user registry (`alias`, role`).
-    #[cfg(feature = "user")]
-    pub users: HashMap<EntityId, (String, Role)>,
 }
 
 //─────────────────────────────
@@ -64,9 +56,6 @@ pub enum KernelError {
     /// Submitted capability token is not authorised.
     #[error("capability denied")]
     CapabilityDenied,
-    /// Insufficient balance for debit.
-    #[error("insufficient balance for entity {entity:?}: need {needed}, have {available}")]
-    InsufficientBalance { entity: EntityId, needed: u64, available: u64 },
     /// Unknown entity referenced in the operation.
     #[error("unknown entity {0:?}")]
     UnknownEntity(EntityId),
@@ -109,90 +98,35 @@ impl Kernel {
             .await
             .map_err(|_| KernelError::CapabilityDenied)?;
 
-        // 2. Dispatch → handler
-        #[allow(unreachable_patterns)]
-        let evt = match msg.op {
-            // ───────── finance ops (optional) ─────────
-            #[cfg(feature = "finance")]
-            Operation::TransferFunds { from, to, amount } => {
-                self.handle_transfer(from, to, amount).await?
+        // 2. Try external opcode handlers first so we don't move the operation prematurely.
+        {
+            let mut state = self.state.write().await;
+            if let Some(ext_evt) = registry::dispatch(&msg.op, &mut state)? {
+                self.bus.publish(&ext_evt)?;
+                return Ok(ext_evt);
             }
-            #[cfg(feature = "finance")]
-            Operation::MintAsset { asset, to, amount } => {
-                self.handle_mint(asset, to, amount).await?
-            }
-            #[cfg(feature = "finance")]
-            Operation::BurnAsset { asset, from, amount } => {
-                self.handle_burn(asset, from, amount).await?
-            }
+        }
 
-            // ───────── agent ops (always on) ─────────
+        // 3. Dispatch → built-in agent handlers
+        let evt = match &msg.op {
+            // ───────── agent ops (core) ─────────
             Operation::ScheduleAgentTask { agent, task } => {
-                self.handle_schedule_task(agent, task).await?
+                self.handle_schedule_task(agent.clone(), task.clone()).await?
             }
             Operation::SpawnSubAgent { parent, spec } => {
-                self.handle_spawn_agent(parent, spec).await?
+                self.handle_spawn_agent(parent.clone(), spec.clone()).await?
             }
             Operation::EmitObservation { agent, data } => {
-                self.handle_observation(agent, data).await?
+                self.handle_observation(agent.clone(), data.clone()).await?
             }
-
-            // ───────── user ops (optional) ─────────
-            #[cfg(feature = "user")]
-            Operation::CreateUser { alias } => {
-                self.handle_create_user(alias).await?
-            }
-            #[cfg(feature = "user")]
-            Operation::AssignRole { user, role } => {
-                self.handle_assign_role(user, role).await?
-            }
-
-            // Anything else → unsupported
-            _ => return Err(KernelError::UnsupportedOperation.into()),
         };
 
-        // 3. Emit event
+        // 4. Emit event for core ops
         self.bus.publish(&evt)?;
         Ok(evt)
     }
 
     //───────────────────── handlers ─────────────────────
-
-    #[cfg(feature = "finance")]
-    async fn handle_transfer(&self, from: EntityId, to: EntityId, amount: u64) -> Result<KernelEvent> {
-        let mut state = self.state.write().await;
-        let src_balance = *state.balances.get(&from).unwrap_or(&0);
-        if src_balance < amount {
-            return Err(KernelError::InsufficientBalance { entity: from, needed: amount, available: src_balance }.into());
-        }
-        state.balances.insert(from, src_balance - amount);
-        *state.balances.entry(to).or_insert(0) += amount;
-        Ok(KernelEvent::FundsTransferred { from, to, amount })
-    }
-
-    #[cfg(feature = "finance")]
-    async fn handle_mint(&self, asset: EntityId, to: EntityId, amount: u64) -> Result<KernelEvent> {
-        let mut state = self.state.write().await;
-        *state.supply.entry(asset).or_insert(0) += amount;
-        *state.balances.entry(to).or_insert(0) += amount;
-        Ok(KernelEvent::AssetMinted { asset, to, amount })
-    }
-
-    #[cfg(feature = "finance")]
-    async fn handle_burn(&self, asset: EntityId, from: EntityId, amount: u64) -> Result<KernelEvent> {
-        let mut state = self.state.write().await;
-        let src_balance = *state.balances.get(&from).unwrap_or(&0);
-        if src_balance < amount {
-            return Err(KernelError::InsufficientBalance { entity: from, needed: amount, available: src_balance }.into());
-        }
-        let supply = state.supply.entry(asset).or_insert(0);
-        if *supply < amount {
-            return Err(KernelError::InvalidOperation("burn exceeds supply".into()).into());
-        }
-        *supply -= amount;
-        state.balances.insert(from, src_balance - amount);
-        Ok(KernelEvent::AssetBurned { asset, from, amount })
-    }
 
     async fn handle_schedule_task(&self, agent: EntityId, task: TaskSpec) -> Result<KernelEvent> {
         let mut state = self.state.write().await;
@@ -208,107 +142,10 @@ impl Kernel {
     async fn handle_observation(&self, agent: EntityId, data: Vec<u8>) -> Result<KernelEvent> {
         Ok(KernelEvent::ObservationEmitted { agent, data })
     }
-
-    #[cfg(feature = "user")]
-    async fn handle_create_user(&self, alias: String) -> Result<KernelEvent> {
-        let mut state = self.state.write().await;
-        let new_id = EntityId(rand::random());
-        state.users.insert(new_id, (alias.clone(), Role::Member));
-        Ok(KernelEvent::UserCreated { alias, id: new_id })
-    }
-
-    #[cfg(feature = "user")]
-    async fn handle_assign_role(&self, user: EntityId, role: Role) -> Result<KernelEvent> {
-        let mut state = self.state.write().await;
-        if let Some((alias, _)) = state.users.get_mut(&user) {
-            *state.users.get_mut(&user).unwrap() = (alias.clone(), role.clone());
-            Ok(KernelEvent::RoleAssigned { user, role })
-        } else {
-            Err(KernelError::UnknownEntity(user).into())
-        }
-    }
 }
 
 //─────────────────────────────
 //  Tests
 //─────────────────────────────
 
-#[cfg(all(test, feature = "finance"))]
-mod tests_finance {
-    use super::*;
-    use tokio::runtime::Runtime;
-    use async_trait::async_trait;
-
-    struct AllowAllValidator;
-    #[async_trait]
-    impl TokenValidator for AllowAllValidator {
-        async fn validate(&self, _raw: &str) -> Result<Claims, toka_auth::Error> {
-            Ok(Claims {
-                sub: "test".into(),
-                vault: "test".into(),
-                permissions: vec!["*".into()],
-                iat: 0,
-                exp: u64::MAX,
-                jti: "test".into(),
-            })
-        }
-    }
-
-    fn test_kernel() -> Kernel {
-        let auth = Arc::new(AllowAllValidator);
-        let bus = Arc::new(toka_events::bus::InMemoryBus::default());
-        Kernel::new(WorldState::default(), auth, bus)
-    }
-
-    #[test]
-    fn mint_and_transfer() {
-        let rt = Runtime::new().unwrap();
-        rt.block_on(async move {
-            let kernel = test_kernel();
-            let asset = EntityId(1);
-            let alice = EntityId(100);
-            let bob = EntityId(200);
-
-            // Mint 1000 to Alice
-            let msg_mint = Message {
-                origin: alice,
-                capability: "allow".into(),
-                op: Operation::MintAsset { asset, to: alice, amount: 1000 },
-            };
-            kernel.submit(msg_mint).await.unwrap();
-
-            // Transfer 300 to Bob
-            let msg_transfer = Message {
-                origin: alice,
-                capability: "allow".into(),
-                op: Operation::TransferFunds { from: alice, to: bob, amount: 300 },
-            };
-            kernel.submit(msg_transfer).await.unwrap();
-
-            // Assert balances
-            let state = kernel.state.read().await;
-            assert_eq!(state.balances.get(&alice), Some(&700));
-            assert_eq!(state.balances.get(&bob), Some(&300));
-        });
-    }
-
-    #[test]
-    fn insufficient_balance() {
-        let rt = Runtime::new().unwrap();
-        rt.block_on(async move {
-            let kernel = test_kernel();
-            let alice = EntityId(50);
-            let bob = EntityId(60);
-
-            // Try to transfer without balance
-            let res = kernel
-                .submit(Message {
-                    origin: alice,
-                    capability: "allow".into(),
-                    op: Operation::TransferFunds { from: alice, to: bob, amount: 10 },
-                })
-                .await;
-            assert!(matches!(res, Err(e) if e.downcast_ref::<KernelError>().map_or(false, |k| matches!(k, KernelError::InsufficientBalance{..}))));
-        });
-    }
-}
+// No finance tests after v0.2 – core kernel covers agent primitives only.
