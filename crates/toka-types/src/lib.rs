@@ -40,17 +40,6 @@ pub struct AgentSpec {
     pub name: String,
 }
 
-/// Simple role model used by the *user* opcode family.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub enum Role {
-    /// Read-only observer.
-    Observer,
-    /// Regular user able to submit messages.
-    Member,
-    /// Elevated privileges (admin/operator).
-    Admin,
-}
-
 //─────────────────────────────
 //  Kernel opcode enumeration
 //─────────────────────────────
@@ -59,14 +48,6 @@ pub enum Role {
 #[allow(missing_docs)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Operation {
-    /* — financial — */
-    /// Transfer fungible balance from `from` to `to`.
-    TransferFunds { from: EntityId, to: EntityId, amount: u64 },
-    /// Increase total supply of an asset and credit `to`.
-    MintAsset     { asset: EntityId, to: EntityId, amount: u64 },
-    /// Reduce supply and debit `from`.
-    BurnAsset     { asset: EntityId, from: EntityId, amount: u64 },
-
     /* — agent — */
     /// Enqueue a task in the agent inbox.
     ScheduleAgentTask { agent: EntityId, task: TaskSpec },
@@ -75,11 +56,7 @@ pub enum Operation {
     /// Emit opaque observation data.
     EmitObservation   { agent: EntityId, data: Vec<u8> },
 
-    /* — user — */
-    /// Create a new user entity with the given alias.
-    CreateUser  { alias: String },
-    /// Assign `role` to an existing user.
-    AssignRole  { user: EntityId, role: Role },
+    // future non-domain-specific opcodes may be added here
 }
 
 //─────────────────────────────

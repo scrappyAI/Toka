@@ -7,7 +7,7 @@ use tokio::sync::broadcast;
 use anyhow::Result;
 use std::sync::Arc;
 
-use toka_types::{EntityId, TaskSpec, AgentSpec, Role};
+use toka_types::{EntityId, TaskSpec, AgentSpec};
 
 /// Typed kernel event enumeration emitted by the kernel after a successful
 /// state transition.  Each variant mirrors one opcode family from
@@ -15,19 +15,10 @@ use toka_types::{EntityId, TaskSpec, AgentSpec, Role};
 #[allow(missing_docs)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Event {
-    /* — financial — */
-    FundsTransferred { from: EntityId, to: EntityId, amount: u64 },
-    AssetMinted      { asset: EntityId, to: EntityId, amount: u64 },
-    AssetBurned      { asset: EntityId, from: EntityId, amount: u64 },
-
     /* — agent — */
     TaskScheduled  { agent: EntityId, task: TaskSpec },
     AgentSpawned   { parent: EntityId, spec: AgentSpec },
     ObservationEmitted { agent: EntityId, data: Vec<u8> },
-
-    /* — user — */
-    UserCreated { alias: String, id: EntityId },
-    RoleAssigned { user: EntityId, role: Role },
 }
 
 /// Minimal event bus interface for the kernel and clients.

@@ -43,6 +43,9 @@ sqlx-test = "0.7"
 
 base64ct = "1.7.3"
 
+# plugin registry helper
+once_cell = "1.19"
+
 [workspace.package]
 version = "0.1.0"
 authors = ["Seb"]
