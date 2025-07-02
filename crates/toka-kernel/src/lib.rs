@@ -119,6 +119,8 @@ impl Kernel {
             Operation::EmitObservation { agent, data } => {
                 self.handle_observation(agent.clone(), data.clone()).await?
             }
+            // Any other opcode family is not supported by the core kernel.
+            _ => return Err(KernelError::UnsupportedOperation.into()),
         };
 
         // 4. Emit event for core ops
