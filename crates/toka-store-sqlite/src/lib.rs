@@ -11,7 +11,7 @@ use std::path::Path;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use sqlx::{SqlitePool, Row};
+use sqlx::{SqlitePool, Sqlite, Row};
 use tokio::sync::broadcast;
 
 use toka_store_core::{
@@ -81,7 +81,7 @@ impl SqliteBackend {
     /// Run database migrations to ensure schema is current.
     async fn migrate(&self) -> Result<()> {
         // Create headers table
-        sqlx::query(
+        sqlx::query::<Sqlite>(
             r#"
             CREATE TABLE IF NOT EXISTS event_headers (
                 id BLOB PRIMARY KEY,
@@ -96,7 +96,7 @@ impl SqliteBackend {
         .await?;
 
         // Create payloads table with deduplication by digest
-        sqlx::query(
+        sqlx::query::<Sqlite>(
             r#"
             CREATE TABLE IF NOT EXISTS event_payloads (
                 digest BLOB PRIMARY KEY,
@@ -108,15 +108,15 @@ impl SqliteBackend {
         .await?;
 
         // Create indexes for better query performance
-        sqlx::query("CREATE INDEX IF NOT EXISTS idx_headers_timestamp ON event_headers(timestamp)")
+        sqlx::query::<Sqlite>("CREATE INDEX IF NOT EXISTS idx_headers_timestamp ON event_headers(timestamp)")
             .execute(&self.pool)
             .await?;
 
-        sqlx::query("CREATE INDEX IF NOT EXISTS idx_headers_intent ON event_headers(intent)")
+        sqlx::query::<Sqlite>("CREATE INDEX IF NOT EXISTS idx_headers_intent ON event_headers(intent)")
             .execute(&self.pool)
             .await?;
 
-        sqlx::query("CREATE INDEX IF NOT EXISTS idx_headers_kind ON event_headers(kind)")
+        sqlx::query::<Sqlite>("CREATE INDEX IF NOT EXISTS idx_headers_kind ON event_headers(kind)")
             .execute(&self.pool)
             .await?;
 
@@ -134,7 +134,7 @@ impl SqliteBackend {
 
     /// Get the total number of events stored in the database.
     pub async fn event_count(&self) -> Result<i64> {
-        let row = sqlx::query("SELECT COUNT(*) as count FROM event_headers")
+        let row = sqlx::query::<Sqlite>("SELECT COUNT(*) as count FROM event_headers")
             .fetch_one(&self.pool)
             .await?;
         Ok(row.get("count"))
@@ -145,7 +145,7 @@ impl SqliteBackend {
     /// This may be less than the event count due to payload deduplication
     /// when multiple events share the same content hash.
     pub async fn payload_count(&self) -> Result<i64> {
-        let row = sqlx::query("SELECT COUNT(*) as count FROM event_payloads")
+        let row = sqlx::query::<Sqlite>("SELECT COUNT(*) as count FROM event_payloads")
             .fetch_one(&self.pool)
             .await?;
         Ok(row.get("count"))
@@ -164,7 +164,7 @@ impl StorageBackend for SqliteBackend {
 
         // Store payload (deduplicated by digest)
         // Use INSERT OR IGNORE to avoid errors on duplicate digests
-        sqlx::query(
+        sqlx::query::<Sqlite>(
             "INSERT OR IGNORE INTO event_payloads (digest, payload_data) VALUES (?, ?)"
         )
         .bind(&header.digest[..])
@@ -174,14 +174,14 @@ impl StorageBackend for SqliteBackend {
 
         // Store header (may overwrite previous version with same ID)
         let header_bytes = rmp_serde::to_vec_named(header)?;
-        sqlx::query(
+        sqlx::query::<Sqlite>(
             r#"
             INSERT OR REPLACE INTO event_headers 
             (id, header_data, timestamp, intent, kind) 
             VALUES (?, ?, ?, ?, ?)
             "#
         )
-        .bind(header.id.as_bytes())
+        .bind(header.id)
         .bind(&header_bytes)
         .bind(header.timestamp.to_rfc3339())
         .bind(header.intent.to_string())
@@ -198,10 +198,10 @@ impl StorageBackend for SqliteBackend {
     }
 
     async fn header(&self, id: &EventId) -> Result<Option<EventHeader>> {
-        let row = sqlx::query(
+        let row = sqlx::query::<Sqlite>(
             "SELECT header_data FROM event_headers WHERE id = ?"
         )
-        .bind(id.as_bytes())
+        .bind(*id)
         .fetch_optional(&self.pool)
         .await?;
 
@@ -217,7 +217,7 @@ impl StorageBackend for SqliteBackend {
     }
 
     async fn payload_bytes(&self, digest: &CausalDigest) -> Result<Option<Vec<u8>>> {
-        let row = sqlx::query(
+        let row = sqlx::query::<Sqlite>(
             "SELECT payload_data FROM event_payloads WHERE digest = ?"
         )
         .bind(&digest[..])

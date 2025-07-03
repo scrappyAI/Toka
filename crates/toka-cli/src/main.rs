@@ -108,7 +108,7 @@ async fn main() -> Result<()> {
 
     // Create authentication validator
     let auth: Arc<dyn TokenValidator> = Arc::new(
-        JwtHs256Validator::new(cli.jwt_secret.as_bytes())
+        JwtHs256Validator::new(cli.jwt_secret.clone())
     );
 
     // Create and run the runtime
@@ -172,7 +172,7 @@ async fn handle_spawn_agent(runtime: &Runtime, name: String) -> Result<()> {
     let message = Message {
         origin: parent,
         capability: "demo-token".to_string(),
-        op: Operation::SpawnAgent { parent, spec },
+        op: Operation::SpawnSubAgent { parent, spec },
     };
 
     info!("Spawning agent: {}", name);
@@ -189,11 +189,10 @@ async fn handle_query_state(runtime: &Runtime) -> Result<()> {
     let state_guard = state.read().await;
 
     println!("🌍 Current World State:");
-    println!("📊 Agents: {}", state_guard.agents.len());
-    
-    for (id, agent) in &state_guard.agents {
-        println!("  🤖 Agent {}: {}", id.0, agent.name);
-    }
+
+    // Agents are inferred from the task map (world-state no longer stores agent metadata)
+    let agent_count = state_guard.agent_tasks.len();
+    println!("📊 Agents with tasks: {}", agent_count);
 
     println!("📋 Total tasks across all agents: {}", 
         state_guard.agent_tasks.values().map(|tasks| tasks.len()).sum::<usize>());
@@ -301,19 +300,11 @@ fn init_tracing(log_level: &str) -> Result<()> {
 fn parse_storage_config(storage_type: &str, db_path: &str) -> Result<StorageConfig> {
     match storage_type.to_lowercase().as_str() {
         "memory" => Ok(StorageConfig::Memory),
-        #[cfg(feature = "sled-storage")]
-        "sled" => Ok(StorageConfig::Sled {
-            path: db_path.to_string(),
-        }),
-        #[cfg(feature = "sqlite-storage")]
-        "sqlite" => Ok(StorageConfig::Sqlite {
-            path: db_path.to_string(),
-        }),
-        _ => Err(anyhow::anyhow!(
-            "Unsupported storage type: {}. Supported types: memory{}{}",
-            storage_type,
-            #[cfg(feature = "sled-storage")] ", sled" #[cfg(not(feature = "sled-storage"))] "",
-            #[cfg(feature = "sqlite-storage")] ", sqlite" #[cfg(not(feature = "sqlite-storage"))] ""
+        "sled" => Ok(StorageConfig::Sled { path: db_path.to_string() }),
+        "sqlite" => Ok(StorageConfig::Sqlite { path: db_path.to_string() }),
+        other => Err(anyhow::anyhow!(
+            "Unsupported storage type: {}. Supported types: memory, sled, sqlite",
+            other
         )),
     }
 }

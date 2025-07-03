@@ -181,6 +181,7 @@ pub mod hs256 {
         pub fn new(secret: impl Into<String>) -> Self {
             let mut validation = Validation::new(Algorithm::HS256);
             validation.validate_exp = true;
+            validation.leeway = 0;
             Self {
                 secret: secret.into(),
                 validation,
