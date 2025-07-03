@@ -7,7 +7,7 @@ use tokio::sync::broadcast;
 use anyhow::Result;
 use std::sync::Arc;
 
-use toka_types::{EntityId, Hash256, PubKey, Capability, HandlerRef};
+use toka_types::{EntityId, TaskSpec, AgentSpec};
 
 /// Typed kernel event enumeration emitted by the kernel after a successful
 /// state transition.  Each variant mirrors one opcode family from
@@ -15,13 +15,10 @@ use toka_types::{EntityId, Hash256, PubKey, Capability, HandlerRef};
 #[allow(missing_docs)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Event {
-    EntityCreated { template: Hash256, id: EntityId },
-    EntityDeleted { id: EntityId },
-    CapabilityGranted { to: PubKey, cap: Capability },
-    CapabilityRevoked { cap_id: Hash256 },
-    BatchSubmitted { count: usize },
-    EventEmitted { topic: String, data: Vec<u8> },
-    HandlerRegistered { range_start: u8, range_end: u8, entry: HandlerRef },
+    /* — agent — */
+    TaskScheduled  { agent: EntityId, task: TaskSpec },
+    AgentSpawned   { parent: EntityId, spec: AgentSpec },
+    ObservationEmitted { agent: EntityId, data: Vec<u8> },
 }
 
 /// Minimal event bus interface for the kernel and clients.

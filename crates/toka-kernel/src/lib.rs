@@ -14,22 +14,22 @@
 //! *Scope* (v0.2):
 //! - Deterministic execution – single thread, no async side-effects inside handlers.
 //! - Capability-guarded syscall surface exposed via [`Operation`](toka_types::Operation).
-//! - Core kernel ships with **system-level primitives only**.  *All* domain
-//!   families (agents, finance, identity …) live in external crates
-//!   implementing [`OpcodeHandler`].
+//! - Core kernel ships with **agent primitives only** by default.  Finance &
+//!   other families remain external extension crates implementing
+//!   [`OpcodeHandler`].
 //! - In-memory state only; durable storage adapters, metering and async schedulers
 //!   are slated for v0.3+.
 //!
 //! Anything outside these bounds (networking, storage, WASM execution) is
 //! intentionally deferred to keep the kernel minimal and auditable.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::Result;
 use tokio::sync::RwLock;
 
-use toka_types::{EntityId, Message, Operation, Hash256, PubKey, Capability, HandlerRef};
+use toka_types::{EntityId, Message, Operation, TaskSpec, AgentSpec};
 use toka_events::bus::{Event as KernelEvent, EventBus};
 use toka_auth::{TokenValidator, Claims};
 
@@ -43,10 +43,8 @@ pub use registry::{register_handler, OpcodeHandler};
 /// In-memory tables representing the canonical world-state.
 #[derive(Debug, Default)]
 pub struct WorldState {
-    /// Set of *live* entities managed by the kernel.
-    pub entities: HashSet<EntityId>,
-    /// Capability grants keyed by recipient public key.
-    pub grants: HashMap<PubKey, Vec<Capability>>, // simplified model
+    /// Agent inboxes (queued tasks).
+    pub agent_tasks: HashMap<EntityId, Vec<TaskSpec>>,
 }
 
 //─────────────────────────────
@@ -114,26 +112,14 @@ impl Kernel {
         // 3. Dispatch → built-in agent handlers
         let evt = match &msg.op {
             // ───────── core system ops ─────────
-            Operation::CreateEntity { template } => {
-                self.handle_create_entity(*template).await?
+            Operation::ScheduleAgentTask { agent, task } => {
+                self.handle_schedule_task(agent.clone(), task.clone()).await?
             }
-            Operation::DeleteEntity { id } => {
-                self.handle_delete_entity(*id).await?
+            Operation::SpawnSubAgent { parent, spec } => {
+                self.handle_spawn_agent(parent.clone(), spec.clone()).await?
             }
-            Operation::GrantCapability { to, cap } => {
-                self.handle_grant_capability(to.clone(), cap.clone()).await?
-            }
-            Operation::RevokeCapability { cap_id } => {
-                self.handle_revoke_capability(*cap_id).await?
-            }
-            Operation::SubmitBatch { ops } => {
-                self.handle_submit_batch(ops.clone()).await?
-            }
-            Operation::EmitEvent { topic, data } => {
-                self.handle_emit_event(topic.clone(), data.clone()).await?
-            }
-            Operation::RegisterHandler { range, entry } => {
-                self.handle_register_handler(range.clone(), entry.clone()).await?
+            Operation::EmitObservation { agent, data } => {
+                self.handle_observation(agent.clone(), data.clone()).await?
             }
             // Any other opcode family is not supported by the core kernel.
             _ => return Err(KernelError::UnsupportedOperation.into()),
@@ -146,50 +132,18 @@ impl Kernel {
 
     //───────────────────── handlers ─────────────────────
 
-    async fn handle_create_entity(&self, template: Hash256) -> Result<KernelEvent> {
-        use rand::{RngCore, rngs::OsRng};
-        let mut rand_bytes = [0u8; 16];
-        OsRng.fill_bytes(&mut rand_bytes);
-        let id = EntityId(u128::from_le_bytes(rand_bytes));
-
+    async fn handle_schedule_task(&self, agent: EntityId, task: TaskSpec) -> Result<KernelEvent> {
         let mut state = self.state.write().await;
-        state.entities.insert(id);
-
-        Ok(KernelEvent::EntityCreated { template, id })
+        state.agent_tasks.entry(agent).or_default().push(task.clone());
+        Ok(KernelEvent::TaskScheduled { agent, task })
     }
 
-    async fn handle_delete_entity(&self, id: EntityId) -> Result<KernelEvent> {
-        let mut state = self.state.write().await;
-        state.entities.remove(&id);
-        Ok(KernelEvent::EntityDeleted { id })
+    async fn handle_spawn_agent(&self, parent: EntityId, spec: AgentSpec) -> Result<KernelEvent> {
+        Ok(KernelEvent::AgentSpawned { parent, spec })
     }
 
-    async fn handle_grant_capability(&self, to: PubKey, cap: Capability) -> Result<KernelEvent> {
-        let mut state = self.state.write().await;
-        state.grants.entry(to.clone()).or_default().push(cap.clone());
-        Ok(KernelEvent::CapabilityGranted { to, cap })
-    }
-
-    async fn handle_revoke_capability(&self, cap_id: Hash256) -> Result<KernelEvent> {
-        // Simplified: we don't track individual cap IDs yet.
-        Ok(KernelEvent::CapabilityRevoked { cap_id })
-    }
-
-    async fn handle_submit_batch(&self, ops: Vec<Message>) -> Result<KernelEvent> {
-        let count = ops.len();
-        // NOTE: For v0.2 the kernel does **not** execute the batch inline to
-        // avoid recursive async calls.  Batch execution logic will be added
-        // once an async scheduler lands (see roadmap v0.2.1).
-        Ok(KernelEvent::BatchSubmitted { count })
-    }
-
-    async fn handle_emit_event(&self, topic: String, data: Vec<u8>) -> Result<KernelEvent> {
-        Ok(KernelEvent::EventEmitted { topic, data })
-    }
-
-    async fn handle_register_handler(&self, range: std::ops::Range<u8>, entry: HandlerRef) -> Result<KernelEvent> {
-        // The actual dynamic linking is outside scope; emit event only.
-        Ok(KernelEvent::HandlerRegistered { range_start: range.start, range_end: range.end, entry })
+    async fn handle_observation(&self, agent: EntityId, data: Vec<u8>) -> Result<KernelEvent> {
+        Ok(KernelEvent::ObservationEmitted { agent, data })
     }
 }
 
