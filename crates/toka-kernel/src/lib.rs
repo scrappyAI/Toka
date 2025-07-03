@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![deny(missing_docs)]
 
 //! **toka-kernel** – Deterministic state-machine core of Toka OS.
 //!
@@ -30,7 +30,7 @@ use anyhow::Result;
 use tokio::sync::RwLock;
 
 use toka_types::{EntityId, Message, Operation, TaskSpec, AgentSpec};
-use toka_events::bus::{Event as KernelEvent, EventBus};
+use toka_bus_core::{KernelEvent, EventBus};
 use toka_auth::{TokenValidator, Claims};
 
 mod registry;

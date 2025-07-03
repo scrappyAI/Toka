@@ -10,9 +10,9 @@ description.workspace = true
 [dependencies]
 toka-types = { path = "../toka-types" }
 toka-auth = { path = "../toka-auth" }
-toka-events = { path = "../toka-events" }
+toka-bus-core = { path = "../toka-bus-core" }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true, features=["sync","rt-multi-thread","macros"] }
+tokio = { workspace = true, features=["sync"] }
 async-trait = { workspace = true }
 once_cell = { workspace = true }

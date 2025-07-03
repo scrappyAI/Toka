@@ -1,11 +1,22 @@
 [workspace]
 resolver = "2"
 members = [
-    # Core kernel ecosystem (v0.1)
+    # Core kernel ecosystem (v0.2) - deterministic layer
     "crates/toka-types",
     "crates/toka-auth",
-    "crates/toka-events",
+    "crates/toka-bus-core", 
     "crates/toka-kernel",
+    
+    # Storage layer - core abstractions and drivers
+    "crates/toka-store-core",
+    "crates/toka-store-memory",
+    "crates/toka-store-sled",
+    
+    # Runtime layer - fuzzy/async coordination
+    "crates/toka-runtime",
+    
+    # Legacy/transition crates
+    "crates/toka-events",
     "crates/toka-tools",
 
     # Applications / demos
@@ -49,7 +60,7 @@ once_cell = "1.19"
 proptest = "1.4"
 
 [workspace.package]
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Seb"]
 edition = "2021"
 license = "MIT OR Apache-2.0"

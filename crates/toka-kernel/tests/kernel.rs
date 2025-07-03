@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use toka_auth::{Claims, TokenValidator};
-use toka_events::bus::{Event as KernelEvent, EventBus, InMemoryBus};
+use toka_bus_core::{KernelEvent, EventBus, InMemoryBus};
 use toka_kernel::{register_handler, Kernel, KernelError, OpcodeHandler, WorldState};
 use toka_types::{EntityId, Message, Operation, TaskSpec};
 

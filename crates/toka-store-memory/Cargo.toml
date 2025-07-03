@@ -1,0 +1,20 @@
+[package]
+name = "toka-store-memory"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "In-memory storage driver for Toka OS - fast, non-persistent event storage."
+
+[dependencies]
+toka-store-core = { path = "../toka-store-core" }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+tokio = { workspace = true, features = ["sync"] }
+rmp-serde = "1.1"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }
+uuid = { workspace = true, features = ["v4"] }
+serde = { workspace = true, features = ["derive"] }
