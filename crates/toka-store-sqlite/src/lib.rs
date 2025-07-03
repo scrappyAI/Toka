@@ -49,8 +49,13 @@ impl SqliteBackend {
     /// # Errors
     /// Returns an error if the database cannot be opened or created.
     pub async fn open<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let database_url = format!("sqlite://{}", path.as_ref().display());
-        let pool = SqlitePool::connect(&database_url).await?;
+        use sqlx::sqlite::SqliteConnectOptions;
+        
+        let opts = SqliteConnectOptions::new()
+            .filename(&path)
+            .create_if_missing(true);
+        
+        let pool = SqlitePool::connect_with(opts).await?;
         Self::from_pool(pool).await
     }
 
