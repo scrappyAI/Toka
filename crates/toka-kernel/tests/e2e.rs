@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use toka_events::bus::{Event as KernelEvent, EventBus, InMemoryBus};
+use toka_events::bus::{EventBus, InMemoryBus};
 use toka_kernel::{Kernel, WorldState};
 use toka_types::{EntityId, Message, Operation, TaskSpec, AgentSpec};
 

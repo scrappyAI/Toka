@@ -46,7 +46,7 @@ pub struct AgentSpec {
 
 /// Canonical list of **agent-centric** operations for kernel v0.2.
 #[allow(missing_docs)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Operation {
     /// Enqueue a task in the agent inbox.
     ScheduleAgentTask { agent: EntityId, task: TaskSpec },
