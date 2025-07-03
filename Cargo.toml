@@ -11,6 +11,7 @@ members = [
     "crates/toka-store-core",
     "crates/toka-store-memory",
     "crates/toka-store-sled",
+    "crates/toka-store-sqlite",
     
     # Runtime layer - fuzzy/async coordination
     "crates/toka-runtime",
@@ -19,6 +20,7 @@ members = [
     "crates/toka-tools",
 
     # Applications / demos
+    "crates/toka-cli",
 ]
 
 [workspace.dependencies]

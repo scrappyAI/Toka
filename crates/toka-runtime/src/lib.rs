@@ -33,6 +33,9 @@ use toka_store_memory::MemoryBackend;
 #[cfg(feature = "sled-storage")]
 use toka_store_sled::SledBackend;
 
+#[cfg(feature = "sqlite-storage")]
+use toka_store_sqlite::SqliteBackend;
+
 //─────────────────────────────
 //  Configuration
 //─────────────────────────────
@@ -75,6 +78,12 @@ pub enum StorageConfig {
     Sled { 
         /// Database file path
         path: String 
+    },
+    /// SQLite-based persistent storage
+    #[cfg(feature = "sqlite-storage")]
+    Sqlite {
+        /// Database file path
+        path: String
     },
 }
 
@@ -154,6 +163,12 @@ impl Runtime {
             StorageConfig::Sled { path } => {
                 debug!("Creating sled storage backend at path: {}", path);
                 let backend = SledBackend::open(path)?;
+                Ok(Arc::new(backend))
+            }
+            #[cfg(feature = "sqlite-storage")]
+            StorageConfig::Sqlite { path } => {
+                debug!("Creating SQLite storage backend at path: {}", path);
+                let backend = SqliteBackend::open(path).await?;
                 Ok(Arc::new(backend))
             }
             #[cfg(not(feature = "memory-storage"))]

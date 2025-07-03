@@ -1,0 +1,36 @@
+[package]
+name = "toka-cli"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Command-line interface for Toka OS - interact with the agentic operating system."
+
+[[bin]]
+name = "toka"
+path = "src/main.rs"
+
+[dependencies]
+# Core Toka components
+toka-runtime = { path = "../toka-runtime", features = ["memory-storage", "sled-storage", "sqlite-storage"] }
+toka-auth = { path = "../toka-auth" }
+toka-types = { path = "../toka-types" }
+
+# CLI framework
+clap = { workspace = true }
+
+# Async runtime and utilities
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }
+anyhow = { workspace = true }
+
+# Serialization and configuration
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+
+# Additional utilities
+uuid = { workspace = true, features = ["v4"] }

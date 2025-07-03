@@ -18,6 +18,7 @@ toka-store-core = { path = "../toka-store-core" }
 # Optional storage drivers
 toka-store-memory = { path = "../toka-store-memory", optional = true }
 toka-store-sled = { path = "../toka-store-sled", optional = true }
+toka-store-sqlite = { path = "../toka-store-sqlite", optional = true }
 
 # Runtime dependencies
 anyhow = { workspace = true }
@@ -36,3 +37,4 @@ tempfile = "3.8"
 default = ["memory-storage"]
 memory-storage = ["dep:toka-store-memory"]
 sled-storage = ["dep:toka-store-sled"]
+sqlite-storage = ["dep:toka-store-sqlite"]
