@@ -41,7 +41,7 @@ uuid = { version = "1.7", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json"] }
 argon2 = "0.5"
-jsonwebtoken = "9.2"
+jsonwebtoken = "9.1"
 rand = "0.8"
 dotenv = "0.15"
 config = "0.14"
@@ -53,7 +53,7 @@ clap = { version = "4.5", features = ["derive"] }
 tokio-test = "0.4"
 sqlx-test = "0.7"
 
-base64ct = "1.7.3"
+
 
 # plugin registry helper
 once_cell = "1.19"
