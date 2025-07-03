@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use tokio_test::block_on;
 
 use toka_tools::{ToolRegistry, tools::EchoTool, ToolParams};
 

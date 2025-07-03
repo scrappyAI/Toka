@@ -1,4 +1,5 @@
 use toka_auth::hs256::{build_claims, JwtHs256Token, JwtHs256Validator};
+use toka_auth::{CapabilityToken, TokenValidator};
 
 #[tokio::test]
 async fn test_jwt_hs256_mint_and_validate() {

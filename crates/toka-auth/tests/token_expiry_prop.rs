@@ -1,5 +1,5 @@
 use proptest::prelude::*;
-use toka_auth::{Claims};
+use toka_auth::{Claims, CapabilityToken, TokenValidator};
 use toka_auth::hs256::{JwtHs256Token, JwtHs256Validator};
 
 proptest! {
