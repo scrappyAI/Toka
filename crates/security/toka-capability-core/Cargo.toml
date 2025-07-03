@@ -2,7 +2,7 @@
 name = "toka-capability-core"
 version = "0.2.0-alpha"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 description = "Core, no-std capability token primitives – Claims struct and capability traits shared by all implementation crates."
 
 [dependencies]

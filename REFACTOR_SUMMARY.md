@@ -133,16 +133,24 @@ All tests passing:
 
 ## Version & Compatibility
 
-- **Version**: Updated to v0.2.1 (Phase 1 completion marker)
-- **Breaking Changes**: Yes, but clean migration path via new crate structure
-- **Backward Compatibility**: Legacy `toka-events` still available during transition
+- **Version**: Updated to v0.2.1 (Refactor fully complete)
+- **Breaking Changes**: Yes, legacy crates have been removed
+- **License**: Standardized on Apache-2.0 only (removed MIT option)
+
+## Cleanup Completed
+
+### ✅ v0.2.1 Finalization
+- [x] Removed legacy `toka-events` crate completely
+- [x] Removed outdated CLI application 
+- [x] Updated all documentation to reflect new architecture
+- [x] Standardized on Apache-2.0 license only
+- [x] Updated CRATES.md with new layer-based organization
 
 ## Next Steps (Per Roadmap)
 
 ### v0.2.2 (Next)
-- [ ] Add deprecation warnings to old `toka-events` crate
-- [ ] Complete migration of any remaining `toka-events` usage
 - [ ] Add SQLite storage driver (`toka-store-sqlite`)
+- [ ] Create new CLI using toka-runtime properly
 
 ### v0.3.0 (Future)
 - [ ] Add snapshot/replay engine for deterministic testing
@@ -174,8 +182,8 @@ crates/
 ├── toka-store-memory/   # In-memory driver (deterministic)
 ├── toka-store-sled/     # Persistent driver (deterministic)
 ├── toka-runtime/        # Async coordination (fuzzy)
-├── toka-events/         # Legacy (transition only)
-└── toka-tools/          # Utilities (user-space)
+├── toka-tools/          # Utilities (user-space)
+└── security/            # Security primitives (capability tokens, etc.)
 ```
 
 This refactor successfully achieves the goal of a **pure OS kernel for an agent operating system** with deterministic core operations and pluggable fuzzy user-space components.

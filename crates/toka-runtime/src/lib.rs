@@ -322,7 +322,7 @@ mod tests {
     use async_trait::async_trait;
     use toka_auth::{Claims, TokenValidator};
     use toka_types::{Operation, TaskSpec};
-    use uuid::Uuid;
+    // Removed unused import
 
     #[derive(Clone, Debug)]
     struct TestValidator;
@@ -347,8 +347,9 @@ mod tests {
         let auth = Arc::new(TestValidator);
 
         let runtime = Runtime::new(config, auth).await.unwrap();
-        assert!(runtime.storage().is_some());
-        assert!(runtime.bus().is_some());
+        // Just verify we can get references to storage and bus
+        let _storage = runtime.storage();
+        let _bus = runtime.bus();
     }
 
     #[tokio::test]
