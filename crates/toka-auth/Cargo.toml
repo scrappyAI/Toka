@@ -16,3 +16,5 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 proptest = "1.4"
+chrono = { workspace = true }
+tokio-test = { workspace = true }
