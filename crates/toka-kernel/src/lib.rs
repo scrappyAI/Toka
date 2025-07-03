@@ -5,18 +5,20 @@
 //!
 //! The kernel validates capability tokens, executes opcode handlers on an
 //! in-memory `WorldState`, and emits typed events onto the shared event bus.
-//! All operations are synchronous and **deterministic** for v0.1.
+//! All operations are synchronous and **deterministic** for v0.2.
 //!
-//! 📜 **Spec reference:** see [`docs/42_toka_kernel_spec_v0.1.md`](../../../docs/42_toka_kernel_spec_v0.1.md)
-//! which outlines opcode semantics, architectural principles and open
-//! questions for upcoming milestones.
+//! 📜 **Spec reference:** see [`docs/44_toka_kernel_spec_v0.2.md`](../../../docs/44_toka_kernel_spec_v0.2.md)
+//! which defines the **minimal, agent-centric kernel surface** and extension
+//! mechanism introduced in this release.
 //!
-//! *Scope* (v0.1):
+//! *Scope* (v0.2):
 //! - Deterministic execution – single thread, no async side-effects inside handlers.
 //! - Capability-guarded syscall surface exposed via [`Operation`](toka_types::Operation).
-//! - *Only* agent primitives are enabled by default.  Financial & user families are
-//!   available via the optional `finance` / `user` feature flags.
-//! - In-memory state only; durable storage adapters arrive in v0.2.
+//! - Core kernel ships with **agent primitives only** by default.  Finance &
+//!   other families remain external extension crates implementing
+//!   [`OpcodeHandler`].
+//! - In-memory state only; durable storage adapters, metering and async schedulers
+//!   are slated for v0.3+.
 //!
 //! Anything outside these bounds (networking, storage, WASM execution) is
 //! intentionally deferred to keep the kernel minimal and auditable.
@@ -109,7 +111,7 @@ impl Kernel {
 
         // 3. Dispatch → built-in agent handlers
         let evt = match &msg.op {
-            // ───────── agent ops (core) ─────────
+            // ───────── core system ops ─────────
             Operation::ScheduleAgentTask { agent, task } => {
                 self.handle_schedule_task(agent.clone(), task.clone()).await?
             }
@@ -137,7 +139,6 @@ impl Kernel {
     }
 
     async fn handle_spawn_agent(&self, parent: EntityId, spec: AgentSpec) -> Result<KernelEvent> {
-        // For v0.1 we simply emit an event; state updates deferred to v0.2.
         Ok(KernelEvent::AgentSpawned { parent, spec })
     }
 

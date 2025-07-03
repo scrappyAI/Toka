@@ -44,19 +44,16 @@ pub struct AgentSpec {
 //  Kernel opcode enumeration
 //─────────────────────────────
 
-/// Canonical list of operations understood by the kernel.
+/// Canonical list of **agent-centric** operations for kernel v0.2.
 #[allow(missing_docs)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Operation {
-    /* — agent — */
     /// Enqueue a task in the agent inbox.
     ScheduleAgentTask { agent: EntityId, task: TaskSpec },
     /// Spawn a sub-agent as a child of `parent`.
     SpawnSubAgent     { parent: EntityId, spec: AgentSpec },
     /// Emit opaque observation data.
     EmitObservation   { agent: EntityId, data: Vec<u8> },
-
-    // future non-domain-specific opcodes may be added here
 }
 
 //─────────────────────────────
