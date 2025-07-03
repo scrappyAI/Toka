@@ -13,3 +13,6 @@ serde = { workspace = true, features = ["derive"] }
 async-trait = { workspace = true }
 jsonwebtoken = { workspace = true }
 uuid = { workspace = true }
+
+[dev-dependencies]
+proptest = "1.4"
