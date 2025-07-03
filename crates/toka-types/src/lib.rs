@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![deny(missing_docs)]
 
 //! **toka-types** – Shared primitive data structures for Toka OS.
 //!

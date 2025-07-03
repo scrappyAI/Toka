@@ -22,7 +22,7 @@ Key design pillars:
 |--------|--------------|
 | **Determinism** | Single-threaded kernel → same input, same output |
 | **Capability security** | `toka-auth` validates unforgeable permission tokens |
-| **Event sourcing** | Append-only log (`toka-events`) enables replay & audits |
+| **Event sourcing** | Pluggable storage backends (`toka-store-*`) enable replay & audits |
 | **Extensibility** | New opcodes are additive – no breaking removals |
 | **Minimal surface** | Everything non-essential (storage, WASM, networking) lives outside the kernel |
 
@@ -32,11 +32,12 @@ Key design pillars:
 |-------|--------|---------|
 | **toka-types** | ✅ | Shared primitives (`EntityId`, `Operation`, etc.) |
 | **toka-kernel** | ✅ | Deterministic state-machine core |
-| **toka-events** | ✅ | Canonical event bus & store |
+| **toka-bus-core** | ✅ | Lightweight event broadcasting |
+| **toka-store-core** | ✅ | Storage backend abstractions |
 | **toka-auth** | ✅ | Capability token issuance & validation |
 | **toka-tools** | ✅ | Core tool abstractions **+** standard reference tools |
 | **toka-agents** | ⬜ *planned* | Default agent implementations layered atop the kernel |
-| **toka-cli** | 🟡 | Developer CLI for interacting with the runtime |
+| **toka-runtime** | ✅ | Async coordination layer bridging kernel and storage |
 
 > Legend: ✅ implemented 🟡 minimal / WIP ⬜ missing
 
@@ -46,15 +47,15 @@ Key design pillars:
 # Validate build – requires stable Rust 1.78+
 cargo check --workspace --all-features
 
-# Launch CLI help
-cargo run -p toka-cli -- --help
+# Run tests to see the kernel in action
+cargo test --workspace --all-features
 ```
 
 ```mermaid
 graph TD
   subgraph Application
     Agents
-    CLI
+    Runtime[toka-runtime]
   end
 
   subgraph Kernel
@@ -64,12 +65,14 @@ graph TD
   subgraph Infrastructure
     Types[toka-types]
     Auth[toka-auth]
-    Events[toka-events]
+    Bus[toka-bus-core]
+    Storage[toka-store-*]
   end
 
   Agents -->|Messages| K
-  CLI -->|Messages| K
-  K --> Events
+  Runtime -->|Messages| K
+  K --> Bus
+  K --> Storage
   K -. verifies .-> Auth
   K -. uses .-> Types
 ```
@@ -86,4 +89,4 @@ graph TD
 
 > The full roadmap lives in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
-© 2025 Toka Contributors · MIT OR Apache-2.0
+© 2025 Toka Contributors · Apache-2.0

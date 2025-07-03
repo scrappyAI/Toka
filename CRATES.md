@@ -1,16 +1,36 @@
-# Toka Workspace – Crate Inventory (2025)
+# Toka Workspace – Crate Inventory (v0.2.1)
 
 > This document is the single-source-of-truth for crate purpose and architecture. **Update it immediately** when the workspace structure changes so humans and LLMs can build an accurate mental model without scanning the entire tree.
 
+## Core Deterministic Layer (Build Order 0-1)
+
 | Crate Name                 | Rule-of-Thumb Reason* | One-line Purpose |
 |----------------------------|-----------------------|------------------|
-| `toka-types`               | ① `no_std` primitives | Fundamental, dependency-light types (EntityId, Operation, Message). |
-| `toka-kernel`              | ② core runtime        | Deterministic state-machine core with capability validation and agent primitives. |
-| `toka-auth`                | ② crypto deps         | JWT-based capability token validation and claims processing. |
-| `toka-events`              | ② heavy deps          | Canonical event store with persistent storage (sled) and bus integration. |
-| `toka-runtime`             | ② heavy deps          | Async host orchestrating kernel, agents, tools, and event bus. |
+| `toka-types`               | ① `no_std` primitives | Pure POD structs & enums (EntityId, Operation, Message, KernelEvent). |
+| `toka-auth`                | ① minimal crypto      | JWT-based capability token validation and claims processing. |
+| `toka-bus-core`            | ① deterministic       | Lightweight, in-memory event broadcasting with no I/O. |
+| `toka-kernel`              | ② core runtime        | Deterministic state-machine core with agent primitives only. |
+
+## Storage Layer (Build Order 2-3)
+
+| Crate Name                 | Rule-of-Thumb Reason* | One-line Purpose |
+|----------------------------|-----------------------|------------------|
+| `toka-store-core`          | ① storage traits      | Pure storage abstractions with no concrete implementations. |
+| `toka-store-memory`        | ② memory impl         | Fast, non-persistent storage driver for testing/development. |
+| `toka-store-sled`          | ② persistent impl     | Sled-based persistent storage driver with ACID guarantees. |
+
+## Runtime Layer (Build Order 4)
+
+| Crate Name                 | Rule-of-Thumb Reason* | One-line Purpose |
+|----------------------------|-----------------------|------------------|
+| `toka-runtime`             | ② fuzzy/async         | Bridges deterministic kernel with storage and provides configuration. |
+
+## Tools and Security
+
+| Crate Name                 | Rule-of-Thumb Reason* | One-line Purpose |
+|----------------------------|-----------------------|------------------|
 | `toka-tools`               | ② optional deps       | Standard library of agent tools and utility helpers. |
-| `security`                 | ③ independent         | Security-related utilities and cryptographic primitives. |
+| `security/*`               | ③ independent         | Security-related utilities and cryptographic primitives. |
 
 *Rule-of-Thumb Keys*
 ① Usable from `no_std` / lean targets  
@@ -19,15 +39,21 @@
 
 ---
 
-## Workspace Evolution 2025
+## Architecture Highlights (v0.2.1)
 
-The 2025 *Kernel Refactor* (v0.2) removed finance and user opcode families from the core kernel, establishing a **minimal, agent-centric nucleus**. Domain-specific functionality is expected to live in extension crates that plug into the kernel via the new `OpcodeHandler` registry.
+The **v0.2.1 Kernel Refactor** established a clean separation between deterministic core operations and fuzzy user-space concerns:
 
 ### Key Changes
-- **`toka-kernel`** now contains only agent primitives (`ScheduleAgentTask`, `SpawnSubAgent`, `EmitObservation`)
-- **Finance & user families** removed from core; will be re-established as extension crates
-- **`toka-types`** simplified to core operation enum without domain-specific variants
-- **Extension mechanism** introduced via `OpcodeHandler` trait for pluggable opcode families
+- **Pure OS Kernel**: `toka-kernel` treats itself as a pure OS kernel for agent operating systems
+- **Layer Separation**: Deterministic core (0-1) → Storage abstractions (2-3) → Runtime coordination (4) 
+- **No Heavy Dependencies**: Kernel avoids `tokio::time`, `rand`, `std::env`, and I/O operations
+- **Pluggable Storage**: Multiple storage drivers (memory, sled) implement common `StorageBackend` trait
+- **Event Bus Extraction**: Lightweight bus moved to `toka-bus-core` with no external dependencies
+
+### Removed Legacy Components
+- **`toka-events`** ➜ Split into `toka-bus-core` + `toka-store-*` family
+- **Finance/User Opcodes** ➜ Moved to user-space (will be re-established as extension crates)
+- **CLI Application** ➜ Removed pending new CLI that uses runtime layer properly
 
 ---
 

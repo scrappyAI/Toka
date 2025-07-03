@@ -2,7 +2,7 @@
 name = "toka-cvm"
 version = "0.2.0-alpha"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 description = "Capability Validation Module – host wrapper for verifying capabilities inside WASM guest modules."
 
 [dependencies]

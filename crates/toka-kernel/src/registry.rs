@@ -16,7 +16,7 @@ use anyhow::Result;
 use once_cell::sync::Lazy;
 
 use crate::{WorldState, KernelError};
-use toka_events::bus::Event as KernelEvent;
+use toka_bus_core::KernelEvent;
 use toka_types::Operation;
 
 /// Trait implemented by **extension crates** to hook additional opcodes into

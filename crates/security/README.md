@@ -15,6 +15,6 @@ three-tier architecture described in [../../docs/41_capability_tokens_architectu
 Crates are intentionally **decoupled** so you only depend on what you really
 need (e.g. embedded targets can pull in `core` only).
 
-All crates forbid `unsafe_code` and are covered by MIT OR Apache-2.0.
+All crates forbid `unsafe_code` and are covered by Apache-2.0.
 
 **Note**: The deprecated `toka-capability` shim crate has been removed in v0.2. Depend directly on `toka-capability-core` and the desired implementation crate (e.g. `toka-capability-jwt-hs256`). 

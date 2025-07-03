@@ -48,6 +48,6 @@ assert_eq!(res.output, "hello");
 
 ## License
 
-Apache-2.0 OR MIT
+Apache-2.0
 
 © 2025 Toka Contributors 

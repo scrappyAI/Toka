@@ -1,7 +1,7 @@
-# Toka-Kernel – v0.2 Specification (Official)
+# Toka-Kernel – v0.2.1 Specification (Official)
 
-> Status: **Stable** | Version: **0.2.0** | Last-updated: 2025-07-02  
-> This version supersedes [v0.1.1 draft](43_toka_kernel_spec_v0.1.1.md).
+> Status: **Stable** | Version: **0.2.1** | Last-updated: 2025-07-03  
+> This version represents the completed architectural refactor that separated deterministic kernel operations from fuzzy user-space concerns.
 >
 > v0.2 removes _finance_ & _user_ opcode families from the core and defines
 > a **minimal, agent-centric kernel surface**.  Domain-specific functionality
@@ -60,19 +60,27 @@ struct WorldState {
 }
 ```
 
-### 3.3 Opcode Handler Registry
+### 3.3 Extension Architecture
 
-```rust
-trait OpcodeHandler {
-    fn dispatch(&self, op: &Operation, state: &mut WorldState) -> Result<Event, KernelError>;
-}
+The v0.2.1 refactor establishes clear architectural boundaries:
 
-fn register_handler(tag: &'static str, h: Box<dyn OpcodeHandler>);
+```
+DETERMINISTIC CORE (replayable)
+├── toka-types        # Pure data structures  
+├── toka-auth         # Capability validation
+├── toka-bus-core     # Event broadcasting
+└── toka-kernel       # State machine core
+
+STORAGE LAYER (pluggable)
+├── toka-store-core   # Abstract traits
+├── toka-store-memory # In-memory driver  
+└── toka-store-sled   # Persistent driver
+
+FUZZY/ASYNC LAYER (user-space)
+└── toka-runtime      # Configuration & coordination
 ```
 
-Handlers are invoked **before** built-in dispatch and may mutate `WorldState`
-deterministically.  If they return `None`, the kernel treats the opcode as
-unsupported.
+Domain-specific functionality (finance, user management, etc.) is expected to be implemented at the runtime layer or as separate application services.
 
 ### 3.4 Error Model (excerpt)
 
@@ -114,4 +122,4 @@ pub enum KernelError {
 
 ---
 
-© 2025 Toka Project — Apache-2.0 / MIT 
+© 2025 Toka Project — Apache-2.0 
