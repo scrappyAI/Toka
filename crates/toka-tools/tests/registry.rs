@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use tokio_test::block_on;
 
-use toka_tools::{ToolRegistry, tools::EchoTool, ToolParams, ToolMetadata, ToolResult};
+use toka_tools::{ToolRegistry, tools::EchoTool};
 
 #[tokio::test]
 async fn duplicate_registration_fails() -> Result<()> {

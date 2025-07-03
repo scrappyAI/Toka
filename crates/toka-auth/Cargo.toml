@@ -18,3 +18,4 @@ uuid = { workspace = true }
 proptest = "1.4"
 chrono = { workspace = true }
 tokio-test = { workspace = true }
+tokio = { workspace = true, features = ["macros", "test-util"] }
