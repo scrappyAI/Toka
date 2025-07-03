@@ -53,6 +53,34 @@ pub enum KernelEvent {
     },
 }
 
+impl KernelEvent {
+    /// Validate the kernel event to ensure it meets security constraints.
+    /// 
+    /// # Security
+    /// Validates all event parameters to prevent various attack vectors.
+    pub fn validate(&self) -> Result<(), String> {
+        match self {
+            KernelEvent::TaskScheduled { task, .. } => {
+                task.validate()
+            }
+            KernelEvent::AgentSpawned { spec, .. } => {
+                spec.validate()
+            }
+            KernelEvent::ObservationEmitted { data, .. } => {
+                // SECURITY: Validate observation data size
+                if data.len() > toka_types::MAX_OBSERVATION_DATA_LEN {
+                    return Err(format!(
+                        "Observation data too large: {} > {}",
+                        data.len(),
+                        toka_types::MAX_OBSERVATION_DATA_LEN
+                    ));
+                }
+                Ok(())
+            }
+        }
+    }
+}
+
 //─────────────────────────────
 //  Event bus trait
 //─────────────────────────────
@@ -116,6 +144,9 @@ impl InMemoryBus {
 
 impl EventBus for InMemoryBus {
     fn publish(&self, event: &KernelEvent) -> Result<()> {
+        // SECURITY: Validate event before publishing
+        event.validate().map_err(|e| BusError::PublishFailed(e))?;
+        
         // Ignore lagging receiver errors - subscribers must handle missed events
         let _ = self.tx.send(event.clone());
         Ok(())
@@ -213,7 +244,11 @@ mod tests {
             Err(RecvError::Lagged(_)) => {
                 // Expected - some events were dropped
             }
-            Err(e) => panic!("Unexpected error: {}", e),
+            Err(e) => {
+                // Log unexpected error but don't panic in production
+                eprintln!("Unexpected receiver error: {}", e);
+                assert!(false, "Unexpected error: {}", e);
+            }
         }
     }
 }

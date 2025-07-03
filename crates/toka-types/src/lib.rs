@@ -10,6 +10,22 @@
 use serde::{Deserialize, Serialize};
 
 //─────────────────────────────
+//  Security constants
+//─────────────────────────────
+
+/// Maximum allowed size for task descriptions to prevent memory exhaustion attacks
+pub const MAX_TASK_DESCRIPTION_LEN: usize = 4096;
+
+/// Maximum allowed size for agent names to prevent memory exhaustion attacks  
+pub const MAX_AGENT_NAME_LEN: usize = 256;
+
+/// Maximum allowed size for observation data to prevent memory exhaustion attacks
+pub const MAX_OBSERVATION_DATA_LEN: usize = 1_048_576; // 1MB
+
+/// Maximum allowed size for capability tokens to prevent memory exhaustion attacks
+pub const MAX_CAPABILITY_TOKEN_LEN: usize = 8192;
+
+//─────────────────────────────
 //  Core identifiers
 //─────────────────────────────
 
@@ -33,11 +49,75 @@ pub struct TaskSpec {
     pub description: String,
 }
 
+impl TaskSpec {
+    /// Create a new task specification with validation.
+    /// 
+    /// # Security
+    /// Validates that the description doesn't exceed maximum length to prevent
+    /// memory exhaustion attacks.
+    pub fn new(description: String) -> Result<Self, String> {
+        if description.len() > MAX_TASK_DESCRIPTION_LEN {
+            return Err(format!(
+                "Task description too long: {} > {}",
+                description.len(),
+                MAX_TASK_DESCRIPTION_LEN
+            ));
+        }
+        if description.trim().is_empty() {
+            return Err("Task description cannot be empty".to_string());
+        }
+        Ok(Self { description })
+    }
+
+    /// Validate an existing task specification.
+    pub fn validate(&self) -> Result<(), String> {
+        if self.description.len() > MAX_TASK_DESCRIPTION_LEN {
+            return Err("Task description exceeds maximum length".to_string());
+        }
+        if self.description.trim().is_empty() {
+            return Err("Task description cannot be empty".to_string());
+        }
+        Ok(())
+    }
+}
+
 /// Blueprint for spawning a sub-agent.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AgentSpec {
     /// Optional display name.
     pub name: String,
+}
+
+impl AgentSpec {
+    /// Create a new agent specification with validation.
+    /// 
+    /// # Security
+    /// Validates that the name doesn't exceed maximum length to prevent
+    /// memory exhaustion attacks.
+    pub fn new(name: String) -> Result<Self, String> {
+        if name.len() > MAX_AGENT_NAME_LEN {
+            return Err(format!(
+                "Agent name too long: {} > {}",
+                name.len(),
+                MAX_AGENT_NAME_LEN
+            ));
+        }
+        if name.trim().is_empty() {
+            return Err("Agent name cannot be empty".to_string());
+        }
+        Ok(Self { name })
+    }
+
+    /// Validate an existing agent specification.
+    pub fn validate(&self) -> Result<(), String> {
+        if self.name.len() > MAX_AGENT_NAME_LEN {
+            return Err("Agent name exceeds maximum length".to_string());
+        }
+        if self.name.trim().is_empty() {
+            return Err("Agent name cannot be empty".to_string());
+        }
+        Ok(())
+    }
 }
 
 //─────────────────────────────
@@ -69,4 +149,70 @@ pub struct Message {
     pub capability: String,
     /// Requested operation.
     pub op: Operation,
+}
+
+impl Message {
+    /// Create a new message with validation.
+    /// 
+    /// # Security
+    /// Validates all components to prevent various attack vectors including
+    /// memory exhaustion and injection attacks.
+    pub fn new(origin: EntityId, capability: String, op: Operation) -> Result<Self, String> {
+        // SECURITY: Validate capability token size to prevent memory exhaustion
+        if capability.len() > MAX_CAPABILITY_TOKEN_LEN {
+            return Err(format!(
+                "Capability token too long: {} > {}",
+                capability.len(),
+                MAX_CAPABILITY_TOKEN_LEN
+            ));
+        }
+        
+        if capability.trim().is_empty() {
+            return Err("Capability token cannot be empty".to_string());
+        }
+
+        // SECURITY: Validate the operation
+        op.validate()?;
+
+        Ok(Self { origin, capability, op })
+    }
+
+    /// Validate an existing message.
+    pub fn validate(&self) -> Result<(), String> {
+        if self.capability.len() > MAX_CAPABILITY_TOKEN_LEN {
+            return Err("Capability token exceeds maximum length".to_string());
+        }
+        if self.capability.trim().is_empty() {
+            return Err("Capability token cannot be empty".to_string());
+        }
+        self.op.validate()
+    }
+}
+
+impl Operation {
+    /// Validate the operation to ensure it meets security constraints.
+    /// 
+    /// # Security
+    /// Validates all operation parameters to prevent various attack vectors.
+    pub fn validate(&self) -> Result<(), String> {
+        match self {
+            Operation::ScheduleAgentTask { task, .. } => {
+                task.validate()
+            }
+            Operation::SpawnSubAgent { spec, .. } => {
+                spec.validate()
+            }
+            Operation::EmitObservation { data, .. } => {
+                // SECURITY: Prevent memory exhaustion via large observation data
+                if data.len() > MAX_OBSERVATION_DATA_LEN {
+                    return Err(format!(
+                        "Observation data too large: {} > {}",
+                        data.len(),
+                        MAX_OBSERVATION_DATA_LEN
+                    ));
+                }
+                Ok(())
+            }
+        }
+    }
 }

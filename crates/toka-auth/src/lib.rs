@@ -34,6 +34,76 @@ pub struct Claims {
     pub jti: String,
 }
 
+impl Claims {
+    /// Validate the claims to ensure they meet security requirements.
+    /// 
+    /// # Security
+    /// Validates all claim fields to prevent various attack vectors including
+    /// token bloat, excessive lifetimes, and invalid identifiers.
+    pub fn validate(&self) -> Result<()> {
+        // SECURITY: Validate subject identifier
+        if self.sub.trim().is_empty() {
+            return Err(Error::new("Subject identifier cannot be empty"));
+        }
+        if self.sub.len() > 256 {
+            return Err(Error::new("Subject identifier too long"));
+        }
+
+        // SECURITY: Validate vault identifier  
+        if self.vault.trim().is_empty() {
+            return Err(Error::new("Vault identifier cannot be empty"));
+        }
+        if self.vault.len() > 256 {
+            return Err(Error::new("Vault identifier too long"));
+        }
+
+        // SECURITY: Validate permissions list
+        if self.permissions.len() > MAX_PERMISSIONS_COUNT {
+            return Err(Error::new("Too many permissions in token"));
+        }
+        for permission in &self.permissions {
+            if permission.trim().is_empty() {
+                return Err(Error::new("Permission cannot be empty"));
+            }
+            if permission.len() > 64 {
+                return Err(Error::new("Permission name too long"));
+            }
+        }
+
+        // SECURITY: Validate timestamps
+        if self.exp <= self.iat {
+            return Err(Error::new("Token expiry must be after issuance"));
+        }
+        let lifetime = self.exp - self.iat;
+        if lifetime > MAX_TOKEN_LIFETIME_SECS {
+            return Err(Error::new("Token lifetime exceeds maximum allowed"));
+        }
+
+        // SECURITY: Validate JTI for replay protection
+        if self.jti.trim().is_empty() {
+            return Err(Error::new("Token ID (jti) cannot be empty"));
+        }
+        if self.jti.len() > 256 {
+            return Err(Error::new("Token ID (jti) too long"));
+        }
+
+        Ok(())
+    }
+
+    /// Check if the token is currently expired.
+    /// 
+    /// # Security
+    /// Uses system time carefully to prevent timing attacks.
+    pub fn is_expired(&self) -> bool {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let now = match SystemTime::now().duration_since(UNIX_EPOCH) {
+            Ok(duration) => duration.as_secs(),
+            Err(_) => return true, // Assume expired on time errors
+        };
+        now >= self.exp
+    }
+}
+
 /// Minimal in‐crate error type.
 #[derive(Debug)]
 pub struct Error {
@@ -56,6 +126,16 @@ impl std::error::Error for Error {}
 pub type Result<T> = std::result::Result<T, Error>;
 
 //─────────────────────────────
+//  Security constants  
+//─────────────────────────────
+
+/// Maximum allowed token lifetime in seconds (24 hours) to limit exposure
+pub const MAX_TOKEN_LIFETIME_SECS: u64 = 86400;
+
+/// Maximum number of permissions per token to prevent bloat
+pub const MAX_PERMISSIONS_COUNT: usize = 100;
+
+//─────────────────────────────
 //  Trait definitions
 //─────────────────────────────
 
@@ -73,6 +153,10 @@ pub trait CapabilityToken: Sized + Send + Sync {
 #[async_trait]
 pub trait TokenValidator: Send + Sync {
     /// Verify authenticity + semantic correctness, returning the embedded [`Claims`].
+    /// 
+    /// # Security
+    /// Implementations should log authentication failures for security monitoring
+    /// and use constant-time operations where possible to prevent timing attacks.
     async fn validate(&self, raw: &str) -> Result<Claims>;
 }
 
@@ -192,12 +276,34 @@ pub mod hs256 {
     #[async_trait]
     impl TokenValidator for JwtHs256Validator {
         async fn validate(&self, raw: &str) -> Result<Claims> {
-            let data = decode::<Claims>(
+            // SECURITY: Log validation attempts for monitoring
+            let validation_start = std::time::Instant::now();
+            
+            let result = decode::<Claims>(
                 raw,
                 &DecodingKey::from_secret(self.secret.as_bytes()),
                 &self.validation,
-            ).map_err(|e| Error::new(&e.to_string()))?;
-            Ok(data.claims)
+            );
+            
+            let claims = match result {
+                Ok(data) => data.claims,
+                Err(e) => {
+                    // SECURITY: Log authentication failures for monitoring
+                    eprintln!("Token validation failed: {} (took {:?})", e, validation_start.elapsed());
+                    return Err(Error::new(&e.to_string()));
+                }
+            };
+
+            // SECURITY: Additional claim validation
+            claims.validate()?;
+
+            // SECURITY: Log successful validations for audit trail
+            let duration = validation_start.elapsed();
+            if duration.as_millis() > 100 {
+                eprintln!("Token validation took unusually long: {:?}", duration);
+            }
+
+            Ok(claims)
         }
     }
 

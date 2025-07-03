@@ -10,46 +10,49 @@
 //! slim and avoids tight coupling.
 
 use std::collections::HashMap;
-use std::sync::RwLock;
-
-use anyhow::Result;
+use std::sync::{Arc, RwLock};
 use once_cell::sync::Lazy;
-
-use crate::{WorldState, KernelError};
+use anyhow::Result;
+use toka_types::{Operation, EntityId};
 use toka_bus_core::KernelEvent;
-use toka_types::Operation;
+use super::{WorldState, KernelError};
 
-/// Trait implemented by **extension crates** to hook additional opcodes into
-/// the deterministic kernel pipeline.
-pub trait OpcodeHandler: Send + Sync + 'static {
-    /// Attempt to handle `op` given a mutable reference to the shared
-    /// [`WorldState`].  If the handler **does not recognise** the operation it
-    /// MUST return `Ok(None)` so that other handlers (or the core) may take
-    /// over.  Returning an `Err` signals a *deterministic* failure that will be
-    /// propagated to the caller.
-    fn dispatch(&self, op: &Operation, state: &mut WorldState) -> Result<Option<KernelEvent>, KernelError>;
+/// Type alias for opcode handler functions.
+type HandlerFn = Arc<dyn Fn(&Operation, &mut WorldState) -> Result<Option<KernelEvent>, KernelError> + Send + Sync>;
+
+/// Global registry of external opcode handlers.
+static REGISTRY: Lazy<RwLock<HashMap<String, HandlerFn>>> = Lazy::new(|| RwLock::new(HashMap::new()));
+
+/// Trait for extending the kernel with new opcode families.
+pub trait OpcodeHandler: Send + Sync {
+    /// Execute the handler for this operation type.
+    fn execute(&self, op: &Operation, state: &mut WorldState) -> Result<Option<KernelEvent>, KernelError>;
 }
 
-/// Global registry mapping *tags* to boxed handler instances.  The tag is
-/// informational only for now (it helps with debugging / introspection).
-static REGISTRY: Lazy<RwLock<HashMap<&'static str, Box<dyn OpcodeHandler>>>> = Lazy::new(|| RwLock::new(HashMap::new()));
-
-/// Register a new opcode `handler` under the provided human-readable `tag`.
-///
-/// Calling this function **after the kernel has started processing messages is
-/// still safe** – the underlying `RwLock` ensures any concurrent lookup sees a
-/// fully initialized handler instance.
-pub fn register_handler(tag: &'static str, handler: Box<dyn OpcodeHandler>) {
-    REGISTRY.write().expect("registry poisoned").insert(tag, handler);
+/// Register a new opcode handler in the global registry.
+/// 
+/// # Security Note
+/// This function returns an error if the registry lock is poisoned,
+/// preventing potential panics that could be exploited for DoS attacks.
+pub fn register_handler(tag: impl Into<String>, handler: HandlerFn) -> Result<(), String> {
+    REGISTRY.write()
+        .map_err(|_| "Registry lock poisoned".to_string())?
+        .insert(tag.into(), handler);
+    Ok(())
 }
 
-/// Dispatch helper used by the kernel to delegate operations not covered by
-/// the built-in agent primitives.  It iterates over **all** registered
-/// handlers (in insertion order) and returns the first non-`None` result.
-pub(crate) fn dispatch(op: &Operation, state: &mut WorldState) -> Result<Option<KernelEvent>, KernelError> {
-    for handler in REGISTRY.read().expect("registry poisoned").values() {
-        if let Some(evt) = handler.dispatch(op, state)? {
-            return Ok(Some(evt));
+/// Dispatch an operation to registered handlers.
+/// 
+/// # Security Note  
+/// This function handles lock poisoning gracefully to prevent panics
+/// that could be exploited for denial of service attacks.
+pub fn dispatch(op: &Operation, state: &mut WorldState) -> Result<Option<KernelEvent>, KernelError> {
+    let registry = REGISTRY.read()
+        .map_err(|_| KernelError::InvalidOperation("Registry lock poisoned".to_string()))?;
+    
+    for handler in registry.values() {
+        if let Some(event) = handler(op, state)? {
+            return Ok(Some(event));
         }
     }
     Ok(None)
