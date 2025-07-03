@@ -1,0 +1,29 @@
+# 40 – Refactoring Guidelines
+
+> Maintainer reference for safe, incremental refactors across the Toka
+> workspace.
+
+## 1. Kernel Invariants (v0.3)
+
+1. The **core kernel** (`toka-kernel`) remains **domain-agnostic** – only the
+   opcodes listed in the [v0.3 spec](45_toka_kernel_spec_v0.3_draft.md) are
+   allowed.
+2. Domain families (*agents*, *finance*, *identity*, ...) MUST ship as
+   extension crates registering handlers via `OpcodeHandler`.
+3. Any change that adds or removes core opcodes is a **MAJOR** version bump and
+   requires:
+   * Spec update + approval.
+   * Migration path / adapter for old snapshots.
+
+## 2. Workspace Versioning Flow
+
+1. Increment versions in **workspace root** first (`Cargo.toml` → `workspace.package.version`).
+2. Run `cargo check --workspace` and `cargo test --workspace`.
+3. Update docs/ and crate READMEs to match new version banners.
+
+## 3. Refactor Checklist (Delta to rule file 40_refactoring-guidelines.mdc)
+
+- [ ] Scoped change set – crate or module only.
+- [ ] No cross-crate API leaks.
+- [ ] Tests & docs updated.
+- [ ] Version bump per SemVer (§2 above).

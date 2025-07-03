@@ -1,6 +1,6 @@
-# Toka-Kernel – v0.3 DRAFT (Namespace Split)
+# Toka-Kernel – v0.3 Specification (Namespace Split)
 
-> Status: **Draft** | Version: **0.3.0-alpha** | Last-updated: 2025-07-03  
+> Status: **Stable (alpha)** | Version: **0.3.0-alpha** | Last-updated: 2025-07-03  
 > This draft captures the *namespace split* proposal removing **all domain
 > opcodes** from the core and introducing a minimal, system-level surface.
 
