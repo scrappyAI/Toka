@@ -1,0 +1,22 @@
+[package]
+name = "toka-store-sqlite"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "SQLite-based persistent storage driver for Toka OS - reliable, portable event storage."
+
+[dependencies]
+toka-store-core = { path = "../toka-store-core" }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+tokio = { workspace = true, features = ["sync"] }
+sqlx = { workspace = true, features = ["sqlite", "runtime-tokio-rustls", "uuid", "chrono"] }
+rmp-serde = "1.1"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }
+uuid = { workspace = true, features = ["v4"] }
+serde = { workspace = true, features = ["derive"] }
+tempfile = "3.8"
