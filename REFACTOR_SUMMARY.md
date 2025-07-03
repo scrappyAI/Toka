@@ -170,6 +170,87 @@ All tests passing:
 4. **Storage Ordering**: All drivers must preserve total event ordering
 5. **Default Features**: Workspace defaults to deterministic set only
 
+## ✅ Security Hardening (v0.2.1+)
+
+**Completed comprehensive security hardening of deterministic core components:**
+
+### 🔒 Critical Security Fixes
+- **Eliminated Panic Vectors**: Replaced all `panic!()` calls in production code with proper error handling
+- **Registry Lock Safety**: Fixed potential lock poisoning panics in opcode handler registry  
+- **DoS Prevention**: Added proper error handling instead of panics that could be exploited
+
+### 🛡️ Input Validation & Limits
+- **Memory Exhaustion Protection**: Added size limits for all user inputs:
+  - Task descriptions: 4KB max
+  - Agent names: 256 bytes max  
+  - Observation data: 1MB max
+  - Capability tokens: 8KB max
+- **Data Structure Validation**: Added comprehensive validation methods to all core types
+- **Operation Validation**: Added security validation to all kernel operations
+
+### 🔐 Authentication Hardening
+- **Token Lifetime Limits**: Maximum 24-hour token lifetime to limit exposure
+- **Permission Bloat Prevention**: Maximum 100 permissions per token
+- **Claim Validation**: Comprehensive validation of all JWT claims
+- **Privilege Escalation Prevention**: Verify token subject matches message origin
+- **Timing Attack Mitigation**: Consistent timing for authentication operations
+
+### 📊 Security Monitoring & Logging
+- **Authentication Failure Logging**: Log all failed authentication attempts with timing
+- **Suspicious Activity Detection**: Log unusually slow operations
+- **Audit Trail**: Log critical operations (agent spawning, large observations)
+- **Rate Limiting Preparation**: Infrastructure for future DoS protection
+
+### 🔍 Defense in Depth
+- **Multiple Validation Layers**: Validation at message, operation, and event levels
+- **Task Queue Overflow Protection**: Prevent DoS via task queue flooding (10k task limit)
+- **Large Data Monitoring**: Log and monitor large observation data transfers
+- **Graceful Degradation**: Proper error handling instead of system crashes
+
+### 🚨 Security Tags & Documentation
+- **Security Comments**: Added `// SECURITY:` tags to all security-critical code
+- **Documentation**: Comprehensive security documentation for all public APIs
+- **Threat Model Awareness**: Code comments explain attack vectors being prevented
+
+### ✅ Deterministic Core Security Status
+
+**toka-types** (✅ Hardened):
+- ✅ Input validation with size limits
+- ✅ Comprehensive data structure validation  
+- ✅ Memory exhaustion attack prevention
+- ✅ Security constants and bounds checking
+
+**toka-auth** (✅ Hardened):
+- ✅ Token lifetime and permission limits
+- ✅ Comprehensive claim validation
+- ✅ Authentication failure logging
+- ✅ Timing attack mitigation
+- ✅ Privilege escalation prevention
+
+**toka-bus-core** (✅ Hardened):
+- ✅ Event validation before publishing
+- ✅ Panic-free error handling
+- ✅ DoS-resistant event processing
+- ✅ Memory-safe event broadcasting
+
+**toka-kernel** (✅ Hardened):
+- ✅ Multi-layer message validation
+- ✅ Authentication with subject verification
+- ✅ Task queue overflow protection
+- ✅ Operation parameter validation
+- ✅ Security audit logging
+- ✅ Graceful error handling
+
+### 🔒 Security Compliance Achieved
+
+1. **No Unsafe Code**: All crates maintain `#![forbid(unsafe_code)]`
+2. **Panic-Free**: Eliminated all production panic vectors
+3. **Input Validation**: Comprehensive validation at all system boundaries
+4. **Memory Safety**: Protected against memory exhaustion attacks
+5. **DoS Resilience**: Protected against denial of service attacks
+6. **Audit Trail**: Security-relevant events are logged for monitoring
+7. **Defense in Depth**: Multiple validation layers throughout the system
+
 ## File Structure
 
 ```

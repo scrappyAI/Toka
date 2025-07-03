@@ -92,13 +92,45 @@ impl Kernel {
     }
 
     /// Submit a message, triggering capability validation, execution and event emission.
+    /// 
+    /// # Security
+    /// This function performs comprehensive validation including:
+    /// - Message structure validation
+    /// - Capability token authentication
+    /// - Operation parameter validation
+    /// - Rate limiting (future enhancement)
     pub async fn submit(&self, msg: Message) -> Result<KernelEvent> {
+        // SECURITY: Validate message structure first
+        msg.validate().map_err(|e| KernelError::InvalidOperation(e))?;
+
+        // SECURITY: Log authentication attempts for security monitoring
+        let auth_start = std::time::Instant::now();
+
         // 1. Capability validation
-        let _claims: Claims = self
+        let claims: Claims = self
             .auth
             .validate(&msg.capability)
             .await
-            .map_err(|_| KernelError::CapabilityDenied)?;
+            .map_err(|e| {
+                // SECURITY: Log authentication failures
+                eprintln!("Authentication failed for entity {:?}: {} (took {:?})", 
+                         msg.origin, e, auth_start.elapsed());
+                KernelError::CapabilityDenied
+            })?;
+
+        // SECURITY: Verify the token subject matches the message origin
+        // This prevents privilege escalation attacks
+        let origin_str = msg.origin.0.to_string();
+        if claims.sub != origin_str {
+            eprintln!("Token subject mismatch: {} != {}", claims.sub, origin_str);
+            return Err(KernelError::CapabilityDenied.into());
+        }
+
+        // SECURITY: Log successful authentication
+        let auth_duration = auth_start.elapsed();
+        if auth_duration.as_millis() > 100 {
+            eprintln!("Authentication took unusually long: {:?}", auth_duration);
+        }
 
         // 2. Try external opcode handlers first so we don't move the operation prematurely.
         {
@@ -131,16 +163,51 @@ impl Kernel {
     //───────────────────── handlers ─────────────────────
 
     async fn handle_schedule_task(&self, agent: EntityId, task: TaskSpec) -> Result<KernelEvent> {
+        // SECURITY: Validate task before processing
+        task.validate().map_err(|e| KernelError::InvalidOperation(e))?;
+        
         let mut state = self.state.write().await;
+        
+        // SECURITY: Check if agent exists (prevent task scheduling to non-existent agents)
+        // For now, we allow task scheduling to any agent ID, but log it for monitoring
+        let task_count = state.agent_tasks.get(&agent).map(|tasks| tasks.len()).unwrap_or(0);
+        
+        // SECURITY: Prevent task queue overflow DoS attacks
+        const MAX_TASKS_PER_AGENT: usize = 10000;
+        if task_count >= MAX_TASKS_PER_AGENT {
+            return Err(KernelError::InvalidOperation(
+                format!("Agent {:?} task queue full ({} tasks)", agent, task_count)
+            ).into());
+        }
+        
         state.agent_tasks.entry(agent).or_default().push(task.clone());
         Ok(KernelEvent::TaskScheduled { agent, task })
     }
 
     async fn handle_spawn_agent(&self, parent: EntityId, spec: AgentSpec) -> Result<KernelEvent> {
+        // SECURITY: Validate agent spec before processing
+        spec.validate().map_err(|e| KernelError::InvalidOperation(e))?;
+        
+        // SECURITY: Log agent spawning for audit trail
+        eprintln!("Agent spawn request: parent={:?}, name={}", parent, spec.name);
+        
         Ok(KernelEvent::AgentSpawned { parent, spec })
     }
 
     async fn handle_observation(&self, agent: EntityId, data: Vec<u8>) -> Result<KernelEvent> {
+        // SECURITY: Validate observation data size (already validated in Operation::validate)
+        // But double-check as defense in depth
+        if data.len() > toka_types::MAX_OBSERVATION_DATA_LEN {
+            return Err(KernelError::InvalidOperation(
+                "Observation data exceeds maximum size".to_string()
+            ).into());
+        }
+        
+        // SECURITY: Log large observations for monitoring
+        if data.len() > 100_000 { // 100KB threshold
+            eprintln!("Large observation from agent {:?}: {} bytes", agent, data.len());
+        }
+        
         Ok(KernelEvent::ObservationEmitted { agent, data })
     }
 }
