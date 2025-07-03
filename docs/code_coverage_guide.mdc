@@ -1,0 +1,33 @@
+<ProjectRule name="CodeCoverageGuide">
+<Extends>Baseline</Extends>
+
+<Description>
+Defines the minimal test coverage thresholds and tooling commands for the Toka workspace.
+</Description>
+
+<Objective>
+• Maintain a healthy automated safety-net – no crate should regress below the required line coverage.
+• Provide a single source-of-truth for CI fail-under values.
+</Objective>
+
+<Thresholds>
+• Crate-level line coverage ≥ 70 % for _core_ crates (`toka-kernel`, `toka-auth`, `toka-events`, `toka-tools`, `toka-types`).
+• Workspace aggregate ≥ 60 %.
+</Thresholds>
+
+<Tooling>
+`cargo llvm-cov --workspace --all-features` generates HTML and summary reports.
+CI runs:
+```bash
+cargo llvm-cov --workspace --all-features --summary-only --fail-under 60
+```
+A crate-level job may set `--fail-under` to 70.
+
+<Instructions>
+1. Before merging, run `make coverage` or the above command locally.
+2. If a crate drops below threshold, either:
+   • Add meaningful tests, **or**
+   • Update this rule with rationale and new threshold (requires approval).
+3. Coverage reports are stored under `docs/code_coverage_reports/` with date stamp.
+</Instructions>
+</ProjectRule>

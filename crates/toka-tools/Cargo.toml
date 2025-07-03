@@ -36,6 +36,9 @@ anyhow = "1"
 rand = "0.8"
 serde_cbor = "0.11"
 tempfile = "3.10"
+proptest = "1.4"
+tokio-test = { workspace = true }
+futures = { workspace = true }
 
 [features]
 # Phase-0: clean slate – only the `echo` demo tool.
