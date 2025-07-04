@@ -1,0 +1,72 @@
+name: "SecurityAgents"
+version: "1.0.0"
+description: "Security guidelines for AI agents with execution capabilities"
+category: "security"
+priority: 85
+always_apply: false
+
+extends: ["CoreBaseline", "SecurityBase"]
+
+objectives:
+  - "Prevent unauthorized or irreversible agent actions"
+  - "Constrain agents within observable environments"
+  - "Prevent prompt injection and capability escalation"
+
+agent_constraints:
+  capabilities:
+    - "All agents must declare capabilities explicitly"
+    - "Disallow dynamic tool access unless authorized"
+    - "Prefer capability-based over natural language interfaces"
+  
+  sandboxing:
+    requirements:
+      - "Run in isolated environments (WASM, Docker, virtual VFS)"
+      - "Log inputs and outputs deterministically"
+      - "Enforce timeouts and memory limits"
+      - "Disable network/filesystem unless scoped"
+  
+  input_hardening:
+    - "Sanitize all user input before LLM forwarding"
+    - "Detect prompt injection patterns"
+    - "Use structured schemas for critical actions"
+    - "Validate against instruction leakage"
+
+logging_requirements:
+  mandatory_fields:
+    - "original_intent"
+    - "tools_invoked"
+    - "outcome_status"
+    - "failure_state" # if applicable
+  
+  storage:
+    - "Use tamper-evident formats for critical actions"
+    - "Include timestamps and agent IDs"
+    - "Audit trail for financial/security operations"
+
+policy_enforcement:
+  runtime_policies:
+    - "Define constraints per invocation layer"
+    - "Use static rules for high-risk actions (DELETE, TRANSFER, EXEC)"
+    - "Dynamic evaluation for context-sensitive decisions"
+  
+  memory_safety:
+    - "Agent memory ephemeral by default"
+    - "Namespace by agent ID and purpose"
+    - "Include timestamps and access reasons"
+
+fail_safe_defaults:
+  - "Fail closed when in doubt"
+  - "Elevated actions require human approval"
+  - "Avoid speculative or irreversible actions"
+  - "Use confirmation rounds for critical operations"
+
+tool_constraints:
+  registration:
+    - "Central manifest with ID, version, capability"
+    - "Deny runtime-discovered tools"
+    - "Require authorization for privileged tools"
+  
+  isolation:
+    - "Subprocess/network tools in sandboxes"
+    - "Mark privileged tools explicitly"
+    - "Emit audit logs with trace IDs"
