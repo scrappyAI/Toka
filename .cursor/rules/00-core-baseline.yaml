@@ -1,0 +1,64 @@
+name: "CoreBaseline"
+version: "1.0.0"
+description: "Foundational guidelines applicable across all Rust projects in the workspace"
+category: "core"
+priority: 100
+always_apply: true
+
+extends: []
+
+objectives:
+  - "Provide canonical engineering conventions"
+  - "Encourage reuse and incremental adoption"
+  - "Reduce duplication between rule files"
+  - "Enable composition through extension mechanism"
+
+guidelines:
+  security:
+    - "All code must be safe and resilient"
+    - "Validate inputs, limit unsafe blocks"
+    - "Follow security best practices"
+  
+  documentation:
+    - "Every public item must have doc comments"
+    - "Use /// for items, //! for modules/crates"
+    - "Keep README.md and Cargo.toml in sync"
+    - "Annotate design decisions in comments"
+  
+  code_style:
+    - "Follow rustfmt and clippy standards"
+    - "Use descriptive, consistent naming"
+    - "Maintain consistent module layout"
+    - "Prefer pure functions where possible"
+  
+  testing:
+    - "Write meaningful behavior tests"
+    - "Cover edge cases and failure modes"
+    - "Use helpers to reduce duplication"
+    - "Separate unit from integration tests"
+  
+  error_handling:
+    - "Never ignore Result or Option"
+    - "Use rich error context (thiserror, anyhow)"
+    - "Avoid panics in library code"
+    - "Prefer ? operator for error propagation"
+  
+  dependencies:
+    - "Keep dependency graph shallow"
+    - "Audit dependencies regularly"
+    - "Prefer standard library solutions"
+    - "Justify all third-party crates"
+
+commit_conventions:
+  format: "<type>(<scope>): <description>"
+  types: ["feat", "fix", "docs", "refactor", "test", "chore"]
+  examples:
+    - "feat(auth): add JWT token validation"
+    - "fix(config): handle missing TOML keys"
+    - "docs(api): update README examples"
+
+versioning:
+  scheme: "semantic"
+  patch: "Internal refactors, no API changes"
+  minor: "Additive changes, backward compatible"
+  major: "Breaking changes, architectural shifts"

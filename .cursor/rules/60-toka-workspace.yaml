@@ -1,0 +1,125 @@
+name: "TokaWorkspace"
+version: "1.0.0"
+description: "Toka workspace-specific evolution and organization guidelines"
+category: "project"
+priority: 40
+always_apply: false
+
+extends: ["CoreBaseline"]
+
+objectives:
+  - "Maintain clear boundaries between domain contracts and implementations"
+  - "Minimize technical debt while allowing rapid experimentation"
+  - "Keep compile times reasonable and avoid crate explosion"
+  - "Provide predictable naming for humans and LLM agents"
+
+workspace_layers:
+  api_layer:
+    tag: "*-api"
+    purpose: "Pure data types, traits, error enums"
+    dependencies: "core Rust + optional serde behind serde feature"
+    compatibility: "no_std compatible where practical"
+    examples:
+      - "toka-events-api → Event, EventKind, serde impls"
+      - "toka-agent-memory-api → MemoryCell, MemoryPolicy, trait MemoryStore"
+  
+  default_layer:
+    tag: "<domain>" # no suffix
+    purpose: "Production-ready, in-process implementation"
+    dependencies: "Matching *-api crate + light deps (tokio permitted)"
+    examples:
+      - "toka-events → in-proc broadcast queue using tokio::sync"
+      - "toka-agent-memory → HashMap + LRU default store"
+  
+  adapter_layer:
+    tag_pattern: "<domain>-<adapter>"
+    purpose: "Connects domain to external services"
+    dependencies: "*-api ± default crate as needed"
+    examples:
+      - "toka-events-nats → adapter using async-nats + TLS"
+      - "toka-agent-memory-sled → sled-backed adapter"
+      - "toka-cache-redis → Redis driver with redis::aio"
+
+naming_conventions:
+  pattern: "toka-<domain>[-api|-<adapter>]"
+  domain_format: "kebab-case nouns"
+  examples: ["events", "agents", "auth", "agent-memory", "cache"]
+  avoid: "Redundant suffixes like -core unless language-agnostic"
+
+directory_structure: |
+  toka-workspace/
+  ├─ Cargo.toml           # workspace manifest
+  ├─ crates/              # flat list of Rust packages
+  │   ├─ toka-events-api/
+  │   ├─ toka-events/
+  │   ├─ toka-events-nats/
+  │   ├─ toka-agent-memory-api/
+  │   ├─ toka-agent-memory/
+  │   └─ …
+  ├─ bindings/            # generated TS / Python etc.
+  ├─ docs/                # architecture & ADRs
+  └─ .github/             # CI configs
+
+crate_split_criteria:
+  create_new_crate_when:
+    - "Needs heavy or optional dependency"
+    - "Will be consumed by ≥2 other crates or another language"
+    - "Requires independent semver cadence"
+  
+  otherwise: "Add module or #[cfg(feature = \"...\")] flag to existing crate"
+  
+  scaling: "If crates exceed ~30, create virtual manifests (core/Cargo.toml)"
+
+versioning_strategy:
+  api_crates:
+    - "Follow strict semver"
+    - "Breaking API changes bump MAJOR"
+  
+  implementation_crates:
+    - "May bump MINOR freely"
+    - "Must keep >= their dependent api's MINOR"
+
+ci_guardrails:
+  required_checks:
+    - "cargo public-api" # block API changes without semver bump
+    - "cargo deny & cargo udeps" # ban unwanted deps, detect unused
+    - "cargo test --all --workspace --all-features" # required for merge
+  
+  quality_gates:
+    - "All tests pass"
+    - "No new clippy warnings"
+    - "Documentation builds successfully"
+    - "Public API changes properly versioned"
+
+domain_examples:
+  events:
+    api: "Event, EventKind, serde impls"
+    default: "in-proc broadcast queue using tokio::sync"
+    adapters: ["nats", "kafka", "redis-streams"]
+  
+  agent_memory:
+    api: "MemoryCell, MemoryPolicy, trait MemoryStore"
+    default: "HashMap + LRU default store"
+    adapters: ["sled", "sqlite", "postgresql"]
+  
+  cache:
+    api: "Cache<K,V> trait"
+    default: "in-proc LRU via moka"
+    adapters: ["redis", "memcached", "disk-cache"]
+
+llm_integration:
+  documentation: "One-line doc comment for every public item in *-api crates"
+  purpose: "Enable retrieval-augmented agents to supply accurate code samples"
+  structure: "Code organized for clarity and navigability"
+
+future_evolution:
+  feature_flags: "Prefer over new crates until adapters > 300 LOC"
+  monitoring: "Periodically run cargo bloat and consolidate thin crates"
+  performance: "Monitor compile time degradation"
+  
+maintenance:
+  regular_tasks:
+    - "Audit dependency health and security"
+    - "Review crate boundaries and consolidation opportunities"
+    - "Update documentation and examples"
+    - "Validate workspace structure against guidelines"
