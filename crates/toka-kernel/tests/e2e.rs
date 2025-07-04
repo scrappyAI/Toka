@@ -15,7 +15,7 @@ struct AllowAll;
 impl TokenValidator for AllowAll {
     async fn validate(&self, _raw: &str) -> toka_auth::Result<Claims> {
         Ok(Claims {
-            sub: "e2e".into(),
+            sub: "10".into(),  // Match the EntityId(10) used in the test
             vault: "demo".into(),
             permissions: vec![],
             iat: 0,

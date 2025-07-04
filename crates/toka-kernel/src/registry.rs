@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use once_cell::sync::Lazy;
 use anyhow::Result;
-use toka_types::{Operation, EntityId};
+use toka_types::Operation;
 use toka_bus_core::KernelEvent;
 use super::{WorldState, KernelError};
 

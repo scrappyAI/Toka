@@ -47,24 +47,38 @@ fn is_default_mcp_version(v: &String) -> bool {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Transport {
     /// JSON-RPC 2.0 over HTTP(S).  `endpoint` must be absolute URI.
-    JsonRpcHttp { endpoint: String },
+    JsonRpcHttp { 
+        /// HTTP endpoint URL for JSON-RPC communication
+        endpoint: String 
+    },
     /// JSON-RPC 2.0 over stdio (command-line programs).
-    JsonRpcStdio { exec: String },
+    JsonRpcStdio { 
+        /// Command-line executable path
+        exec: String 
+    },
     /// In-process Rust struct implementing the [`Tool`](crate::core::Tool) trait.
     InProcess,
     /// WebAssembly module exposing `execute` function.
-    Wasm { path: String },
+    Wasm { 
+        /// Path to the WASM module file
+        path: String 
+    },
 }
 
 /// Side-effect characteristics used for audit & scheduling policy.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum SideEffect {
+    /// No side effects - pure function
     #[default]
     None,
+    /// Only reads data, does not modify anything
     ReadOnly,
+    /// May have side effects but can be safely retried
     Idempotent,
+    /// Performs external operations like network or filesystem writes
     External,   // network or fs writes
+    /// Requires elevated authorization or sandbox access
     Privileged, // requires elevated authz/sandbox
 }
 
