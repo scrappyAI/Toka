@@ -1,0 +1,132 @@
+metadata:
+  name: "build-system-stabilization"
+  version: "v0.3.0"
+  created: "2025-07-04"
+  workstream: "Build System Stabilization"
+  branch: "feature/build-system-stabilization"
+  
+spec:
+  name: "Build System Stabilization Agent"
+  domain: "infrastructure"
+  priority: "critical"
+  
+capabilities:
+  primary:
+    - "dependency-conflict-resolution"
+    - "build-validation"
+    - "workspace-management"
+    - "ci-cd-integration"
+  secondary:
+    - "dependency-auditing"
+    - "environment-setup"
+    - "automation-scripting"
+    
+objectives:
+  - description: "Resolve base64ct dependency conflict"
+    deliverable: "Fixed base64ct edition2024 compatibility across workspace"
+    validation: "cargo check && cargo test passes without dependency conflicts"
+  - description: "Establish automated dependency audit"
+    deliverable: "CI pipeline with automated dependency conflict detection"
+    validation: "CI fails on dependency conflicts and alerts maintainers"
+  - description: "Implement workspace build validation"
+    deliverable: "Enhanced CI/CD build validation system"
+    validation: "All crates build successfully in isolation and together"
+  - description: "Create development environment setup automation"
+    deliverable: "Automated developer setup scripts and documentation"
+    validation: "New developers can set up environment in under 10 minutes"
+    
+tasks:
+  default:
+    - description: "Analyze current base64ct dependency conflict in workspace"
+      priority: "high"
+    - description: "Research base64ct edition2024 compatibility requirements"
+      priority: "high"
+    - description: "Update Cargo.toml files to resolve dependency conflicts"
+      priority: "high"
+    - description: "Test build across all workspace crates"
+      priority: "high"
+    - description: "Implement dependency conflict detection script"
+      priority: "medium"
+    - description: "Add dependency audit to CI pipeline"
+      priority: "medium"
+    - description: "Create developer environment setup automation"
+      priority: "medium"
+    - description: "Update documentation for build processes"
+      priority: "low"
+      
+dependencies:
+  required: {}
+  optional: {}
+    
+reporting:
+  frequency: "daily"
+  channels:
+    - "main-agent"
+    - "kernel-events"
+  metrics:
+    - "dependency-conflicts": "Number of unresolved dependency conflicts"
+    - "build-success-rate": "Percentage of successful builds across workspace"
+    - "setup-time": "Time required for new developer environment setup"
+    - "ci-reliability": "CI pipeline success rate and stability"
+    
+security:
+  sandbox: true
+  capabilities_required:
+    - "filesystem-read"
+    - "filesystem-write"
+    - "cargo-execution"
+    - "git-access"
+    - "ci-integration"
+  resource_limits:
+    max_memory: "512MB"
+    max_cpu: "75%"
+    timeout: "2h"
+    
+behavioral_directives:
+  operational_focus:
+    - "Prioritize build system stability over feature additions"
+    - "Ensure backward compatibility with existing developer workflows"
+    - "Validate changes against all workspace crates before applying"
+    - "Document all dependency changes with clear rationale"
+  
+  error_handling:
+    - "Fail fast on dependency conflicts - do not proceed with partial fixes"
+    - "Rollback changes if any workspace crate fails to build"
+    - "Alert immediately on CI pipeline failures"
+    - "Maintain detailed logs of all dependency resolution attempts"
+  
+  coordination:
+    - "Block other workstreams until critical dependency conflicts resolved"
+    - "Communicate build status changes to all dependent workstreams"
+    - "Provide clear ETA for dependency resolution completion"
+    - "Coordinate with testing agent for validation of fixes"
+
+risk_mitigation:
+  high_priority_risks:
+    - risk: "Breaking changes to existing build processes"
+      mitigation: "Test all changes in isolated environment before applying"
+    - risk: "Dependency resolution causes compatibility issues"
+      mitigation: "Maintain rollback plan and test against all supported platforms"
+    - risk: "CI pipeline changes break existing workflows"
+      mitigation: "Staged rollout with fallback to previous CI configuration"
+  
+  monitoring:
+    - "Continuous monitoring of build success rates"
+    - "Automated alerts on dependency conflict introduction"
+    - "Performance impact assessment of dependency changes"
+
+success_criteria:
+  phase_1:
+    - "base64ct dependency conflict completely resolved"
+    - "All workspace crates build without warnings or errors"
+    - "CI pipeline validates dependency compatibility"
+  
+  phase_2:
+    - "Automated dependency audit integrated into development workflow"
+    - "Developer setup time reduced by minimum 50%"
+    - "Zero unresolved dependency conflicts in workspace"
+  
+  final_validation:
+    - "Complete workspace build takes less than previous baseline"
+    - "All existing tests pass without modification"
+    - "Documentation updated and verified by independent developer" 

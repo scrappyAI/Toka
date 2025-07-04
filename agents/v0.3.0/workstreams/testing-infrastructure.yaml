@@ -1,0 +1,156 @@
+metadata:
+  name: "testing-infrastructure"
+  version: "v0.3.0"
+  created: "2025-07-04"
+  workstream: "Testing Infrastructure Expansion"
+  branch: "feature/testing-infrastructure"
+  
+spec:
+  name: "Testing Infrastructure Expansion Agent"
+  domain: "quality-assurance"
+  priority: "high"
+  
+capabilities:
+  primary:
+    - "integration-test-design"
+    - "end-to-end-testing"
+    - "property-based-testing"
+    - "performance-benchmarking"
+  secondary:
+    - "test-automation"
+    - "coverage-analysis"
+    - "regression-testing"
+    - "test-data-management"
+    
+objectives:
+  - description: "Implement cross-crate integration tests"
+    deliverable: "Runtime-Storage integration test suite with comprehensive scenarios"
+    validation: "Integration tests cover all critical interaction paths with >90% reliability"
+  - description: "Establish end-to-end test scenarios"
+    deliverable: "Agent lifecycle end-to-end tests from spawn to termination"
+    validation: "E2E tests validate complete workflows under realistic conditions"
+  - description: "Create property-based testing framework"
+    deliverable: "Property-based testing for kernel operations with invariant checking"
+    validation: "Property tests discover edge cases and validate system invariants"
+  - description: "Add performance regression testing"
+    deliverable: "Performance benchmark baseline with automated regression detection"
+    validation: "Performance tests catch regressions >5% and establish baselines"
+    
+tasks:
+  default:
+    - description: "Design integration test architecture for Runtime-Storage interactions"
+      priority: "high"
+    - description: "Implement agent lifecycle end-to-end test scenarios"
+      priority: "high"
+    - description: "Create property-based test framework for kernel operations"
+      priority: "high"
+    - description: "Establish performance benchmark baseline and tooling"
+      priority: "high"
+    - description: "Add cross-crate dependency testing"
+      priority: "medium"
+    - description: "Implement test data factories and fixtures"
+      priority: "medium"
+    - description: "Create test environment isolation and cleanup"
+      priority: "medium"
+    - description: "Add performance regression detection automation"
+      priority: "medium"
+    - description: "Document testing standards and practices"
+      priority: "low"
+      
+dependencies:
+  required:
+    - "build-system-stabilization": "Stable build system required for reliable test execution"
+  optional: {}
+    
+reporting:
+  frequency: "daily"
+  channels:
+    - "main-agent"
+    - "kernel-events"
+  metrics:
+    - "test-coverage": "Percentage of code covered by integration and unit tests"
+    - "test-reliability": "Percentage of tests passing consistently across runs"
+    - "performance-baseline": "Established performance benchmarks and trends"
+    - "regression-detection": "Number of performance regressions caught early"
+    
+security:
+  sandbox: true
+  capabilities_required:
+    - "filesystem-read"
+    - "filesystem-write"
+    - "cargo-test-execution"
+    - "database-access"
+    - "network-access-limited"
+  resource_limits:
+    max_memory: "1GB"
+    max_cpu: "80%"
+    timeout: "4h"
+    
+behavioral_directives:
+  operational_focus:
+    - "Prioritize test reliability and determinism over test speed"
+    - "Ensure tests are isolated and can run in any order"
+    - "Design tests to validate behavior, not implementation details"
+    - "Create realistic test scenarios that mirror production usage"
+  
+  error_handling:
+    - "Fail tests clearly with actionable error messages"
+    - "Isolate test failures to prevent cascade effects"
+    - "Maintain test environment consistency across runs"
+    - "Provide debugging tools for test failure investigation"
+  
+  coordination:
+    - "Wait for build system stabilization before major test infrastructure changes"
+    - "Provide test validation services to other workstreams"
+    - "Share performance baselines with performance-observability agent"
+    - "Coordinate with kernel-events agent for event testing scenarios"
+
+risk_mitigation:
+  high_priority_risks:
+    - risk: "Flaky tests reduce confidence in test suite"
+      mitigation: "Implement test reliability monitoring and auto-retry with limits"
+    - risk: "Integration tests become too slow for development workflow"
+      mitigation: "Optimize test performance and implement test parallelization"
+    - risk: "Performance tests are not representative of production"
+      mitigation: "Design tests based on real-world usage patterns and data"
+  
+  monitoring:
+    - "Track test execution times and success rates"
+    - "Monitor test coverage trends across codebase changes"
+    - "Alert on significant performance baseline deviations"
+
+success_criteria:
+  phase_1:
+    - "Runtime-Storage integration tests implemented and passing"
+    - "Agent lifecycle E2E tests cover spawn, task, and termination flows"
+    - "Property-based testing framework established for kernel operations"
+  
+  phase_2:
+    - "Test coverage improved to >80% for integration scenarios"
+    - "Performance benchmark baseline established and automated"
+    - "Test reliability reaches >95% pass rate across all environments"
+  
+  final_validation:
+    - "All integration tests pass consistently in CI/CD pipeline"
+    - "Performance regression testing integrated into development workflow"
+    - "Testing standards documented and adopted by development team"
+
+test_scenarios:
+  integration:
+    - "Runtime initialization with different storage backends"
+    - "Agent spawning and task scheduling under load"
+    - "Event bus message handling and persistence"
+    - "Storage backend failover and recovery"
+    - "Authentication and authorization across components"
+  
+  end_to_end:
+    - "Complete agent lifecycle from spawn to termination"
+    - "Multi-agent interaction and coordination"
+    - "System recovery from various failure modes"
+    - "Configuration changes without service interruption"
+  
+  property_based:
+    - "Event ordering invariants under concurrent access"
+    - "Storage consistency across transaction boundaries"
+    - "Agent state transitions follow valid state machine"
+    - "Resource allocation and cleanup guarantees" 
