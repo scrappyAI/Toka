@@ -1,0 +1,68 @@
+[package]
+name = "toka-integration-tests"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Integration test suite for Toka OS v0.3.0 - comprehensive cross-crate testing framework"
+
+[dependencies]
+# Core Toka components for testing
+toka-types = { path = "../../crates/toka-types" }
+toka-auth = { path = "../../crates/toka-auth" }
+toka-bus-core = { path = "../../crates/toka-bus-core" }
+toka-kernel = { path = "../../crates/toka-kernel" }
+toka-runtime = { path = "../../crates/toka-runtime", features = ["memory-storage", "sled-storage", "sqlite-storage"] }
+toka-store-core = { path = "../../crates/toka-store-core" }
+toka-store-memory = { path = "../../crates/toka-store-memory" }
+toka-store-sled = { path = "../../crates/toka-store-sled" }
+toka-store-sqlite = { path = "../../crates/toka-store-sqlite" }
+
+# Async runtime and utilities
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time", "test-util"] }
+async-trait = { workspace = true }
+futures = { workspace = true }
+
+# Error handling and serialization
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# Testing utilities
+tempfile = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }
+chrono = { workspace = true, features = ["serde"] }
+
+# Property-based testing
+proptest = { workspace = true }
+
+# Development dependencies
+[dev-dependencies]
+tokio-test = { workspace = true }
+
+# Features for different test scenarios
+[features]
+default = ["memory-storage"]
+memory-storage = []
+sqlite-storage = []
+sled-storage = []
+performance-tests = []
+property-based-tests = []
+
+# Test configuration
+[[test]]
+name = "integration"
+path = "lib.rs"
+harness = true
+
+[[test]]
+name = "runtime_storage"
+path = "runtime_storage.rs"
+harness = true
+
+# Benchmark configuration
+[[bench]]
+name = "performance_baseline"
+harness = false
