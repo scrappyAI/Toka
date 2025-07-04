@@ -1,6 +1,6 @@
 # 30 – Documentation Generation Guide
 
-> Version: 0.1 – 2025-06-28
+> Version: 0.1 – 2025-07-04
 >
 > This page is **authoritative** for generating API & reference docs across the Toka workspace.  Follow it exactly before opening a PR or publishing a new release.
 
@@ -75,4 +75,4 @@ CI will fail if broken intra-doc links are detected.
 
 | Date | Change |
 |------|--------|
-| 2025-06-28 | Initial version extracted from Engineering Handbook |
+| 2025-07-04 | Updated date enforcement and consolidated documentation |

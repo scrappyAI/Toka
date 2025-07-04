@@ -224,7 +224,7 @@ fn create_demo_configuration() -> Result<OrchestrationConfig> {
             metadata: AgentMetadata {
                 name: "build-system-stabilization".to_string(),
                 version: "v0.3.0".to_string(),
-                created: "2025-01-04".to_string(),
+                created: "2025-07-04".to_string(),
                 workstream: "build-system-stabilization".to_string(),
                 branch: "feature/build-system-stabilization".to_string(),
             },
@@ -285,7 +285,7 @@ fn create_demo_configuration() -> Result<OrchestrationConfig> {
             metadata: AgentMetadata {
                 name: "testing-infrastructure".to_string(),
                 version: "v0.3.0".to_string(),
-                created: "2025-01-04".to_string(),
+                created: "2025-07-04".to_string(),
                 workstream: "testing-infrastructure".to_string(),
                 branch: "feature/testing-infrastructure".to_string(),
             },
@@ -346,7 +346,7 @@ fn create_demo_configuration() -> Result<OrchestrationConfig> {
             metadata: AgentMetadata {
                 name: "security-enhancement".to_string(),
                 version: "v0.3.0".to_string(),
-                created: "2025-01-04".to_string(),
+                created: "2025-07-04".to_string(),
                 workstream: "security-enhancement".to_string(),
                 branch: "feature/security-enhancement".to_string(),
             },

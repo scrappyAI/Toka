@@ -1,7 +1,6 @@
-# Capability Tokens – v0.1 Specification
 # Capability Tokens – v0.2 Specification
 
-> Status: **Stable** | Version: 0.2 | Last-updated: 2025-06-29
+> Status: **Stable** | Version: 0.2 | Last-updated: 2025-07-04
 
 ---
 
@@ -56,7 +55,7 @@ A future *MINOR* release will introduce **EdDSA (ed25519)** while retaining HS25
 ## 3  Validation Rules
 
 1. **Clock Skew** – Accept at most ±5 seconds. Tokens are considered invalid the *moment* the wall-clock reaches `exp`.
-2. **Algorithm Allow-List** – Only `HS256` is accepted in v0.1. Reject `alg:"none"` and anything else.
+2. **Algorithm Allow-List** – Only `HS256` is accepted in v0.2. Reject `alg:"none"` and anything else.
 3. **Issuer Separation** – Internal tokens carry `typ:"toka.cap+jwt"` and must be signed with the *internal* key, never the public OAuth key.
 4. **Audience** – Not required. Internal services derive authorisation purely from `vault` + `permissions`.
 5. **Constant-Time Comparison** – Always compare MACs in constant time.
@@ -68,8 +67,8 @@ A future *MINOR* release will introduce **EdDSA (ed25519)** while retaining HS25
 1. **Mint** – Auth service issues token after authenticating principal. Caller receives the raw JWT.
 2. **Transport** – Sent as `Authorization: Bearer <jwt>` header or `grpc-metadata-bearer`.
 3. **Validate** – Receiving service executes algorithm in §3.
-4. **Propagate / Delegate** – A holder MAY forward the token *unchanged* to downstream services. Attenuation (sub-scoping) will arrive with Biscuit support in v0.2.
-5. **Revoke** – Not supported for stateless JWT. Instead, issue short TTL and rotate often. Opaque-token mode (v0.2) will allow on-demand revocation.
+4. **Propagate / Delegate** – A holder MAY forward the token *unchanged* to downstream services. Attenuation (sub-scoping) will arrive with Biscuit support in v0.3.
+5. **Revoke** – Not supported for stateless JWT. Instead, issue short TTL and rotate often. Opaque-token mode (v0.3) will allow on-demand revocation.
 
 ---
 
@@ -134,4 +133,4 @@ New features slated for v0.3:
 
 | Date | Change | Author |
 |------|--------|--------|
-| 2025-06-29 | v0.1 initial spec derived from design report | DS |
+| 2025-07-04 | v0.2 specification with proper date enforcement | DS |
