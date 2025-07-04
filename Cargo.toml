@@ -21,6 +21,7 @@ members = [
 
     # Applications / demos
     "crates/toka-cli",
+    "crates/toka-config-cli",
 ]
 
 [workspace.dependencies]
