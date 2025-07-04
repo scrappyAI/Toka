@@ -1,0 +1,450 @@
+name: Dependency Management
+
+on:
+  # Daily dependency checks
+  schedule:
+    - cron: '0 6 * * *'  # 6 AM UTC daily
+  
+  # On any Cargo.toml changes
+  push:
+    paths:
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '.github/workflows/dependency-management.yml'
+  
+  # Weekly comprehensive audit
+  schedule:
+    - cron: '0 3 * * 1'  # 3 AM UTC on Mondays
+  
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      audit_type:
+        description: 'Type of audit to run'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - 'conflicts'
+          - 'security'
+          - 'updates'
+          - 'full'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Detect dependency conflicts across workstreams
+  conflict-detection:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: 
+          - main
+          - feature/build-system-stabilization
+          - feature/testing-infrastructure
+          - feature/kernel-events-expansion
+          - feature/storage-enhancements
+          - feature/security-enhancements
+          - feature/performance-observability
+    
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 1
+        continue-on-error: true
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        if: success()
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        if: success()
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: deps-${{ matrix.branch }}-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Generate dependency tree
+        if: success()
+        run: |
+          echo "=== Dependency Analysis for ${{ matrix.branch }} ==="
+          
+          # Create output directory
+          mkdir -p dependency-reports
+          
+          # Basic dependency tree
+          cargo tree --workspace > dependency-reports/${{ matrix.branch }}-tree.txt || echo "Failed to generate tree"
+          
+          # Duplicate dependencies
+          cargo tree --workspace --duplicates > dependency-reports/${{ matrix.branch }}-duplicates.txt || echo "No duplicates found"
+          
+          # Feature analysis
+          cargo tree --workspace --format "{p} {f}" > dependency-reports/${{ matrix.branch }}-features.txt || echo "Failed to analyze features"
+          
+          # Audit dependencies
+          cargo install cargo-audit --locked || true
+          if command -v cargo-audit >/dev/null 2>&1; then
+            cargo audit --json > dependency-reports/${{ matrix.branch }}-audit.json || echo "Audit failed"
+          fi
+      
+      - name: Check for base64ct conflicts
+        if: success()
+        run: |
+          echo "=== Base64ct Compatibility Check for ${{ matrix.branch }} ==="
+          
+          # Check for base64 versions
+          cargo tree --workspace | grep -i base64 > dependency-reports/${{ matrix.branch }}-base64.txt || echo "No base64 dependencies found"
+          
+          # Test base64 feature compatibility
+          if [ -f "crates/toka-tools/Cargo.toml" ]; then
+            if cargo check -p toka-tools --features base64; then
+              echo "✅ Base64 compatibility verified" >> dependency-reports/${{ matrix.branch }}-base64.txt
+            else
+              echo "❌ Base64 compatibility issues detected" >> dependency-reports/${{ matrix.branch }}-base64.txt
+              exit 1
+            fi
+          fi
+      
+      - name: Upload dependency reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-reports-${{ matrix.branch }}
+          path: dependency-reports/
+          retention-days: 7
+
+  # Cross-branch conflict analysis
+  cross-branch-analysis:
+    needs: conflict-detection
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download all dependency reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: dependency-reports-*
+          merge-multiple: true
+          path: all-reports/
+      
+      - name: Install analysis tools
+        run: |
+          pip install PyYAML
+          npm install -g semver-diff
+      
+      - name: Analyze cross-branch conflicts
+        run: |
+          echo "=== Cross-Branch Dependency Conflict Analysis ==="
+          
+          mkdir -p conflict-analysis
+          
+          # Create summary report
+          cat > conflict-analysis/summary.md << 'EOF'
+          # Dependency Conflict Analysis Report
+          
+          **Generated:** $(date -u)
+          **Trigger:** ${{ github.event_name }}
+          
+          ## Branch Analysis
+          EOF
+          
+          # Analyze each branch report
+          for report_dir in all-reports/*/; do
+            branch_name=$(basename "$report_dir")
+            echo "Analyzing $branch_name..."
+            
+            if [ -f "$report_dir/${branch_name}-duplicates.txt" ]; then
+              echo "### $branch_name" >> conflict-analysis/summary.md
+              echo '```' >> conflict-analysis/summary.md
+              cat "$report_dir/${branch_name}-duplicates.txt" >> conflict-analysis/summary.md
+              echo '```' >> conflict-analysis/summary.md
+              echo "" >> conflict-analysis/summary.md
+            fi
+          done
+          
+          # Check for edition2024 compatibility issues
+          echo "## Edition2024 Compatibility" >> conflict-analysis/summary.md
+          for report_dir in all-reports/*/; do
+            branch_name=$(basename "$report_dir")
+            if [ -f "$report_dir/${branch_name}-base64.txt" ]; then
+              echo "### $branch_name" >> conflict-analysis/summary.md
+              echo '```' >> conflict-analysis/summary.md
+              cat "$report_dir/${branch_name}-base64.txt" >> conflict-analysis/summary.md
+              echo '```' >> conflict-analysis/summary.md
+            fi
+          done
+      
+      - name: Generate conflict matrix
+        run: |
+          echo "=== Generating Conflict Matrix ==="
+          
+          # Create a conflict matrix showing which branches have conflicts
+          python3 << 'EOF'
+          import os
+          import json
+          
+          branches = []
+          conflicts = {}
+          
+          # Scan all reports
+          for item in os.listdir('all-reports'):
+            if os.path.isdir(f'all-reports/{item}'):
+              branch = item
+              branches.append(branch)
+              
+              # Check for duplicates
+              dup_file = f'all-reports/{item}/{branch}-duplicates.txt'
+              if os.path.exists(dup_file):
+                with open(dup_file, 'r') as f:
+                  content = f.read().strip()
+                  conflicts[branch] = len(content.split('\n')) if content else 0
+              else:
+                conflicts[branch] = 0
+          
+          # Generate matrix
+          with open('conflict-analysis/matrix.json', 'w') as f:
+            json.dump({
+              'branches': branches,
+              'conflicts': conflicts,
+              'total_conflicts': sum(conflicts.values())
+            }, f, indent=2)
+          
+          print(f"Matrix generated for {len(branches)} branches")
+          print(f"Total conflicts detected: {sum(conflicts.values())}")
+          EOF
+      
+      - name: Upload conflict analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: conflict-analysis-report
+          path: conflict-analysis/
+          retention-days: 30
+
+  # Security audit
+  security-audit:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.audit_type == 'security' || github.event.inputs.audit_type == 'full' || github.event_name == 'schedule'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Install audit tools
+        run: |
+          cargo install cargo-audit --locked
+          cargo install cargo-deny --locked || echo "cargo-deny installation failed"
+      
+      - name: Run security audit
+        run: |
+          echo "=== Security Audit ==="
+          
+          mkdir -p security-audit
+          
+          # Cargo audit
+          cargo audit --json > security-audit/audit-report.json || echo "Audit found issues"
+          cargo audit > security-audit/audit-report.txt || echo "Audit found issues"
+          
+          # Deny check if available
+          if command -v cargo-deny >/dev/null 2>&1; then
+            if [ -f "deny.toml" ]; then
+              cargo deny check > security-audit/deny-report.txt || echo "Deny check found issues"
+            else
+              echo "No deny.toml configuration found" > security-audit/deny-report.txt
+            fi
+          fi
+      
+      - name: Check for known vulnerabilities
+        run: |
+          echo "=== Vulnerability Check ==="
+          
+          # Parse audit results
+          if [ -f "security-audit/audit-report.json" ]; then
+            python3 << 'EOF'
+          import json
+          
+          try:
+            with open('security-audit/audit-report.json', 'r') as f:
+              audit_data = json.load(f)
+            
+            vulnerabilities = audit_data.get('vulnerabilities', [])
+            print(f"Found {len(vulnerabilities)} vulnerabilities")
+            
+            if vulnerabilities:
+              print("CRITICAL: Security vulnerabilities detected!")
+              for vuln in vulnerabilities:
+                print(f"- {vuln.get('package', 'unknown')}: {vuln.get('title', 'No title')}")
+              exit(1)
+            else:
+              print("✅ No known vulnerabilities found")
+              
+          except Exception as e:
+            print(f"Failed to parse audit report: {e}")
+            exit(1)
+          EOF
+          fi
+      
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-audit-report
+          path: security-audit/
+          retention-days: 90
+
+  # Dependency updates
+  dependency-updates:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.audit_type == 'updates' || github.event.inputs.audit_type == 'full' || github.event_name == 'schedule'
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Install update tools
+        run: |
+          cargo install cargo-edit --locked
+          cargo install cargo-outdated --locked || echo "cargo-outdated installation failed"
+      
+      - name: Check for outdated dependencies
+        run: |
+          echo "=== Dependency Update Check ==="
+          
+          mkdir -p update-reports
+          
+          # Generate outdated report
+          if command -v cargo-outdated >/dev/null 2>&1; then
+            cargo outdated --workspace > update-reports/outdated.txt || echo "No outdated dependencies"
+          fi
+          
+          # Check for major version updates
+          cargo tree --workspace --format "{p}" | sort -u > update-reports/current-deps.txt
+      
+      - name: Generate update recommendations
+        run: |
+          echo "=== Update Recommendations ==="
+          
+          cat > update-reports/recommendations.md << 'EOF'
+          # Dependency Update Recommendations
+          
+          **Generated:** $(date -u)
+          
+          ## Automated Update Strategy
+          
+          ### Safe Updates (Patch/Minor)
+          - Can be applied automatically
+          - Low risk of breaking changes
+          
+          ### Major Updates
+          - Require manual review
+          - High risk of breaking changes
+          - Need thorough testing
+          
+          ## Current Analysis
+          EOF
+          
+          if [ -f "update-reports/outdated.txt" ]; then
+            echo '```' >> update-reports/recommendations.md
+            cat update-reports/outdated.txt >> update-reports/recommendations.md
+            echo '```' >> update-reports/recommendations.md
+          fi
+      
+      - name: Upload update reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-update-reports
+          path: update-reports/
+          retention-days: 14
+
+  # Summary and notification
+  dependency-summary:
+    needs: [conflict-detection, cross-branch-analysis, security-audit, dependency-updates]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Download all reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-report*"
+          merge-multiple: true
+          path: all-reports/
+      
+      - name: Generate summary
+        run: |
+          echo "=== Dependency Management Summary ==="
+          
+          mkdir -p summary
+          
+          cat > summary/dependency-summary.md << 'EOF'
+          # Dependency Management Summary
+          
+          **Date:** $(date -u)
+          **Trigger:** ${{ github.event_name }}
+          **Workflow:** ${{ github.workflow }}
+          
+          ## Results Overview
+          
+          - **Conflict Detection:** ${{ needs.conflict-detection.result }}
+          - **Cross-Branch Analysis:** ${{ needs.cross-branch-analysis.result }}
+          - **Security Audit:** ${{ needs.security-audit.result }}
+          - **Dependency Updates:** ${{ needs.dependency-updates.result }}
+          
+          ## Next Actions
+          
+          EOF
+          
+          # Add specific recommendations based on results
+          if [[ "${{ needs.conflict-detection.result }}" != "success" ]]; then
+            echo "- 🔴 **URGENT**: Resolve dependency conflicts before proceeding" >> summary/dependency-summary.md
+          fi
+          
+          if [[ "${{ needs.security-audit.result }}" != "success" ]]; then
+            echo "- 🔴 **SECURITY**: Address security vulnerabilities immediately" >> summary/dependency-summary.md
+          fi
+          
+          if [[ "${{ needs.cross-branch-analysis.result }}" == "success" && "${{ needs.conflict-detection.result }}" == "success" ]]; then
+            echo "- ✅ **SUCCESS**: All dependency checks passed - proceed with workstream development" >> summary/dependency-summary.md
+          fi
+      
+      - name: Upload summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-management-summary
+          path: summary/
+          retention-days: 30
+      
+      - name: Comment on relevant PRs
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            try {
+              const summary = fs.readFileSync('summary/dependency-summary.md', 'utf8');
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## Dependency Management Report\n\n${summary}`
+              });
+            } catch (error) {
+              console.log('Failed to read summary or create comment:', error);
+            } 

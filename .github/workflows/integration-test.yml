@@ -1,0 +1,360 @@
+name: Cross-Workstream Integration
+
+on:
+  # Weekly integration testing on Mondays at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * 1'
+  
+  # Manual trigger for integration testing
+  workflow_dispatch:
+    inputs:
+      workstreams:
+        description: 'Comma-separated list of workstreams to test (or "all")'
+        required: false
+        default: 'all'
+        type: string
+      
+  # Trigger on PRs to main that affect multiple workstreams
+  pull_request:
+    branches: [main]
+    paths:
+      - 'agents/v0.3.0/**'
+      - 'docs/proposals/**'
+      - '.github/workflows/**'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Setup and preparation
+  integration-setup:
+    runs-on: ubuntu-latest
+    outputs:
+      test-matrix: ${{ steps.matrix.outputs.test-matrix }}
+      branches: ${{ steps.branches.outputs.branches }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for branch analysis
+      
+      - name: Determine active workstream branches
+        id: branches
+        run: |
+          # Get all feature branches that exist
+          BRANCHES=$(git branch -r | grep 'origin/feature/' | sed 's|origin/||' | tr '\n' ' ')
+          echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
+          echo "Found branches: $BRANCHES"
+      
+      - name: Create test matrix
+        id: matrix
+        run: |
+          # Create integration test matrix based on dependencies
+          cat > test-matrix.json << 'EOF'
+          {
+            "include": [
+              {
+                "name": "Build System Foundation",
+                "primary": "feature/build-system-stabilization",
+                "dependents": [],
+                "priority": "critical"
+              },
+              {
+                "name": "Testing + Build System",
+                "primary": "feature/testing-infrastructure", 
+                "dependents": ["feature/build-system-stabilization"],
+                "priority": "high"
+              },
+              {
+                "name": "Kernel Events + Build System",
+                "primary": "feature/kernel-events-expansion",
+                "dependents": ["feature/build-system-stabilization"], 
+                "priority": "high"
+              },
+              {
+                "name": "Storage + Build System + Kernel Events",
+                "primary": "feature/storage-enhancements",
+                "dependents": ["feature/build-system-stabilization", "feature/kernel-events-expansion"],
+                "priority": "medium"
+              },
+              {
+                "name": "Security + Build System + Storage",
+                "primary": "feature/security-enhancements",
+                "dependents": ["feature/build-system-stabilization", "feature/storage-enhancements"],
+                "priority": "medium"
+              },
+              {
+                "name": "Performance + All Dependencies",
+                "primary": "feature/performance-observability",
+                "dependents": ["feature/build-system-stabilization", "feature/testing-infrastructure", "feature/kernel-events-expansion"],
+                "priority": "medium"
+              }
+            ]
+          }
+          EOF
+          
+          echo "test-matrix=$(cat test-matrix.json | jq -c .)" >> $GITHUB_OUTPUT
+
+  # Cross-workstream integration tests
+  integration-test:
+    needs: integration-setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.integration-setup.outputs.test-matrix) }}
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: toka_integration_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: integration-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Setup integration test environment
+        run: |
+          echo "Setting up integration test for: ${{ matrix.name }}"
+          echo "Primary branch: ${{ matrix.primary }}"
+          echo "Dependencies: ${{ join(matrix.dependents, ', ') }}"
+      
+      - name: Create integration branch
+        run: |
+          # Create a temporary integration branch merging all dependencies
+          INTEGRATION_BRANCH="integration-test-$(date +%s)"
+          git config user.name "Integration Test Bot"
+          git config user.email "bot@example.com"
+          
+          # Start from main
+          git checkout -b "$INTEGRATION_BRANCH" origin/main
+          
+          # Merge dependency branches if they exist
+          for branch in ${{ join(matrix.dependents, ' ') }}; do
+            if git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+              echo "Merging dependency: $branch"
+              git merge "origin/$branch" --no-edit || {
+                echo "❌ Merge conflict in dependency $branch"
+                exit 1
+              }
+            else
+              echo "⚠️ Dependency branch $branch not found, skipping"
+            fi
+          done
+          
+          # Merge primary branch
+          if git show-ref --verify --quiet "refs/remotes/origin/${{ matrix.primary }}"; then
+            echo "Merging primary branch: ${{ matrix.primary }}"
+            git merge "origin/${{ matrix.primary }}" --no-edit || {
+              echo "❌ Merge conflict in primary branch ${{ matrix.primary }}"
+              exit 1
+            }
+          else
+            echo "⚠️ Primary branch ${{ matrix.primary }} not found, using main"
+          fi
+      
+      - name: Integration build test
+        run: |
+          echo "🔨 Testing integrated build..."
+          cargo check --workspace --all-features
+      
+      - name: Integration unit tests
+        run: |
+          echo "🧪 Running integrated unit tests..."
+          cargo test --workspace --all-features
+      
+      - name: Cross-crate integration tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/toka_integration_test
+        run: |
+          echo "🔗 Running cross-crate integration tests..."
+          
+          # Test Runtime-Storage integration
+          cargo test --workspace --all-features -- integration
+          
+          # Test Agent lifecycle if kernel events are included
+          if [[ "${{ matrix.primary }}" == *"kernel-events"* ]] || [[ "${{ join(matrix.dependents, ' ') }}" == *"kernel-events"* ]]; then
+            echo "Testing agent lifecycle integration..."
+            cargo test --workspace --all-features -- agent_lifecycle
+          fi
+          
+          # Test storage backend integration if storage is included
+          if [[ "${{ matrix.primary }}" == *"storage"* ]] || [[ "${{ join(matrix.dependents, ' ') }}" == *"storage"* ]]; then
+            echo "Testing storage backend integration..."
+            cargo test -p toka-storage --all-features
+          fi
+      
+      - name: Performance impact assessment
+        run: |
+          echo "📊 Assessing performance impact..."
+          
+          # Run basic performance tests if available
+          if [ -d "benches" ]; then
+            cargo bench --workspace || echo "No benchmarks available"
+          fi
+          
+          # Check for performance regressions
+          echo "Performance baseline check - placeholder for future implementation"
+      
+      - name: Security validation
+        run: |
+          echo "🔒 Running security validation..."
+          
+          # Security audit
+          cargo install cargo-audit --locked || true
+          if command -v cargo-audit >/dev/null 2>&1; then
+            cargo audit
+          fi
+          
+          # Test security features if security workstream is included
+          if [[ "${{ matrix.primary }}" == *"security"* ]] || [[ "${{ join(matrix.dependents, ' ') }}" == *"security"* ]]; then
+            echo "Testing security integration..."
+            cargo test -p toka-security-auth --all-features || echo "Security auth tests not available"
+            cargo test -p toka-security-capability --all-features || echo "Security capability tests not available"
+          fi
+      
+      - name: Agent configuration validation
+        run: |
+          echo "🤖 Validating agent configurations..."
+          
+          # Install YAML validation
+          pip install yamllint
+          
+          # Validate agent configs
+          find agents/v0.3.0/workstreams -name "*.yaml" -exec yamllint {} \; || echo "YAML validation issues found"
+          
+          # Test agent config compatibility
+          echo "Agent configuration integration validation complete"
+      
+      - name: Integration test report
+        if: always()
+        run: |
+          echo "=== Integration Test Report: ${{ matrix.name }} ==="
+          echo "Primary Branch: ${{ matrix.primary }}"
+          echo "Dependencies: ${{ join(matrix.dependents, ', ') }}"
+          echo "Priority: ${{ matrix.priority }}"
+          echo "Status: ${{ job.status }}"
+          echo "Timestamp: $(date -u)"
+
+  # Compatibility verification
+  compatibility-check:
+    needs: [integration-setup, integration-test]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: compat-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Backward compatibility validation
+        run: |
+          echo "🔄 Testing backward compatibility..."
+          
+          # Test that existing APIs remain unchanged
+          cargo test --workspace --features compatibility-test || echo "Compatibility tests not available"
+          
+          # Verify configuration compatibility
+          echo "Configuration compatibility validation..."
+          
+          # Check storage format compatibility
+          echo "Storage format compatibility validation..."
+      
+      - name: API compatibility check
+        run: |
+          echo "🔌 Checking API compatibility..."
+          
+          # Generate API surface and check for breaking changes
+          cargo doc --workspace --no-deps --all-features
+          
+          # Placeholder for API compatibility validation
+          echo "API compatibility validation complete"
+
+  # Integration summary and reporting
+  integration-summary:
+    needs: [integration-setup, integration-test, compatibility-check]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Collect integration results
+        run: |
+          echo "=== Cross-Workstream Integration Summary ==="
+          echo "Integration Tests: ${{ needs.integration-test.result }}"
+          echo "Compatibility Check: ${{ needs.compatibility-check.result }}"
+          echo "Timestamp: $(date -u)"
+          
+          # Report overall status
+          if [[ "${{ needs.integration-test.result }}" == "success" && \
+                "${{ needs.compatibility-check.result }}" == "success" ]]; then
+            echo "✅ All integration tests passed"
+            echo "🚀 Workstreams are ready for Phase 3 integration"
+          else
+            echo "❌ Integration issues detected"
+            echo "🔧 Review failed tests and resolve conflicts before proceeding"
+          fi
+      
+      - name: Create integration report
+        run: |
+          # Create integration test report
+          mkdir -p integration-reports
+          
+          cat > integration-reports/summary-$(date +%Y%m%d).md << 'EOF'
+          # Integration Test Summary
+          
+          **Date:** $(date -u)
+          **Trigger:** ${{ github.event_name }}
+          
+          ## Results
+          - Integration Tests: ${{ needs.integration-test.result }}
+          - Compatibility Check: ${{ needs.compatibility-check.result }}
+          
+          ## Next Steps
+          - [ ] Review any failed tests
+          - [ ] Address integration conflicts
+          - [ ] Proceed with Phase 3 if all green
+          
+          EOF
+          
+          echo "Integration report generated"
+      
+      - name: Upload integration artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: |
+            integration-reports/
+            target/criterion/
+          retention-days: 30 

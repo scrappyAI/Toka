@@ -1,0 +1,302 @@
+# Branch Protection Configuration
+# This file documents the branch protection rules that should be applied
+# via GitHub repository settings for the v0.3.0 workstream branches
+
+# These rules must be configured manually in GitHub repository settings
+# or via GitHub CLI/API automation
+
+branch_protection_rules:
+  
+  # Main branch protection (highest security)
+  main:
+    required_status_checks:
+      strict: true
+      contexts:
+        - "CI / test"
+        - "Cross-Workstream Integration / integration-summary"
+        - "docs-validation"
+        - "security-scan"
+    
+    enforce_admins: true
+    required_pull_request_reviews:
+      required_approving_review_count: 2
+      dismiss_stale_reviews: true
+      require_code_owner_reviews: true
+      require_last_push_approval: true
+    
+    restrictions:
+      users: []
+      teams: ["maintainers", "architecture-review"]
+      apps: []
+    
+    allow_force_pushes: false
+    allow_deletions: false
+    required_linear_history: true
+
+  # Feature branch protection templates
+  feature_branches:
+    
+    # Build System Stabilization (Critical Path)
+    "feature/build-system-stabilization":
+      required_status_checks:
+        strict: true
+        contexts:
+          - "Workstream CI / basic-validation"
+          - "Workstream CI / build-system-validation" 
+          - "Workstream CI / agent-config-validation"
+          - "Workstream CI / docs-validation"
+      
+      required_pull_request_reviews:
+        required_approving_review_count: 2
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: true
+      
+      restrictions:
+        teams: ["build-system-team", "maintainers"]
+      
+      allow_force_pushes: false
+      allow_deletions: false
+    
+    # Testing Infrastructure (High Priority)
+    "feature/testing-infrastructure":
+      required_status_checks:
+        strict: true
+        contexts:
+          - "Workstream CI / basic-validation"
+          - "Workstream CI / testing-validation"
+          - "Workstream CI / agent-config-validation"
+          - "Cross-Workstream Integration / Testing + Build System"
+      
+      required_pull_request_reviews:
+        required_approving_review_count: 1
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: true
+      
+      restrictions:
+        teams: ["testing-team", "qa-team", "maintainers"]
+      
+      allow_force_pushes: false
+      allow_deletions: false
+    
+    # Kernel Events Enhancement (High Priority)
+    "feature/kernel-events-expansion":
+      required_status_checks:
+        strict: true
+        contexts:
+          - "Workstream CI / basic-validation"
+          - "Workstream CI / kernel-events-validation"
+          - "Workstream CI / agent-config-validation"
+          - "Cross-Workstream Integration / Kernel Events + Build System"
+      
+      required_pull_request_reviews:
+        required_approving_review_count: 2
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: true
+      
+      restrictions:
+        teams: ["kernel-team", "architecture-review", "maintainers"]
+      
+      allow_force_pushes: false
+      allow_deletions: false
+    
+    # Storage Enhancement (Medium Priority)
+    "feature/storage-enhancements":
+      required_status_checks:
+        strict: true
+        contexts:
+          - "Workstream CI / basic-validation"
+          - "Workstream CI / storage-validation"
+          - "Workstream CI / agent-config-validation"
+          - "Cross-Workstream Integration / Storage + Build System + Kernel Events"
+      
+      required_pull_request_reviews:
+        required_approving_review_count: 1
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: true
+      
+      restrictions:
+        teams: ["storage-team", "maintainers"]
+      
+      allow_force_pushes: false
+      allow_deletions: false
+    
+    # Security Enhancement (Medium Priority - High Security)
+    "feature/security-enhancements":
+      required_status_checks:
+        strict: true
+        contexts:
+          - "Workstream CI / basic-validation"
+          - "Workstream CI / security-validation"
+          - "Workstream CI / agent-config-validation"
+          - "security-audit"
+          - "Cross-Workstream Integration / Security + Build System + Storage"
+      
+      required_pull_request_reviews:
+        required_approving_review_count: 2
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: true
+      
+      restrictions:
+        teams: ["security-team", "maintainers"]
+      
+      allow_force_pushes: false
+      allow_deletions: false
+    
+    # Performance & Observability (Medium Priority)
+    "feature/performance-observability":
+      required_status_checks:
+        strict: true
+        contexts:
+          - "Workstream CI / basic-validation"
+          - "Workstream CI / performance-validation"
+          - "Workstream CI / agent-config-validation"
+          - "Cross-Workstream Integration / Performance + All Dependencies"
+      
+      required_pull_request_reviews:
+        required_approving_review_count: 1
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: true
+      
+      restrictions:
+        teams: ["performance-team", "maintainers"]
+      
+      allow_force_pushes: false
+      allow_deletions: false
+
+# GitHub CLI automation script to apply these rules
+automation_script: |
+  #!/bin/bash
+  # apply-branch-protection.sh
+  # Requires GitHub CLI (gh) and appropriate permissions
+  
+  REPO="org/toka"  # Replace with actual repo
+  
+  echo "Applying branch protection rules..."
+  
+  # Protect main branch
+  gh api repos/$REPO/branches/main/protection \
+    --method PUT \
+    --field required_status_checks='{"strict":true,"contexts":["CI / test","Cross-Workstream Integration / integration-summary","docs-validation","security-scan"]}' \
+    --field enforce_admins=true \
+    --field required_pull_request_reviews='{"required_approving_review_count":2,"dismiss_stale_reviews":true,"require_code_owner_reviews":true,"require_last_push_approval":true}' \
+    --field restrictions='{"users":[],"teams":["maintainers","architecture-review"],"apps":[]}' \
+    --field allow_force_pushes=false \
+    --field allow_deletions=false \
+    --field required_linear_history=true
+  
+  # Protect feature branches
+  declare -a BRANCHES=(
+    "feature/build-system-stabilization"
+    "feature/testing-infrastructure" 
+    "feature/kernel-events-expansion"
+    "feature/storage-enhancements"
+    "feature/security-enhancements"
+    "feature/performance-observability"
+  )
+  
+  for branch in "${BRANCHES[@]}"; do
+    echo "Protecting branch: $branch"
+    
+    # Create branch if it doesn't exist
+    gh api repos/$REPO/git/refs \
+      --method POST \
+      --field ref="refs/heads/$branch" \
+      --field sha="$(gh api repos/$REPO/git/refs/heads/main --jq '.object.sha')" \
+      2>/dev/null || echo "Branch $branch already exists"
+    
+    # Apply protection rules (customize per branch as needed)
+    gh api repos/$REPO/branches/$branch/protection \
+      --method PUT \
+      --field required_status_checks='{"strict":true,"contexts":["Workstream CI / basic-validation","Workstream CI / agent-config-validation"]}' \
+      --field enforce_admins=false \
+      --field required_pull_request_reviews='{"required_approving_review_count":1,"dismiss_stale_reviews":true,"require_code_owner_reviews":true}' \
+      --field restrictions='{"users":[],"teams":["maintainers"],"apps":[]}' \
+      --field allow_force_pushes=false \
+      --field allow_deletions=false
+  done
+  
+  echo "Branch protection rules applied successfully!"
+
+# Manual setup instructions
+manual_setup_instructions: |
+  # Manual Branch Protection Setup
+  
+  1. Navigate to GitHub repository Settings > Branches
+  2. Click "Add rule" for each branch pattern
+  3. Configure the following for each feature branch:
+  
+  ## For all feature/workstream branches:
+  - Require pull request reviews before merging (1-2 reviewers)
+  - Dismiss stale PR reviews when new commits are pushed
+  - Require review from code owners
+  - Require status checks to pass before merging
+  - Require branches to be up to date before merging
+  - Include administrators in these restrictions
+  - Restrict pushes that create the matching branches
+  
+  ## Specific status checks by branch:
+  
+  ### feature/build-system-stabilization:
+  - Workstream CI / basic-validation
+  - Workstream CI / build-system-validation
+  - Workstream CI / agent-config-validation
+  
+  ### feature/testing-infrastructure:
+  - Workstream CI / basic-validation  
+  - Workstream CI / testing-validation
+  - Cross-Workstream Integration / Testing + Build System
+  
+  ### feature/kernel-events-expansion:
+  - Workstream CI / basic-validation
+  - Workstream CI / kernel-events-validation
+  - Cross-Workstream Integration / Kernel Events + Build System
+  
+  ### feature/storage-enhancements:
+  - Workstream CI / basic-validation
+  - Workstream CI / storage-validation
+  - Cross-Workstream Integration / Storage + Build System + Kernel Events
+  
+  ### feature/security-enhancements:
+  - Workstream CI / basic-validation
+  - Workstream CI / security-validation
+  - Cross-Workstream Integration / Security + Build System + Storage
+  - security-audit (when implemented)
+  
+  ### feature/performance-observability:
+  - Workstream CI / basic-validation
+  - Workstream CI / performance-validation
+  - Cross-Workstream Integration / Performance + All Dependencies
+
+# Team assignments (configure in GitHub repository settings)
+team_assignments:
+  build-system-team:
+    members: ["build-maintainer", "infra-lead"]
+    permissions: ["push", "pull"]
+    
+  testing-team:
+    members: ["qa-lead", "test-engineer"]
+    permissions: ["push", "pull"]
+    
+  kernel-team:
+    members: ["kernel-architect", "runtime-lead"]
+    permissions: ["push", "pull"]
+    
+  storage-team:
+    members: ["storage-architect", "db-specialist"]
+    permissions: ["push", "pull"]
+    
+  security-team:
+    members: ["security-lead", "crypto-specialist"]
+    permissions: ["push", "pull"]
+    
+  performance-team:
+    members: ["performance-engineer", "observability-lead"]
+    permissions: ["push", "pull"]
+    
+  maintainers:
+    members: ["project-lead", "senior-architect"]
+    permissions: ["admin"]
+    
+  architecture-review:
+    members: ["tech-lead", "principal-engineer"]
+    permissions: ["push", "pull"] 

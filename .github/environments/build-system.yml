@@ -1,0 +1,127 @@
+# Build System Workstream Environment Configuration
+# This file defines environment-specific settings for the build system stabilization workstream
+
+name: build-system
+description: "Build System Stabilization Workstream Environment"
+
+# Environment protection rules
+protection_rules:
+  required_reviewers:
+    - build-maintainer
+    - infra-lead
+  
+  wait_timer: 0  # No wait timer for build system (critical path)
+  
+  deployment_branch_policy:
+    protected_branches: true
+    custom_branch_policies: false
+
+# Environment variables specific to build system workstream
+variables:
+  # Build Configuration
+  WORKSTREAM_NAME: "build-system-stabilization"
+  WORKSTREAM_PRIORITY: "critical"
+  WORKSTREAM_BRANCH: "feature/build-system-stabilization"
+  
+  # Rust Configuration  
+  RUST_TOOLCHAIN: "stable"
+  RUST_BACKTRACE: "1"
+  CARGO_TERM_COLOR: "always"
+  
+  # Build System Specific
+  BUILD_TIMEOUT: "30m"
+  DEPENDENCY_CHECK_ENABLED: "true"
+  EDITION_2024_VALIDATION: "true"
+  
+  # Base64 Compatibility
+  BASE64_FEATURE_TEST: "true"
+  BASE64_MINIMUM_VERSION: "0.22"
+  
+  # Validation Settings
+  VALIDATION_SCRIPT_PATH: "scripts/validate-build-system.sh"
+  DEPENDENCY_AUDIT_ENABLED: "true"
+  CLIPPY_FAIL_ON_WARNINGS: "true"
+  
+  # CI/CD Settings
+  CACHE_CARGO_REGISTRY: "true"
+  CACHE_CARGO_GIT: "true"
+  CACHE_TARGET_DIR: "true"
+  
+  # Reporting
+  BUILD_REPORT_PATH: "target/build-system-validation.log"
+  METRICS_COLLECTION: "true"
+  
+  # Agent Configuration
+  AGENT_CONFIG_PATH: "agents/v0.3.0/workstreams/build-system-stabilization.yaml"
+  AGENT_VALIDATION_ENABLED: "true"
+
+# Secrets specific to build system workstream
+# These should be configured in GitHub repository settings
+secrets:
+  # Dependency Management
+  CARGO_REGISTRY_TOKEN: "Token for private cargo registry access (if needed)"
+  
+  # Notification
+  SLACK_BUILD_WEBHOOK: "Webhook for build system notifications"
+  
+  # Monitoring
+  METRICS_API_KEY: "API key for build metrics collection"
+
+# Deployment configuration
+deployment:
+  # Build system doesn't deploy, but validates the build process
+  validation_only: true
+  
+  validation_steps:
+    - name: "Dependency Resolution"
+      command: "cargo check --workspace"
+      timeout: "5m"
+    
+    - name: "Build Validation"
+      command: "./scripts/validate-build-system.sh"
+      timeout: "15m"
+    
+    - name: "Agent Config Validation"
+      command: "yamllint agents/v0.3.0/workstreams/build-system-stabilization.yaml"
+      timeout: "1m"
+
+# Monitoring and alerting
+monitoring:
+  health_checks:
+    - name: "Build System Health"
+      endpoint: "internal"
+      interval: "5m"
+      
+  alerts:
+    - name: "Dependency Conflict Detected"
+      condition: "cargo tree --duplicates returns conflicts"
+      severity: "critical"
+      
+    - name: "Build Validation Failed" 
+      condition: "validate-build-system.sh exits non-zero"
+      severity: "critical"
+      
+    - name: "Base64 Compatibility Issue"
+      condition: "Base64 feature test fails"
+      severity: "high"
+
+# Integration with other workstreams
+integration:
+  blocks_workstreams:
+    - "testing-infrastructure"
+    - "kernel-events-expansion" 
+    - "storage-enhancements"
+    - "security-enhancements"
+    - "performance-observability"
+  
+  success_criteria:
+    - "All workspace crates build without errors"
+    - "No dependency conflicts detected"
+    - "Base64ct compatibility verified"
+    - "CI pipeline enhanced and validated"
+  
+  handoff_requirements:
+    - "Build system validation script passes"
+    - "Dependency audit integrated into CI"
+    - "Developer setup time reduced by 50%"
+    - "Documentation updated and verified" 

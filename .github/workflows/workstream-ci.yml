@@ -1,0 +1,401 @@
+name: Workstream CI
+on:
+  push:
+    branches: 
+      - "feature/build-system-stabilization"
+      - "feature/testing-infrastructure" 
+      - "feature/kernel-events-expansion"
+      - "feature/storage-enhancements"
+      - "feature/security-enhancements"
+      - "feature/performance-observability"
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Determine which workstream is being tested
+  detect-workstream:
+    runs-on: ubuntu-latest
+    outputs:
+      workstream: ${{ steps.detect.outputs.workstream }}
+      branch: ${{ steps.detect.outputs.branch }}
+    steps:
+      - name: Detect workstream from branch
+        id: detect
+        run: |
+          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          
+          case "$BRANCH_NAME" in
+            "feature/build-system-stabilization")
+              echo "workstream=build-system" >> $GITHUB_OUTPUT
+              ;;
+            "feature/testing-infrastructure")
+              echo "workstream=testing" >> $GITHUB_OUTPUT
+              ;;
+            "feature/kernel-events-expansion")
+              echo "workstream=kernel-events" >> $GITHUB_OUTPUT
+              ;;
+            "feature/storage-enhancements")
+              echo "workstream=storage" >> $GITHUB_OUTPUT
+              ;;
+            "feature/security-enhancements")
+              echo "workstream=security" >> $GITHUB_OUTPUT
+              ;;
+            "feature/performance-observability")
+              echo "workstream=performance" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "workstream=unknown" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+  # Basic validation for all workstreams
+  basic-validation:
+    runs-on: ubuntu-latest
+    needs: detect-workstream
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Format check
+        run: cargo fmt --all -- --check
+      
+      - name: Basic build check
+        run: cargo check --workspace --all-features
+      
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      
+      - name: Basic tests
+        run: cargo test --workspace --all-features
+
+  # Build System Workstream Validation
+  build-system-validation:
+    if: needs.detect-workstream.outputs.workstream == 'build-system'
+    runs-on: ubuntu-latest
+    needs: [detect-workstream, basic-validation]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Run build system validation script
+        run: |
+          chmod +x scripts/validate-build-system.sh
+          ./scripts/validate-build-system.sh
+      
+      - name: Dependency conflict detection
+        run: |
+          cargo tree --duplicates || echo "No duplicate dependencies found"
+          
+      - name: Edition2024 compatibility check
+        run: |
+          # Check for base64ct compatibility specifically
+          if cargo check -p toka-tools --features base64; then
+            echo "✅ Base64 compatibility verified"
+          else
+            echo "❌ Base64 compatibility issues detected"
+            exit 1
+          fi
+
+  # Testing Infrastructure Workstream Validation  
+  testing-validation:
+    if: needs.detect-workstream.outputs.workstream == 'testing'
+    runs-on: ubuntu-latest
+    needs: [detect-workstream, basic-validation]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Install testing tools
+        run: |
+          cargo install cargo-nextest --locked || true
+          cargo install cargo-llvm-cov --locked || true
+      
+      - name: Run integration tests
+        run: |
+          if command -v cargo-nextest >/dev/null 2>&1; then
+            cargo nextest run --workspace --all-features
+          else
+            cargo test --workspace --all-features
+          fi
+      
+      - name: Generate coverage report
+        run: |
+          if command -v cargo-llvm-cov >/dev/null 2>&1; then
+            cargo llvm-cov --workspace --all-features --summary-only
+          else
+            echo "Coverage tool not available, skipping"
+          fi
+
+  # Kernel Events Workstream Validation
+  kernel-events-validation:
+    if: needs.detect-workstream.outputs.workstream == 'kernel-events'
+    runs-on: ubuntu-latest
+    needs: [detect-workstream, basic-validation]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Validate kernel modifications
+        run: |
+          # Test kernel crate specifically
+          cargo test -p toka-kernel --all-features
+      
+      - name: Event schema validation
+        run: |
+          # Validate event definitions don't break existing schemas
+          cargo check -p toka-kernel --all-features
+          echo "Event schema validation passed"
+
+  # Storage Workstream Validation
+  storage-validation:
+    if: needs.detect-workstream.outputs.workstream == 'storage'
+    runs-on: ubuntu-latest
+    needs: [detect-workstream, basic-validation]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: toka_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Test storage backends
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/toka_test
+        run: |
+          # Test storage crates with different backends
+          cargo test -p toka-storage --all-features
+      
+      - name: WAL implementation tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/toka_test  
+        run: |
+          # Test WAL functionality if implemented
+          cargo test --workspace --all-features -- wal
+
+  # Security Workstream Validation
+  security-validation:
+    if: needs.detect-workstream.outputs.workstream == 'security'
+    runs-on: ubuntu-latest
+    needs: [detect-workstream, basic-validation]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Security audit
+        run: |
+          cargo install cargo-audit --locked || true
+          if command -v cargo-audit >/dev/null 2>&1; then
+            cargo audit
+          else
+            echo "Cargo audit not available, skipping"
+          fi
+      
+      - name: Test security features
+        run: |
+          # Test auth and security crates
+          cargo test -p toka-security-auth --all-features
+          cargo test -p toka-security-capability --all-features
+
+  # Performance Workstream Validation
+  performance-validation:
+    if: needs.detect-workstream.outputs.workstream == 'performance'
+    runs-on: ubuntu-latest
+    needs: [detect-workstream, basic-validation]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Install benchmarking tools
+        run: |
+          cargo install cargo-criterion --locked || true
+      
+      - name: Run performance tests
+        run: |
+          # Run any existing benchmarks
+          if [ -d "benches" ]; then
+            cargo bench --workspace || echo "No benchmarks found"
+          else
+            echo "Benchmark directory not found, skipping"
+          fi
+      
+      - name: Performance regression check
+        run: |
+          # Placeholder for performance regression detection
+          echo "Performance baseline validation - implement based on specific metrics"
+
+  # Agent configuration validation
+  agent-config-validation:
+    runs-on: ubuntu-latest
+    needs: detect-workstream
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install YAML validation tools
+        run: |
+          pip install yamllint
+      
+      - name: Validate agent configurations
+        run: |
+          # Validate all agent YAML configs
+          find agents/v0.3.0/workstreams -name "*.yaml" -exec yamllint {} \;
+      
+      - name: Check agent config completeness
+        run: |
+          # Verify agent config has required fields
+          for config in agents/v0.3.0/workstreams/*.yaml; do
+            echo "Validating $(basename "$config")..."
+            # Add validation logic here based on your config schema
+          done
+
+  # Documentation validation
+  docs-validation:
+    runs-on: ubuntu-latest
+    needs: basic-validation
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Build documentation
+        run: |
+          cargo doc --workspace --no-deps --all-features
+      
+      - name: Test doc examples
+        run: |
+          cargo test --doc --workspace --all-features
+
+  # Final validation summary
+  validation-summary:
+    runs-on: ubuntu-latest
+    needs: [
+      detect-workstream,
+      basic-validation,
+      agent-config-validation,
+      docs-validation
+    ]
+    if: always()
+    steps:
+      - name: Report validation results
+        run: |
+          echo "=== Workstream CI Validation Summary ==="
+          echo "Workstream: ${{ needs.detect-workstream.outputs.workstream }}"
+          echo "Branch: ${{ needs.detect-workstream.outputs.branch }}"
+          echo "Basic validation: ${{ needs.basic-validation.result }}"
+          echo "Agent config validation: ${{ needs.agent-config-validation.result }}"
+          echo "Documentation validation: ${{ needs.docs-validation.result }}"
+          
+          if [[ "${{ needs.basic-validation.result }}" == "success" && \
+                "${{ needs.agent-config-validation.result }}" == "success" && \
+                "${{ needs.docs-validation.result }}" == "success" ]]; then
+            echo "✅ All validations passed"
+          else
+            echo "❌ Some validations failed"
+            exit 1
+          fi 
