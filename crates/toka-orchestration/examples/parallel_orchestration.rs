@@ -8,43 +8,41 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 use tracing_subscriber;
 
-use toka_orchestration::{
-    OrchestrationConfig, OrchestrationEngine,
-};
-use toka_runtime::{Runtime, RuntimeConfig};
 use toka_auth::MockTokenValidator;
+use toka_orchestration::{OrchestrationConfig, OrchestrationEngine};
+use toka_runtime::{Runtime, RuntimeConfig};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize logging
-    tracing_subscriber::fmt()
-        .with_env_filter("info")
-        .init();
+    tracing_subscriber::fmt().with_env_filter("info").init();
 
     info!("Starting parallel agent orchestration example");
 
     // Create mock configuration for demonstration
     let config = create_demo_configuration()?;
-    
+
     // Initialize Toka runtime
     let runtime = Arc::new(
         Runtime::new(
             RuntimeConfig::default(),
             Arc::new(MockTokenValidator::new()),
-        ).await?
+        )
+        .await?,
     );
-    
+
     info!("Toka runtime initialized");
 
     // Create orchestration engine
-    let engine = Arc::new(
-        OrchestrationEngine::new(config.clone(), runtime.clone()).await?
+    let engine = Arc::new(OrchestrationEngine::new(config.clone(), runtime.clone()).await?);
+
+    info!(
+        "Orchestration engine created with {} agents",
+        config.agents.len()
     );
-    
-    info!("Orchestration engine created with {} agents", config.agents.len());
 
     // Optional: Add LLM integration for intelligent coordination
     // let llm_config = toka_llm_gateway::Config::from_env()?;
@@ -58,16 +56,15 @@ async fn main() -> Result<()> {
     // Monitor progress
     let monitoring_task = tokio::spawn({
         let session = session;
-        async move {
-            monitor_orchestration_progress(session).await
-        }
+        async move { monitor_orchestration_progress(session).await }
     });
 
     // Wait for completion or timeout
     let result = tokio::time::timeout(
         Duration::from_secs(300), // 5 minute timeout
-        monitoring_task
-    ).await;
+        monitoring_task,
+    )
+    .await;
 
     match result {
         Ok(Ok(())) => {
@@ -92,13 +89,13 @@ async fn monitor_orchestration_progress(
 ) -> Result<()> {
     // Subscribe to progress events (if available)
     // This would require extending the session API to expose progress monitoring
-    
+
     // For now, we'll poll the session state
     let mut last_progress = 0.0;
-    
+
     loop {
         let state = session.get_state().await;
-        
+
         if state.progress != last_progress {
             info!(
                 "Orchestration progress: {:.1}% - Phase: {:?}",
@@ -111,13 +108,25 @@ async fn monitor_orchestration_progress(
         // Display agent status
         let agents = session.get_spawned_agents();
         if !agents.is_empty() {
-            let active_count = agents.iter().filter(|a| a.state == toka_orchestration::AgentState::Active).count();
-            let completed_count = agents.iter().filter(|a| a.state == toka_orchestration::AgentState::Completed).count();
-            let failed_count = agents.iter().filter(|a| a.state == toka_orchestration::AgentState::Failed).count();
-            
+            let active_count = agents
+                .iter()
+                .filter(|a| a.state == toka_orchestration::AgentState::Active)
+                .count();
+            let completed_count = agents
+                .iter()
+                .filter(|a| a.state == toka_orchestration::AgentState::Completed)
+                .count();
+            let failed_count = agents
+                .iter()
+                .filter(|a| a.state == toka_orchestration::AgentState::Failed)
+                .count();
+
             info!(
                 "Agents - Active: {}, Completed: {}, Failed: {}, Total: {}",
-                active_count, completed_count, failed_count, agents.len()
+                active_count,
+                completed_count,
+                failed_count,
+                agents.len()
             );
         }
 
@@ -140,13 +149,13 @@ async fn monitor_orchestration_progress(
     // Get final results before consuming session
     let final_state = session.get_state().await;
     let final_agents = session.get_spawned_agents();
-    
+
     // Wait for actual completion
     session.wait_for_completion().await?;
-    
+
     // Display final results
     display_orchestration_results(final_state, final_agents).await;
-    
+
     Ok(())
 }
 
@@ -156,7 +165,7 @@ async fn display_orchestration_results(
     agents: Vec<toka_orchestration::SpawnedAgent>,
 ) {
     info!("=== Orchestration Results ===");
-    
+
     info!("Session ID: {}", state.session_id);
     info!("Started at: {}", state.started_at);
     info!("Final progress: {:.1}%", state.progress * 100.0);
@@ -173,13 +182,23 @@ async fn display_orchestration_results(
                 agent.metrics.execution_time
             );
         }
-        
+
         // Calculate summary statistics
         let total_agents = agents.len();
-        let completed_agents = agents.iter().filter(|a| a.state == toka_orchestration::AgentState::Completed).count();
-        let failed_agents = agents.iter().filter(|a| a.state == toka_orchestration::AgentState::Failed).count();
-        let success_rate = if total_agents > 0 { completed_agents as f64 / total_agents as f64 * 100.0 } else { 0.0 };
-        
+        let completed_agents = agents
+            .iter()
+            .filter(|a| a.state == toka_orchestration::AgentState::Completed)
+            .count();
+        let failed_agents = agents
+            .iter()
+            .filter(|a| a.state == toka_orchestration::AgentState::Failed)
+            .count();
+        let success_rate = if total_agents > 0 {
+            completed_agents as f64 / total_agents as f64 * 100.0
+        } else {
+            0.0
+        };
+
         info!("=== Summary ===");
         info!("Total agents: {}", total_agents);
         info!("Completed: {}", completed_agents);
@@ -190,8 +209,8 @@ async fn display_orchestration_results(
 
 /// Create a demo configuration with sample agents for testing.
 fn create_demo_configuration() -> Result<OrchestrationConfig> {
-    use toka_orchestration::*;
     use std::collections::HashMap;
+    use toka_orchestration::*;
 
     // Create sample agents for demonstration
     let agents = vec![
@@ -210,16 +229,17 @@ fn create_demo_configuration() -> Result<OrchestrationConfig> {
                 priority: AgentPriority::Critical,
             },
             capabilities: AgentCapabilities {
-                primary: vec!["build-analysis".to_string(), "dependency-resolution".to_string()],
+                primary: vec![
+                    "build-analysis".to_string(),
+                    "dependency-resolution".to_string(),
+                ],
                 secondary: vec!["testing".to_string()],
             },
-            objectives: vec![
-                AgentObjective {
-                    description: "Resolve base64ct dependency conflicts".to_string(),
-                    deliverable: "Updated Cargo.toml files with resolved dependencies".to_string(),
-                    validation: "Successful build across all workspace crates".to_string(),
-                },
-            ],
+            objectives: vec![AgentObjective {
+                description: "Resolve base64ct dependency conflicts".to_string(),
+                deliverable: "Updated Cargo.toml files with resolved dependencies".to_string(),
+                validation: "Successful build across all workspace crates".to_string(),
+            }],
             tasks: AgentTasks {
                 default: vec![
                     TaskConfig {
@@ -255,7 +275,6 @@ fn create_demo_configuration() -> Result<OrchestrationConfig> {
                 },
             },
         },
-        
         // Testing infrastructure agent (depends on build system)
         AgentConfig {
             metadata: AgentMetadata {
@@ -274,13 +293,11 @@ fn create_demo_configuration() -> Result<OrchestrationConfig> {
                 primary: vec!["test-design".to_string(), "integration-testing".to_string()],
                 secondary: vec!["performance-testing".to_string()],
             },
-            objectives: vec![
-                AgentObjective {
-                    description: "Implement cross-crate integration tests".to_string(),
-                    deliverable: "Comprehensive integration test suite".to_string(),
-                    validation: "All tests pass and provide adequate coverage".to_string(),
-                },
-            ],
+            objectives: vec![AgentObjective {
+                description: "Implement cross-crate integration tests".to_string(),
+                deliverable: "Comprehensive integration test suite".to_string(),
+                validation: "All tests pass and provide adequate coverage".to_string(),
+            }],
             tasks: AgentTasks {
                 default: vec![
                     TaskConfig {
@@ -296,7 +313,10 @@ fn create_demo_configuration() -> Result<OrchestrationConfig> {
             dependencies: AgentDependencies {
                 required: {
                     let mut deps = HashMap::new();
-                    deps.insert("build-system-stabilization".to_string(), "Requires stable build system".to_string());
+                    deps.insert(
+                        "build-system-stabilization".to_string(),
+                        "Requires stable build system".to_string(),
+                    );
                     deps
                 },
                 optional: HashMap::new(),
@@ -316,7 +336,6 @@ fn create_demo_configuration() -> Result<OrchestrationConfig> {
                 },
             },
         },
-        
         // Parallel development agents
         AgentConfig {
             metadata: AgentMetadata {
@@ -332,28 +351,30 @@ fn create_demo_configuration() -> Result<OrchestrationConfig> {
                 priority: AgentPriority::Medium,
             },
             capabilities: AgentCapabilities {
-                primary: vec!["security-analysis".to_string(), "auth-enhancement".to_string()],
+                primary: vec![
+                    "security-analysis".to_string(),
+                    "auth-enhancement".to_string(),
+                ],
                 secondary: vec!["audit-logging".to_string()],
             },
-            objectives: vec![
-                AgentObjective {
-                    description: "Implement JWT key rotation mechanism".to_string(),
-                    deliverable: "Automatic JWT key rotation system".to_string(),
-                    validation: "Secure key rotation without service interruption".to_string(),
-                },
-            ],
+            objectives: vec![AgentObjective {
+                description: "Implement JWT key rotation mechanism".to_string(),
+                deliverable: "Automatic JWT key rotation system".to_string(),
+                validation: "Secure key rotation without service interruption".to_string(),
+            }],
             tasks: AgentTasks {
-                default: vec![
-                    TaskConfig {
-                        description: "Design JWT rotation mechanism".to_string(),
-                        priority: TaskPriority::High,
-                    },
-                ],
+                default: vec![TaskConfig {
+                    description: "Design JWT rotation mechanism".to_string(),
+                    priority: TaskPriority::High,
+                }],
             },
             dependencies: AgentDependencies {
                 required: {
                     let mut deps = HashMap::new();
-                    deps.insert("build-system-stabilization".to_string(), "Requires stable build system".to_string());
+                    deps.insert(
+                        "build-system-stabilization".to_string(),
+                        "Requires stable build system".to_string(),
+                    );
                     deps
                 },
                 optional: HashMap::new(),
@@ -385,8 +406,7 @@ fn create_demo_configuration() -> Result<OrchestrationConfig> {
 /// Mock auth validator for the example.
 mod mock_auth {
     use async_trait::async_trait;
-    use toka_auth::{TokenValidator, TokenClaims};
-    use anyhow::Result;
+    use toka_auth::{Claims, Result, TokenValidator};
 
     pub struct MockTokenValidator;
 
@@ -398,15 +418,20 @@ mod mock_auth {
 
     #[async_trait]
     impl TokenValidator for MockTokenValidator {
-        async fn validate_token(&self, _token: &str) -> Result<TokenClaims> {
-            Ok(TokenClaims {
+        async fn validate(&self, _token: &str) -> Result<Claims> {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+
+            Ok(Claims {
                 sub: "demo-user".to_string(),
-                exp: chrono::Utc::now().timestamp() + 3600,
-                iat: chrono::Utc::now().timestamp(),
-                iss: "demo".to_string(),
-                aud: "demo".to_string(),
-                capabilities: vec!["orchestration".to_string()],
+                vault: "demo-vault".to_string(),
+                permissions: vec!["orchestration".to_string()],
+                iat: now,
+                exp: now + 3600, // 1 hour from now
+                jti: uuid::Uuid::new_v4().to_string(),
             })
         }
     }
-} 
+}
