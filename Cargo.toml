@@ -12,6 +12,7 @@ members = [
     "crates/toka-store-memory",
     "crates/toka-store-sled",
     "crates/toka-store-sqlite",
+    "crates/toka-store-semantic",
     
     # Runtime layer - fuzzy/async coordination
     "crates/toka-runtime",

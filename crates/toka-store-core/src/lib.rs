@@ -34,6 +34,12 @@ pub type IntentId = Uuid;
 /// Blake3 digest representing the causal hash chain of an event.
 pub type CausalDigest = [u8; 32];
 
+/// Unique identifier for a WAL transaction (UUID v4).
+pub type TransactionId = Uuid;
+
+/// Sequence number for WAL entries to ensure ordering.
+pub type SequenceNumber = u64;
+
 //─────────────────────────────
 //  Event payload trait
 //─────────────────────────────
@@ -70,6 +76,154 @@ pub struct EventHeader {
     pub intent: IntentId,
     /// Application-defined kind, e.g. `ledger.mint` or `agent.spawn`
     pub kind: String,
+}
+
+//─────────────────────────────
+//  Write-Ahead Logging (WAL) Support
+//─────────────────────────────
+
+/// Represents a single entry in the Write-Ahead Log.
+///
+/// WAL entries track all operations that modify the storage state,
+/// enabling crash recovery and providing durability guarantees.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct WalEntry {
+    /// Unique identifier for this WAL entry
+    pub id: Uuid,
+    /// Transaction this entry belongs to
+    pub transaction_id: TransactionId,
+    /// Sequence number for ordering within the transaction
+    pub sequence: SequenceNumber,
+    /// Timestamp when this entry was created
+    pub timestamp: DateTime<Utc>,
+    /// The operation being logged
+    pub operation: WalOperation,
+    /// Current state of this entry
+    pub state: WalEntryState,
+}
+
+/// Types of operations that can be logged in the WAL.
+///
+/// Each operation type corresponds to a specific storage modification
+/// and includes all necessary information for recovery.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub enum WalOperation {
+    /// Begin a new transaction
+    BeginTransaction {
+        /// Transaction identifier
+        transaction_id: TransactionId,
+    },
+    /// Commit an event (header + payload)
+    CommitEvent {
+        /// Event header to be committed
+        header: EventHeader,
+        /// Serialized payload bytes
+        payload: Vec<u8>,
+    },
+    /// Commit a transaction (make all changes durable)
+    CommitTransaction {
+        /// Transaction identifier
+        transaction_id: TransactionId,
+    },
+    /// Rollback a transaction (discard all changes)
+    RollbackTransaction {
+        /// Transaction identifier
+        transaction_id: TransactionId,
+    },
+    /// Mark a WAL entry as checkpointed (can be safely removed)
+    Checkpoint {
+        /// Sequence number up to which entries are checkpointed
+        sequence: SequenceNumber,
+    },
+}
+
+/// State of a WAL entry during processing.
+///
+/// This tracks the lifecycle of each entry and enables proper
+/// recovery behavior during crash scenarios.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub enum WalEntryState {
+    /// Entry is pending (not yet committed)
+    Pending,
+    /// Entry has been committed to storage
+    Committed,
+    /// Entry has been rolled back
+    RolledBack,
+    /// Entry has been checkpointed and can be removed
+    Checkpointed,
+}
+
+/// Result of a WAL recovery operation.
+///
+/// Contains information about what was recovered and what actions
+/// were taken during the recovery process.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct WalRecoveryResult {
+    /// Number of entries that were recovered
+    pub entries_recovered: usize,
+    /// Number of transactions that were rolled back
+    pub transactions_rolled_back: usize,
+    /// Number of transactions that were committed
+    pub transactions_committed: usize,
+    /// Number of entries that were checkpointed
+    pub entries_checkpointed: usize,
+    /// Any errors encountered during recovery
+    pub recovery_errors: Vec<String>,
+}
+
+/// Abstraction over a Write-Ahead Log for storage backends.
+///
+/// This trait provides durability guarantees by ensuring all operations
+/// are logged before being applied to the main storage. In case of crashes,
+/// the WAL can be replayed to restore the system to a consistent state.
+#[async_trait]
+pub trait WriteAheadLog: Send + Sync {
+    /// Begin a new transaction and return its identifier.
+    ///
+    /// All subsequent operations within this transaction will be logged
+    /// and can be atomically committed or rolled back.
+    async fn begin_transaction(&self) -> anyhow::Result<TransactionId>;
+
+    /// Write an entry to the WAL for the given transaction.
+    ///
+    /// The entry is logged but not yet committed. The operation will
+    /// only take effect when the transaction is committed.
+    async fn write_entry(
+        &self,
+        transaction_id: TransactionId,
+        operation: WalOperation,
+    ) -> anyhow::Result<()>;
+
+    /// Commit a transaction, making all logged operations durable.
+    ///
+    /// All WAL entries for this transaction are applied to the main
+    /// storage and marked as committed.
+    async fn commit_transaction(&self, transaction_id: TransactionId) -> anyhow::Result<()>;
+
+    /// Rollback a transaction, discarding all logged operations.
+    ///
+    /// All WAL entries for this transaction are marked as rolled back
+    /// and will not be applied to the main storage.
+    async fn rollback_transaction(&self, transaction_id: TransactionId) -> anyhow::Result<()>;
+
+    /// Recover from a previous crash by replaying the WAL.
+    ///
+    /// This method examines all WAL entries and applies any committed
+    /// but not yet applied operations. Uncommitted transactions are
+    /// rolled back.
+    async fn recover(&self) -> anyhow::Result<WalRecoveryResult>;
+
+    /// Create a checkpoint up to the given sequence number.
+    ///
+    /// Entries up to this sequence number are considered durably stored
+    /// and can be safely removed from the WAL to free space.
+    async fn checkpoint(&self, sequence: SequenceNumber) -> anyhow::Result<()>;
+
+    /// Get the current WAL sequence number.
+    ///
+    /// This is useful for determining checkpoint positions and
+    /// monitoring WAL growth.
+    async fn current_sequence(&self) -> anyhow::Result<SequenceNumber>;
 }
 
 //─────────────────────────────
@@ -164,6 +318,38 @@ pub trait StorageBackend: Send + Sync {
     async fn payload_bytes(&self, digest: &CausalDigest) -> anyhow::Result<Option<Vec<u8>>>;
 }
 
+/// Enhanced storage backend with Write-Ahead Logging support.
+///
+/// This trait extends the basic storage backend with WAL capabilities,
+/// providing durability guarantees and crash recovery.
+#[async_trait]
+pub trait WalStorageBackend: StorageBackend + WriteAheadLog {
+    /// Commit an event within a WAL transaction.
+    ///
+    /// This method combines event commitment with WAL logging to ensure
+    /// durability. The operation is logged but not immediately applied to storage.
+    /// The actual storage commitment happens when the transaction is committed.
+    async fn commit_with_wal(
+        &self,
+        transaction_id: TransactionId,
+        header: &EventHeader,
+        payload: &[u8],
+    ) -> anyhow::Result<()> {
+        // Log the operation - it will be applied when transaction is committed
+        self.write_entry(
+            transaction_id,
+            WalOperation::CommitEvent {
+                header: header.clone(),
+                payload: payload.to_vec(),
+            },
+        )
+        .await
+    }
+}
+
+// Automatic implementation for types that implement both traits
+impl<T> WalStorageBackend for T where T: StorageBackend + WriteAheadLog {}
+
 //─────────────────────────────
 //  Error types
 //─────────────────────────────
@@ -191,7 +377,29 @@ pub enum StorageError {
         /// Actual hash
         actual: String,
     },
+    /// WAL operation failed
+    #[error("WAL operation failed: {0}")]
+    WalOperationFailed(String),
+    /// Transaction not found
+    #[error("transaction not found: {0}")]
+    TransactionNotFound(TransactionId),
+    /// Transaction already committed
+    #[error("transaction already committed: {0}")]
+    TransactionAlreadyCommitted(TransactionId),
+    /// Transaction already rolled back
+    #[error("transaction already rolled back: {0}")]
+    TransactionAlreadyRolledBack(TransactionId),
+    /// Recovery failed
+    #[error("WAL recovery failed: {0}")]
+    RecoveryFailed(String),
 }
+
+//─────────────────────────────
+//  Semantic analysis support
+//─────────────────────────────
+
+/// Semantic analysis plugin interface for event content analysis.
+pub mod semantic;
 
 //─────────────────────────────
 //  Convenience re-exports
@@ -203,6 +411,17 @@ pub mod prelude {
         CausalDigest, EventHeader, EventId, EventPayload, IntentId,
         StorageBackend, StorageError,
         causal_hash, create_event_header, deserialize_payload,
+        // WAL types
+        TransactionId, SequenceNumber, WalEntry, WalOperation, WalEntryState,
+        WalRecoveryResult, WriteAheadLog, WalStorageBackend,
+        // Semantic analysis types
+        semantic::{
+            PluginId, SemanticResult, SemanticError, PluginMetadata, PluginConfig,
+            ClassificationResult, EventRelationship, RelationshipGraph, AnomalyReport,
+            ContentClassifier, RelationshipExtractor, AnomalyDetector,
+            PluginRegistry, SemanticEngine, SemanticAnalysisResult,
+            SemanticConfigBuilder, PluginType,
+        },
     };
 }
 
