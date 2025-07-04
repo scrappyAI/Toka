@@ -28,6 +28,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use tokio::sync::RwLock;
+use chrono::Utc;
 
 use toka_types::{EntityId, Message, Operation, TaskSpec, AgentSpec};
 use toka_bus_core::{KernelEvent, EventBus};
@@ -181,7 +182,11 @@ impl Kernel {
         }
         
         state.agent_tasks.entry(agent).or_default().push(task.clone());
-        Ok(KernelEvent::TaskScheduled { agent, task })
+        Ok(KernelEvent::TaskScheduled { 
+            agent, 
+            task, 
+            timestamp: Utc::now(),
+        })
     }
 
     async fn handle_spawn_agent(&self, parent: EntityId, spec: AgentSpec) -> Result<KernelEvent> {
@@ -191,7 +196,11 @@ impl Kernel {
         // SECURITY: Log agent spawning for audit trail
         eprintln!("Agent spawn request: parent={:?}, name={}", parent, spec.name);
         
-        Ok(KernelEvent::AgentSpawned { parent, spec })
+        Ok(KernelEvent::AgentSpawned { 
+            parent, 
+            spec, 
+            timestamp: Utc::now(),
+        })
     }
 
     async fn handle_observation(&self, agent: EntityId, data: Vec<u8>) -> Result<KernelEvent> {
@@ -208,7 +217,11 @@ impl Kernel {
             eprintln!("Large observation from agent {:?}: {} bytes", agent, data.len());
         }
         
-        Ok(KernelEvent::ObservationEmitted { agent, data })
+        Ok(KernelEvent::ObservationEmitted { 
+            agent, 
+            data, 
+            timestamp: Utc::now(),
+        })
     }
 }
 
