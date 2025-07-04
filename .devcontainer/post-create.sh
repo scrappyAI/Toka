@@ -5,6 +5,11 @@ set -e
 
 echo "🦀 Setting up Toka Rust development environment..."
 
+# Install essential build tools
+echo "🔧 Installing build dependencies..."
+sudo apt update
+sudo apt install -y clang lld build-essential
+
 # Ensure cargo registry is accessible
 mkdir -p ~/.cargo
 echo "Creating target directory for faster builds..."
