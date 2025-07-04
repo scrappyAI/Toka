@@ -38,6 +38,13 @@ chrono = { workspace = true, features = ["serde"] }
 # Property-based testing
 proptest = { workspace = true }
 
+# Hex encoding for property tests
+hex = "0.4"
+
+# Tracing for test output
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+
 # Development dependencies
 [dev-dependencies]
 tokio-test = { workspace = true }
@@ -49,7 +56,8 @@ memory-storage = []
 sqlite-storage = []
 sled-storage = []
 performance-tests = []
-property-based-tests = []
+property-based-tests = ["proptest"]
+full-test-suite = ["performance-tests", "property-based-tests"]
 
 # Test configuration
 [[test]]
@@ -62,7 +70,29 @@ name = "runtime_storage"
 path = "runtime_storage.rs"
 harness = true
 
+[[test]]
+name = "agent_lifecycle"
+path = "agent_lifecycle.rs"
+harness = true
+
+[[test]]
+name = "performance"
+path = "performance.rs"
+harness = true
+
+[[test]]
+name = "property_based"
+path = "property_based.rs"
+harness = true
+
 # Benchmark configuration
 [[bench]]
 name = "performance_baseline"
 harness = false
+required-features = ["performance-tests"]
+
+# Example test runner
+[[example]]
+name = "run_integration_suite"
+path = "examples/run_integration_suite.rs"
+required-features = ["full-test-suite"]
