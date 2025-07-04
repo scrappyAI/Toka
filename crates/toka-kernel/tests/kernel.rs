@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::Utc;
 use toka_auth::{Claims, TokenValidator};
 use toka_bus_core::{KernelEvent, EventBus, InMemoryBus};
 use toka_kernel::{register_handler, Kernel, KernelError, OpcodeHandler, WorldState};
@@ -63,6 +64,7 @@ impl OpcodeHandler for ObservationHandler {
             return Ok(Some(KernelEvent::ObservationEmitted {
                 agent: *agent,
                 data: data.clone(),
+                timestamp: Utc::now(),
             }));
         }
         Ok(None)
@@ -92,13 +94,18 @@ async fn test_kernel_schedule_task_happy_path() -> Result<()> {
     };
 
     let evt = kernel.submit(msg).await?;
-    assert_eq!(
-        evt,
-        KernelEvent::TaskScheduled {
-            agent,
-            task: task.clone()
+    // Validate event type and core fields (timestamp will vary)
+    match evt {
+        KernelEvent::TaskScheduled { agent: evt_agent, task: evt_task, timestamp } => {
+            assert_eq!(evt_agent, agent);
+            assert_eq!(evt_task, task);
+            // Validate timestamp is recent (within last 5 seconds)
+            let now = Utc::now();
+            let age = now.signed_duration_since(timestamp);
+            assert!(age.num_seconds() < 5, "Event timestamp too old: {:?}", age);
         }
-    );
+        _ => panic!("Expected TaskScheduled event, got: {:?}", evt),
+    }
 
     // World-state must reflect the queued task.
     let state_arc = kernel.state_ptr();
@@ -149,13 +156,18 @@ async fn test_external_opcode_handler_intercepts_operation() -> Result<()> {
     };
 
     let evt = kernel.submit(msg).await?;
-    assert_eq!(
-        evt,
-        KernelEvent::ObservationEmitted {
-            agent,
-            data: payload.clone()
+    // Validate event type and core fields (timestamp will vary)
+    match evt {
+        KernelEvent::ObservationEmitted { agent: evt_agent, data: evt_data, timestamp } => {
+            assert_eq!(evt_agent, agent);
+            assert_eq!(evt_data, payload);
+            // Validate timestamp is recent (within last 5 seconds)
+            let now = Utc::now();
+            let age = now.signed_duration_since(timestamp);
+            assert!(age.num_seconds() < 5, "Event timestamp too old: {:?}", age);
         }
-    );
+        _ => panic!("Expected ObservationEmitted event, got: {:?}", evt),
+    }
 
     // Ensure our handler mutated state.
     let state_arc = kernel.state_ptr();
