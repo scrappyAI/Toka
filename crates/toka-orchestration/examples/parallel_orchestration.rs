@@ -11,7 +11,7 @@ use anyhow::Result;
 use tracing::{error, info, warn};
 use tracing_subscriber;
 
-use toka_auth::MockTokenValidator;
+// MockTokenValidator is defined locally in the mock_auth module below
 use toka_orchestration::{OrchestrationConfig, OrchestrationEngine};
 use toka_runtime::{Runtime, RuntimeConfig};
 
@@ -29,7 +29,7 @@ async fn main() -> Result<()> {
     let runtime = Arc::new(
         Runtime::new(
             RuntimeConfig::default(),
-            Arc::new(MockTokenValidator::new()),
+            Arc::new(mock_auth::MockTokenValidator::new()),
         )
         .await?,
     );
@@ -67,15 +67,20 @@ async fn main() -> Result<()> {
     .await;
 
     match result {
-        Ok(Ok(())) => {
+        Ok(Ok(Ok(()))) => {
             info!("Orchestration completed successfully");
         }
-        Ok(Err(e)) => {
+        Ok(Ok(Err(e))) => {
             error!("Orchestration failed: {}", e);
             return Err(e);
         }
+        Ok(Err(join_err)) => {
+            error!("Monitoring task panicked: {}", join_err);
+            return Err(anyhow::anyhow!("Monitoring task failed: {}", join_err));
+        }
         Err(_) => {
             warn!("Orchestration timed out after 5 minutes");
+            return Err(anyhow::anyhow!("Orchestration timed out"));
         }
     }
 
