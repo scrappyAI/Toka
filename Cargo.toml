@@ -28,6 +28,10 @@ members = [
     
     # Agent orchestration
     "crates/toka-orchestration",
+    
+    # Raft consensus algorithm implementation
+    "crates/raft-core",
+    "crates/raft-storage",
 ]
 
 [workspace.dependencies]
