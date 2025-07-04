@@ -1,0 +1,37 @@
+[package]
+name = "toka-config-cli"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Configuration file management CLI tool - supports YAML, JSON, and TOML formats with validation."
+
+[[bin]]
+name = "toka-config"
+path = "src/main.rs"
+
+[dependencies]
+# CLI framework
+clap = { workspace = true, features = ["derive"] }
+
+# Serialization and configuration formats
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_yaml = "0.9"
+toml = "0.8"
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# File system operations are provided by the Rust standard library
+
+# Additional utilities
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+
+[dev-dependencies]
+tempfile = "3.8"
+tokio-test = { workspace = true }
