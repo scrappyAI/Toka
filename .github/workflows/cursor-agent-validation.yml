@@ -1,0 +1,284 @@
+name: Cursor Agent Environment Validation
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+    paths:
+      - '.cursor/**'
+      - '.devcontainer/**'
+      - '.vscode/**'
+      - '.cargo/**'
+      - 'rust-toolchain.toml'
+      - '.github/workflows/cursor-agent-validation.yml'
+  pull_request:
+    branches: [ "main", "develop" ]
+    paths:
+      - '.cursor/**'
+      - '.devcontainer/**'
+      - '.vscode/**'
+      - '.cargo/**'
+      - 'rust-toolchain.toml'
+      - '.github/workflows/cursor-agent-validation.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  validate-cursor-environment:
+    name: Validate Cursor Environment Configuration
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Validate .cursor/environment.json
+        run: |
+          echo "🔍 Validating Cursor environment configuration..."
+          if [ ! -f ".cursor/environment.json" ]; then
+            echo "❌ .cursor/environment.json not found"
+            exit 1
+          fi
+          
+          # Validate JSON syntax
+          if ! jq empty .cursor/environment.json; then
+            echo "❌ Invalid JSON in .cursor/environment.json"
+            exit 1
+          fi
+          
+          # Check required fields
+          if ! jq -e '.agentCanUpdateSnapshot' .cursor/environment.json > /dev/null; then
+            echo "❌ Missing agentCanUpdateSnapshot in .cursor/environment.json"
+            exit 1
+          fi
+          
+          if ! jq -e '.environment.RUST_BACKTRACE' .cursor/environment.json > /dev/null; then
+            echo "❌ Missing RUST_BACKTRACE in environment variables"
+            exit 1
+          fi
+          
+          echo "✅ .cursor/environment.json is valid"
+      
+      - name: Validate rust-toolchain.toml
+        run: |
+          echo "🔍 Validating Rust toolchain configuration..."
+          if [ ! -f "rust-toolchain.toml" ]; then
+            echo "❌ rust-toolchain.toml not found"
+            exit 1
+          fi
+          
+          # Check if file is valid TOML
+          if ! python3 -c "import tomllib; tomllib.load(open('rust-toolchain.toml', 'rb'))" 2>/dev/null; then
+            echo "❌ Invalid TOML in rust-toolchain.toml"
+            exit 1
+          fi
+          
+          echo "✅ rust-toolchain.toml is valid"
+      
+      - name: Validate .cargo/config.toml
+        run: |
+          echo "🔍 Validating Cargo configuration..."
+          if [ ! -f ".cargo/config.toml" ]; then
+            echo "❌ .cargo/config.toml not found"
+            exit 1
+          fi
+          
+          # Check if file is valid TOML
+          if ! python3 -c "import tomllib; tomllib.load(open('.cargo/config.toml', 'rb'))" 2>/dev/null; then
+            echo "❌ Invalid TOML in .cargo/config.toml"
+            exit 1
+          fi
+          
+          echo "✅ .cargo/config.toml is valid"
+      
+      - name: Validate VS Code settings
+        run: |
+          echo "🔍 Validating VS Code settings..."
+          if [ ! -f ".vscode/settings.json" ]; then
+            echo "❌ .vscode/settings.json not found"
+            exit 1
+          fi
+          
+          # Validate JSON syntax
+          if ! jq empty .vscode/settings.json; then
+            echo "❌ Invalid JSON in .vscode/settings.json"
+            exit 1
+          fi
+          
+          echo "✅ .vscode/settings.json is valid"
+
+  test-devcontainer:
+    name: Test Dev Container Configuration
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Validate devcontainer.json
+        run: |
+          echo "🔍 Validating Dev Container configuration..."
+          if [ ! -f ".devcontainer/devcontainer.json" ]; then
+            echo "❌ .devcontainer/devcontainer.json not found"
+            exit 1
+          fi
+          
+          # Validate JSON syntax
+          if ! jq empty .devcontainer/devcontainer.json; then
+            echo "❌ Invalid JSON in .devcontainer/devcontainer.json"
+            exit 1
+          fi
+          
+          # Check required fields
+          if ! jq -e '.name' .devcontainer/devcontainer.json > /dev/null; then
+            echo "❌ Missing name in devcontainer.json"
+            exit 1
+          fi
+          
+          echo "✅ .devcontainer/devcontainer.json is valid"
+      
+      - name: Build Dev Container
+        uses: devcontainers/ci@v0.3
+        with:
+          imageName: toka-devcontainer-test
+          runCmd: |
+            echo "🦀 Testing Rust toolchain in dev container..."
+            rustc --version
+            cargo --version
+            rustfmt --version
+            clippy-driver --version
+            
+            echo "🔧 Testing cargo aliases..."
+            cargo c --version
+            cargo t --version
+            cargo f --version
+            
+            echo "🏗️ Testing workspace build..."
+            cargo check --workspace
+            
+            echo "✅ Dev container Rust environment is working correctly"
+
+  test-rust-toolchain:
+    name: Test Rust Toolchain Configuration
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install Rust from toolchain file
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.toolchain.outputs.toolchain }}
+      
+      - name: Read toolchain version
+        id: toolchain
+        run: |
+          if [ -f "rust-toolchain.toml" ]; then
+            TOOLCHAIN=$(python3 -c "import tomllib; print(tomllib.load(open('rust-toolchain.toml', 'rb'))['toolchain']['channel'])")
+          else
+            TOOLCHAIN="stable"
+          fi
+          echo "toolchain=$TOOLCHAIN" >> $GITHUB_OUTPUT
+          echo "Using Rust toolchain: $TOOLCHAIN"
+      
+      - name: Verify toolchain components
+        run: |
+          echo "🔍 Verifying Rust toolchain components..."
+          rustc --version
+          cargo --version
+          
+          # Check components are installed
+          if command -v rustfmt > /dev/null; then
+            echo "✅ rustfmt available: $(rustfmt --version)"
+          else
+            echo "❌ rustfmt not available"
+            exit 1
+          fi
+          
+          if command -v clippy-driver > /dev/null; then
+            echo "✅ clippy available: $(clippy-driver --version)"
+          else
+            echo "❌ clippy not available"
+            exit 1
+          fi
+          
+          # Test target platforms
+          echo "🎯 Testing target platforms..."
+          rustup target list --installed | grep -E "(x86_64-unknown-linux-gnu|aarch64-unknown-linux-gnu)"
+          
+          echo "✅ All toolchain components verified"
+      
+      - name: Test workspace with toolchain
+        run: |
+          echo "🏗️ Testing workspace compilation with configured toolchain..."
+          cargo check --workspace --all-features
+          cargo fmt --all -- --check
+          cargo clippy --workspace --all-features -- -D warnings
+          echo "✅ Workspace builds successfully with configured toolchain"
+
+  validate-environment-consistency:
+    name: Validate Environment Consistency
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Check environment variable consistency
+        run: |
+          echo "🔍 Checking environment variable consistency across configurations..."
+          
+          # Extract RUSTFLAGS from different configs
+          CURSOR_RUSTFLAGS=$(jq -r '.environment.RUSTFLAGS // empty' .cursor/environment.json)
+          CARGO_RUSTFLAGS=$(grep -A 1 'RUSTFLAGS' .cargo/config.toml | tail -1 | cut -d'"' -f2 || echo "")
+          DEVCONTAINER_RUSTFLAGS=$(jq -r '.containerEnv.RUSTFLAGS // empty' .devcontainer/devcontainer.json)
+          
+          echo "Cursor RUSTFLAGS: $CURSOR_RUSTFLAGS"
+          echo "Cargo RUSTFLAGS: $CARGO_RUSTFLAGS"
+          echo "DevContainer RUSTFLAGS: $DEVCONTAINER_RUSTFLAGS"
+          
+          # Check Rust version consistency
+          if [ -f "rust-toolchain.toml" ]; then
+            TOOLCHAIN_VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('rust-toolchain.toml', 'rb'))['toolchain']['channel'])")
+            CURSOR_VERSION=$(jq -r '.tools.rust.version // empty' .cursor/environment.json)
+            
+            echo "Toolchain version: $TOOLCHAIN_VERSION"
+            echo "Cursor version: $CURSOR_VERSION"
+            
+            if [ "$TOOLCHAIN_VERSION" != "$CURSOR_VERSION" ]; then
+              echo "❌ Rust version mismatch between rust-toolchain.toml and .cursor/environment.json"
+              exit 1
+            fi
+          fi
+          
+          echo "✅ Environment consistency validated"
+      
+      - name: Generate environment summary
+        run: |
+          echo "📊 Environment Configuration Summary"
+          echo "=================================="
+          echo ""
+          echo "**Rust Toolchain:**"
+          if [ -f "rust-toolchain.toml" ]; then
+            python3 -c "import tomllib; config=tomllib.load(open('rust-toolchain.toml', 'rb')); print(f\"- Version: {config['toolchain']['channel']}\"); print(f\"- Components: {', '.join(config['toolchain']['components'])}\"); print(f\"- Targets: {', '.join(config['toolchain']['targets'])}\")"
+          fi
+          echo ""
+          echo "**Cursor Configuration:**"
+          echo "- Agent snapshot updates: $(jq -r '.agentCanUpdateSnapshot' .cursor/environment.json)"
+          echo "- Rust support: $(jq -r '.tools.rust.version // "Not specified"' .cursor/environment.json)"
+          echo ""
+          echo "**Dev Container:**"
+          echo "- Name: $(jq -r '.name' .devcontainer/devcontainer.json)"
+          echo "- Extensions: $(jq -r '.customizations.vscode.extensions | length' .devcontainer/devcontainer.json) configured"
+          echo ""
+          echo "✅ All environment configurations are valid and consistent" 

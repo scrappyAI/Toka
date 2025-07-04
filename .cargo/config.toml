@@ -1,26 +1,91 @@
 [build]
-# Limit parallel jobs to reduce memory usage
+# Limit parallel jobs to reduce memory usage in constrained environments
 jobs = 1
+# Use faster linker when available
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 
 [profile.dev]
-# Reduce optimization level to save memory during development builds
+# Fast development builds with minimal optimization
 opt-level = 0
-# Reduce debuginfo to save memory
+# Reduce debuginfo to save memory and disk space
 debug = 1
-# Disable incremental compilation to save disk space and memory
+# Disable incremental compilation to avoid cache issues
 incremental = false
+# Enable debug assertions for better error catching
+debug-assertions = true
+# Split debuginfo to reduce memory usage
+split-debuginfo = "unpacked"
 
 [profile.dev.build-override]
 # Reduce build script optimization to save memory
 opt-level = 0
 debug = false
 
+[profile.test]
+# Optimize tests slightly for faster execution
+opt-level = 1
+debug = 1
+incremental = false
+
+[profile.release]
+# Production optimizations
+opt-level = 3
+debug = false
+incremental = false
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+
 [env]
-# Use mold linker if available (faster and uses less memory)
-# Fallback to lld if mold is not available
+# Environment variables for all cargo invocations
+RUST_BACKTRACE = "1"
+CARGO_NET_RETRY = "10"
+CARGO_NET_TIMEOUT = "60"
+# Use faster linker when available
 RUSTFLAGS = "-C link-arg=-fuse-ld=lld"
 
-[target.aarch64-unknown-linux-gnu]
-# Use lld linker which is generally more memory efficient
+# Target-specific configurations
+[target.x86_64-unknown-linux-gnu]
 linker = "clang"
-rustflags = ["-C", "link-arg=-fuse-ld=lld"] 
+rustflags = [
+    "-C", "link-arg=-fuse-ld=lld",
+    "-C", "target-cpu=native"
+]
+
+[target.aarch64-unknown-linux-gnu]
+linker = "clang"
+rustflags = [
+    "-C", "link-arg=-fuse-ld=lld",
+    "-C", "target-cpu=native"
+]
+
+# Alias shortcuts for common commands
+[alias]
+b = "build"
+c = "check"
+t = "test"
+r = "run"
+f = "fmt"
+cl = "clippy"
+br = "build --release"
+tr = "test --release"
+doc = "doc --open"
+tree = "tree"
+outdated = "outdated"
+audit = "audit"
+watch = "watch"
+
+# Development aliases
+dev-setup = "run --bin dev-setup"
+dev-test = "test --all --all-features"
+dev-check = "check --all --all-features"
+dev-build = "build --all --all-features"
+dev-fmt = "fmt --all"
+dev-clippy = "clippy --all-targets --all-features -- -D warnings"
+
+# Workspace aliases
+ws-build = "build --workspace"
+ws-test = "test --workspace"
+ws-check = "check --workspace"
+ws-clean = "clean --workspace" 

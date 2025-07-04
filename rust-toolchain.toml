@@ -1,0 +1,19 @@
+[toolchain]
+# Pin to Rust 1.86 for consistent builds across all environments
+channel = "1.86"
+profile = "default"
+
+# Components required for development
+components = [
+    "clippy",
+    "rustfmt", 
+    "rust-analyzer",
+    "rust-src",
+    "rust-docs"
+]
+
+# Target platforms for Toka OS
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu"
+] 

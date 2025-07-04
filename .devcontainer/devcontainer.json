@@ -1,18 +1,57 @@
 {
-    "name": "Toka Lean Workspace",
+    "name": "Toka Rust Development Environment",
     "context": "..",
     "dockerFile": "Dockerfile",
-    "features": {},
-    "settings": {
-        "terminal.integrated.defaultProfile.linux": "bash"
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
     },
-    "postCreateCommand": "cargo fmt --all",
+    "containerEnv": {
+        "RUST_BACKTRACE": "1",
+        "RUSTFLAGS": "-C link-arg=-fuse-ld=lld",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_RETRY": "10",
+        "CARGO_NET_TIMEOUT": "60",
+        "RUST_LOG": "info",
+        "CARGO_TARGET_DIR": "/tmp/target"
+    },
+    "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "rust-analyzer.cargo.buildScripts.enable": true,
+        "rust-analyzer.checkOnSave.command": "clippy",
+        "rust-analyzer.checkOnSave.allTargets": true,
+        "rust-analyzer.cargo.features": "all",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": true,
+            "source.organizeImports": true
+        },
+        "files.watcherExclude": {
+            "**/target/**": true,
+            "**/.git/**": true
+        }
+    },
+    "postCreateCommand": "bash .devcontainer/post-create.sh",
+    "postStartCommand": "cargo fmt --all",
     "customizations": {
         "vscode": {
             "extensions": [
                 "rust-lang.rust-analyzer",
-                "vadimcn.vscode-lldb"
+                "vadimcn.vscode-lldb",
+                "tamasfe.even-better-toml",
+                "serayuzgur.crates",
+                "dustypomerleau.rust-syntax",
+                "ms-vscode.test-adapter-converter",
+                "hbenl.vscode-test-explorer",
+                "swellaby.vscode-rust-test-adapter"
             ]
         }
-    }
+    },
+    "forwardPorts": [3000, 8080, 9000],
+    "mounts": [
+        "source=${localWorkspaceFolder}/.cargo,target=/usr/local/cargo,type=bind,consistency=cached",
+        "source=cargo-cache,target=/usr/local/cargo/registry,type=volume"
+    ],
+    "remoteUser": "vscode",
+    "workspaceFolder": "/workspace"
 } 
