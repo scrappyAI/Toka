@@ -202,7 +202,7 @@ pub type Result<T> = std::result::Result<T, ConfigError>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::Path;
+    use std::path::PathBuf;
 
     #[test]
     fn test_error_construction() {

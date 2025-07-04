@@ -33,6 +33,7 @@ pub struct EchoTool {
 }
 
 impl EchoTool {
+    /// Create a new instance of the echo tool
     pub fn new() -> Self {
         Self {
             name: "echo".to_string(),

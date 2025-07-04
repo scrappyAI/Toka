@@ -16,9 +16,12 @@ struct AllowAllValidator;
 
 #[async_trait]
 impl TokenValidator for AllowAllValidator {
-    async fn validate(&self, _raw: &str) -> toka_auth::Result<Claims> {
+    async fn validate(&self, raw: &str) -> toka_auth::Result<Claims> {
+        // For testing purposes, we'll accept any token and return claims
+        // In real usage, the subject would be extracted from the actual token
+        // Here we return a generic subject that passes validation
         Ok(Claims {
-            sub: "tester".into(),
+            sub: raw.to_string(),  // Use the token as the subject for testing
             vault: "demo".into(),
             permissions: vec![],
             iat: 0,
@@ -46,7 +49,7 @@ struct ObservationHandler;
 
 #[async_trait]
 impl OpcodeHandler for ObservationHandler {
-    fn dispatch(
+    fn execute(
         &self,
         op: &Operation,
         state: &mut WorldState,
@@ -84,7 +87,7 @@ async fn test_kernel_schedule_task_happy_path() -> Result<()> {
     };
     let msg = Message {
         origin: agent,
-        capability: "token".into(),
+        capability: "42".into(),  // Token that matches EntityId(42)
         op: Operation::ScheduleAgentTask {
             agent,
             task: task.clone(),
@@ -132,7 +135,10 @@ async fn test_kernel_capability_denied() {
 #[tokio::test]
 async fn test_external_opcode_handler_intercepts_operation() -> Result<()> {
     // Register custom handler.
-    register_handler("observation", Box::new(ObservationHandler));
+    register_handler("observation", Arc::new(|op, state| {
+        let handler = ObservationHandler;
+        handler.execute(op, state)
+    })).map_err(|e| anyhow::anyhow!("Failed to register handler: {}", e))?;
 
     let bus: Arc<dyn EventBus> = Arc::new(InMemoryBus::default());
     let kernel = Kernel::new(WorldState::default(), Arc::new(AllowAllValidator), bus);
@@ -141,7 +147,7 @@ async fn test_external_opcode_handler_intercepts_operation() -> Result<()> {
     let payload = vec![1, 2, 3];
     let msg = Message {
         origin: agent,
-        capability: "cap".into(),
+        capability: "99".into(),  // Token that matches EntityId(99)
         op: Operation::EmitObservation {
             agent,
             data: payload.clone(),

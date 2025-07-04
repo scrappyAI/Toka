@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
 use tracing::{info, debug, error as log_error};
 
-use toka_types::{Message, EntityId};
+use toka_types::Message;
 use toka_auth::TokenValidator;
 use toka_bus_core::{EventBus, InMemoryBus, KernelEvent};
 use toka_kernel::{Kernel, WorldState};
@@ -344,9 +344,9 @@ mod tests {
 
     #[async_trait]
     impl TokenValidator for TestValidator {
-        async fn validate(&self, _raw: &str) -> toka_auth::Result<Claims> {
+        async fn validate(&self, raw: &str) -> toka_auth::Result<Claims> {
             Ok(Claims {
-                sub: "test".into(),
+                sub: raw.to_string(),  // Use the token as the subject for testing
                 vault: "test".into(),
                 permissions: vec![],
                 iat: 0,
@@ -373,10 +373,10 @@ mod tests {
         let auth = Arc::new(TestValidator);
         let runtime = Runtime::new(config, auth).await.unwrap();
 
-        let entity = EntityId(42);
+        let entity = toka_types::EntityId(42);
         let message = Message {
             origin: entity,
-            capability: "test-token".to_string(),
+            capability: "42".to_string(),  // Token that matches EntityId(42)
             op: Operation::ScheduleAgentTask {
                 agent: entity,
                 task: TaskSpec {
@@ -404,10 +404,10 @@ mod tests {
 
         let mut rx = runtime.subscribe();
 
-        let entity = EntityId(123);
+        let entity = toka_types::EntityId(123);
         let message = Message {
             origin: entity,
-            capability: "test-token".to_string(),
+            capability: "123".to_string(),  // Token that matches EntityId(123)
             op: Operation::ScheduleAgentTask {
                 agent: entity,
                 task: TaskSpec {
@@ -435,14 +435,14 @@ mod tests {
         let auth = Arc::new(TestValidator);
         let runtime = Runtime::new(config, auth).await.unwrap();
 
-        let entity = EntityId(999);
+        let entity = toka_types::EntityId(999);
         let task = TaskSpec {
             description: "state test".to_string(),
         };
 
         let message = Message {
             origin: entity,
-            capability: "test-token".to_string(),
+            capability: "999".to_string(),  // Token that matches EntityId(999)
             op: Operation::ScheduleAgentTask {
                 agent: entity,
                 task: task.clone(),
