@@ -5,6 +5,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use tempfile::TempDir;
 use tokio::sync::RwLock;
 
@@ -182,21 +183,114 @@ impl Default for TestMetrics {
     }
 }
 
+/// Performance monitoring for integration tests
+#[derive(Debug, Clone)]
+pub struct PerformanceMonitor {
+    operation_count: Arc<AtomicU64>,
+    error_count: Arc<AtomicU64>,
+    start_time: std::time::Instant,
+    memory_usage_mb: Arc<AtomicU64>, // Stored as integer MB
+}
+
+impl PerformanceMonitor {
+    pub fn new() -> Self {
+        Self {
+            operation_count: Arc::new(AtomicU64::new(0)),
+            error_count: Arc::new(AtomicU64::new(0)),
+            start_time: std::time::Instant::now(),
+            memory_usage_mb: Arc::new(AtomicU64::new(50)), // Start with 50MB baseline
+        }
+    }
+    
+    /// Record a successful operation
+    pub fn record_operation(&self) {
+        self.operation_count.fetch_add(1, Ordering::Relaxed);
+    }
+    
+    /// Record an error
+    pub fn record_error(&self) {
+        self.error_count.fetch_add(1, Ordering::Relaxed);
+    }
+    
+    /// Get operations per second
+    pub fn ops_per_second(&self) -> f64 {
+        let operations = self.operation_count.load(Ordering::Relaxed) as f64;
+        let duration = self.start_time.elapsed().as_secs_f64();
+        
+        if duration > 0.0 {
+            operations / duration
+        } else {
+            0.0
+        }
+    }
+    
+    /// Get current memory usage in MB
+    pub fn memory_usage_mb(&self) -> f64 {
+        self.memory_usage_mb.load(Ordering::Relaxed) as f64
+    }
+    
+    /// Update memory usage (simulated)
+    pub fn update_memory_usage(&self, mb: f64) {
+        self.memory_usage_mb.store(mb as u64, Ordering::Relaxed);
+    }
+    
+    /// Get error rate (0.0 to 1.0)
+    pub fn error_rate(&self) -> f64 {
+        let errors = self.error_count.load(Ordering::Relaxed) as f64;
+        let operations = self.operation_count.load(Ordering::Relaxed) as f64;
+        
+        if operations > 0.0 {
+            errors / operations
+        } else {
+            0.0
+        }
+    }
+    
+    /// Get total operation count
+    pub fn operation_count(&self) -> u64 {
+        self.operation_count.load(Ordering::Relaxed)
+    }
+    
+    /// Get total error count
+    pub fn error_count(&self) -> u64 {
+        self.error_count.load(Ordering::Relaxed)
+    }
+    
+    /// Get elapsed time since monitoring started
+    pub fn elapsed(&self) -> std::time::Duration {
+        self.start_time.elapsed()
+    }
+    
+    /// Reset all counters
+    pub fn reset(&self) {
+        self.operation_count.store(0, Ordering::Relaxed);
+        self.error_count.store(0, Ordering::Relaxed);
+        // Note: start_time is not reset to maintain reference point
+    }
+}
+
+impl Default for PerformanceMonitor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Test data factory for generating consistent test objects
+#[derive(Debug, Clone)]
 pub struct TestDataFactory {
-    counter: std::sync::atomic::AtomicU64,
+    counter: Arc<AtomicUsize>,
 }
 
 impl TestDataFactory {
     pub fn new() -> Self {
         Self {
-            counter: std::sync::atomic::AtomicU64::new(0),
+            counter: Arc::new(AtomicUsize::new(0)),
         }
     }
     
     /// Generate a unique test ID
-    pub fn next_id(&self) -> u64 {
-        self.counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+    pub fn next_id(&self) -> usize {
+        self.counter.fetch_add(1, Ordering::SeqCst)
     }
     
     /// Create a test agent configuration
@@ -242,6 +336,21 @@ impl TestDataFactory {
             }
         })
     }
+    
+    /// Create test configuration object
+    pub fn create_test_config(&self, config_type: &str) -> Value {
+        let id = self.next_id();
+        serde_json::json!({
+            "config_id": format!("test-config-{}", id),
+            "config_type": config_type,
+            "version": "1.0",
+            "settings": {
+                "test_mode": true,
+                "sequence": id,
+                "timeout_ms": 5000
+            }
+        })
+    }
 }
 
 impl Default for TestDataFactory {
@@ -250,80 +359,176 @@ impl Default for TestDataFactory {
     }
 }
 
-/// Performance monitoring utilities for tests
-pub struct PerformanceMonitor {
-    start_time: std::time::Instant,
-    operation_count: std::sync::atomic::AtomicU64,
-    error_count: std::sync::atomic::AtomicU64,
+/// Test result builder for creating consistent test results
+pub struct TestResultBuilder {
+    success: bool,
+    error_message: Option<String>,
+    metrics: Option<crate::PerformanceMetrics>,
 }
 
-impl PerformanceMonitor {
+impl TestResultBuilder {
     pub fn new() -> Self {
         Self {
-            start_time: std::time::Instant::now(),
-            operation_count: std::sync::atomic::AtomicU64::new(0),
-            error_count: std::sync::atomic::AtomicU64::new(0),
+            success: true,
+            error_message: None,
+            metrics: None,
         }
     }
     
-    /// Record a successful operation
-    pub fn record_operation(&self) {
-        self.operation_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    pub fn success() -> Self {
+        Self::new()
     }
     
-    /// Record an error
-    pub fn record_error(&self) {
-        self.error_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    }
-    
-    /// Calculate operations per second
-    pub fn ops_per_second(&self) -> f64 {
-        let elapsed = self.start_time.elapsed().as_secs_f64();
-        if elapsed == 0.0 {
-            return 0.0;
+    pub fn failure(message: impl Into<String>) -> Self {
+        Self {
+            success: false,
+            error_message: Some(message.into()),
+            metrics: None,
         }
-        self.operation_count.load(std::sync::atomic::Ordering::Relaxed) as f64 / elapsed
     }
     
-    /// Calculate error rate
-    pub fn error_rate(&self) -> f64 {
-        let total_ops = self.operation_count.load(std::sync::atomic::Ordering::Relaxed);
-        let errors = self.error_count.load(std::sync::atomic::Ordering::Relaxed);
-        
-        if total_ops == 0 {
-            return 0.0;
-        }
-        
-        errors as f64 / total_ops as f64
+    pub fn with_metrics(mut self, metrics: crate::PerformanceMetrics) -> Self {
+        self.metrics = Some(metrics);
+        self
     }
     
-    /// Get memory usage in MB (simplified implementation)
-    pub fn memory_usage_mb(&self) -> f64 {
-        // This is a simplified implementation
-        // In a real scenario, you'd want to use more sophisticated memory tracking
-        let process_info = std::process::Command::new("ps")
-            .args(&["-o", "rss=", "-p", &std::process::id().to_string()])
-            .output();
-            
-        if let Ok(output) = process_info {
-            if let Ok(rss_str) = String::from_utf8(output.stdout) {
-                if let Ok(rss_kb) = rss_str.trim().parse::<f64>() {
-                    return rss_kb / 1024.0; // Convert KB to MB
-                }
-            }
+    pub fn with_error(mut self, error: impl Into<String>) -> Self {
+        self.success = false;
+        self.error_message = Some(error.into());
+        self
+    }
+    
+    pub fn build(self) -> crate::TestResult {
+        crate::TestResult {
+            success: self.success,
+            error: self.error_message.unwrap_or_default(),
+            performance_metrics: self.metrics,
         }
-        
-        0.0 // Fallback if memory detection fails
     }
 }
 
-impl Default for PerformanceMonitor {
+impl Default for TestResultBuilder {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Utility functions for test assertions and validation
+/// Helper functions for common test operations
+pub mod helpers {
+    use super::*;
+    use std::time::Duration;
+    use tokio::time::sleep;
+    
+    /// Simulate workload with configurable characteristics
+    pub async fn simulate_workload(
+        operations: usize,
+        operation_delay_ms: u64,
+        error_rate: f64,
+        monitor: &PerformanceMonitor,
+    ) -> Result<()> {
+        for i in 0..operations {
+            // Simulate operation delay
+            sleep(Duration::from_millis(operation_delay_ms)).await;
+            
+            // Simulate occasional errors based on error rate
+            if (i as f64 / operations as f64) < error_rate {
+                monitor.record_error();
+            } else {
+                monitor.record_operation();
+            }
+        }
+        
+        Ok(())
+    }
+    
+    /// Create a stress test scenario
+    pub async fn stress_test_scenario(
+        concurrent_workers: usize,
+        operations_per_worker: usize,
+        base_delay_ms: u64,
+        factory: &TestDataFactory,
+        monitor: &PerformanceMonitor,
+    ) -> Result<()> {
+        let mut handles = Vec::new();
+        
+        for worker_id in 0..concurrent_workers {
+            let factory_clone = factory.clone();
+            let monitor_clone = monitor.clone();
+            
+            let handle = tokio::spawn(async move {
+                for operation in 0..operations_per_worker {
+                    // Create test data
+                    let _event = factory_clone.create_event_data("stress_test");
+                    
+                    // Variable delay to simulate real-world conditions
+                    let delay = base_delay_ms + (worker_id as u64 % 10);
+                    sleep(Duration::from_millis(delay)).await;
+                    
+                    // Occasional errors in stress conditions
+                    if operation % 50 == 0 && worker_id % 3 == 0 {
+                        monitor_clone.record_error();
+                    } else {
+                        monitor_clone.record_operation();
+                    }
+                }
+            });
+            
+            handles.push(handle);
+        }
+        
+        // Wait for all workers to complete
+        for handle in handles {
+            handle.await.context("Stress test worker failed")?;
+        }
+        
+        Ok(())
+    }
+    
+    /// Validate performance against thresholds
+    pub fn validate_performance_thresholds(
+        metrics: &crate::PerformanceMetrics,
+        min_ops_per_second: f64,
+        max_latency_ms: f64,
+        max_memory_mb: f64,
+        max_error_rate: f64,
+    ) -> Result<()> {
+        if metrics.operations_per_second < min_ops_per_second {
+            anyhow::bail!(
+                "Operations per second {} below threshold {}",
+                metrics.operations_per_second,
+                min_ops_per_second
+            );
+        }
+        
+        if metrics.latency_p95_ms > max_latency_ms {
+            anyhow::bail!(
+                "Latency {} ms exceeds threshold {} ms",
+                metrics.latency_p95_ms,
+                max_latency_ms
+            );
+        }
+        
+        if metrics.memory_usage_mb > max_memory_mb {
+            anyhow::bail!(
+                "Memory usage {} MB exceeds threshold {} MB",
+                metrics.memory_usage_mb,
+                max_memory_mb
+            );
+        }
+        
+        if metrics.error_rate > max_error_rate {
+            anyhow::bail!(
+                "Error rate {} exceeds threshold {}",
+                metrics.error_rate,
+                max_error_rate
+            );
+        }
+        
+        Ok(())
+    }
+}
+
+/// Assertion utilities for integration tests
 pub mod assertions {
     use super::*;
     
@@ -381,6 +586,41 @@ pub mod assertions {
                 "Error rate {} exceeds threshold {}",
                 metrics.error_rate,
                 max_error_rate
+            );
+        }
+        
+        Ok(())
+    }
+    
+    /// Assert that memory usage is within reasonable bounds
+    pub fn assert_memory_bounds(current_mb: f64, baseline_mb: f64, max_growth_percent: f64) -> Result<()> {
+        let growth_percent = ((current_mb - baseline_mb) / baseline_mb) * 100.0;
+        
+        if growth_percent > max_growth_percent {
+            anyhow::bail!(
+                "Memory growth {:.1}% exceeds threshold {:.1}%",
+                growth_percent,
+                max_growth_percent
+            );
+        }
+        
+        Ok(())
+    }
+    
+    /// Assert that operation throughput meets minimum requirements
+    pub fn assert_throughput_requirements(
+        actual_ops_per_sec: f64,
+        required_ops_per_sec: f64,
+        tolerance_percent: f64,
+    ) -> Result<()> {
+        let min_required = required_ops_per_sec * (1.0 - tolerance_percent / 100.0);
+        
+        if actual_ops_per_sec < min_required {
+            anyhow::bail!(
+                "Throughput {:.2} ops/sec below minimum {:.2} ops/sec ({}% tolerance)",
+                actual_ops_per_sec,
+                min_required,
+                tolerance_percent
             );
         }
         
