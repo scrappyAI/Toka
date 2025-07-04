@@ -1,6 +1,6 @@
 # 31 – Documentation Maintenance Checklist
 
-> Version: 0.1 – 2025-06-28
+> Version: 0.1 – 2025-07-04
 >
 > Use this checklist **before every merge** to keep the documentation corpus healthy and discoverable.
 
@@ -63,4 +63,4 @@ Include in PR description:
 
 | Date | Change |
 |------|--------|
-| 2025-06-28 | First cut derived from Engineering Handbook |
+| 2025-07-04 | Updated with proper date enforcement and maintenance procedures |

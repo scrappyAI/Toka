@@ -1,6 +1,6 @@
 # Toka-Kernel – v0.2.1 Specification (Official)
 
-> Status: **Stable** | Version: **0.2.1** | Last-updated: 2025-07-03  
+> Status: **Stable** | Version: **0.2.1** | Last-updated: 2025-07-04  
 > This version represents the completed architectural refactor that separated deterministic kernel operations from fuzzy user-space concerns.
 >
 > v0.2 removes _finance_ & _user_ opcode families from the core and defines
