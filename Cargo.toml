@@ -22,6 +22,12 @@ members = [
     # Applications / demos
     "crates/toka-cli",
     "crates/toka-config-cli",
+    
+    # LLM integration
+    "crates/toka-llm-gateway",
+    
+    # Agent orchestration
+    "crates/toka-orchestration",
 ]
 
 [workspace.dependencies]

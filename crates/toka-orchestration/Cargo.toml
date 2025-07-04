@@ -1,0 +1,42 @@
+[package]
+name = "toka-orchestration"
+version = "0.2.1"
+edition = "2021"
+description = "Agent orchestration and coordination for Toka OS"
+license = "Apache-2.0"
+repository = "https://github.com/ScrappyAI/toka"
+authors = ["Seb"]
+
+[dependencies]
+# Core Toka dependencies
+toka-types = { path = "../toka-types", version = "0.2.1" }
+toka-kernel = { path = "../toka-kernel", version = "0.2.1" }
+toka-runtime = { path = "../toka-runtime", version = "0.2.1" }
+toka-llm-gateway = { path = "../toka-llm-gateway", version = "0.2.1" }
+
+# Async runtime and utilities
+tokio = { workspace = true }
+futures = { workspace = true }
+async-trait = { workspace = true }
+
+# Serialization and configuration
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = "0.9"
+
+# Error handling and logging
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+# Time and concurrency
+chrono = { workspace = true }
+uuid = { workspace = true }
+
+# Collections and utilities
+indexmap = "2.0"
+dashmap = "5.5"
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+proptest = { workspace = true } 
