@@ -12,7 +12,8 @@ authors = ["Seb"]
 toka-types = { path = "../toka-types", version = "0.2.1" }
 toka-kernel = { path = "../toka-kernel", version = "0.2.1" }
 toka-runtime = { path = "../toka-runtime", version = "0.2.1" }
-toka-llm-gateway = { path = "../toka-llm-gateway", version = "0.2.1" }
+toka-bus-core = { path = "../toka-bus-core", version = "0.2.1" }
+toka-llm-gateway = { path = "../toka-llm-gateway", version = "0.3.0" }
 
 # Async runtime and utilities
 tokio = { workspace = true }
@@ -39,4 +40,7 @@ dashmap = "5.5"
 
 [dev-dependencies]
 tokio-test = { workspace = true }
-proptest = { workspace = true } 
+proptest = { workspace = true }
+tempfile = "3.8"
+tracing-subscriber = { workspace = true }
+toka-auth = { path = "../toka-auth", version = "0.2.1" } 
