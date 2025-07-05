@@ -36,6 +36,7 @@ members = [
     
     # Security enhancements
     "crates/security/toka-key-rotation",
+    "crates/security/toka-rate-limiter",
 ]
 
 [workspace.dependencies]
