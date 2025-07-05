@@ -1,151 +1,111 @@
-# Toka OS Documentation
+# Toka Documentation
 
-**Version:** 0.3.0 – 2025-07-04  
-**Status:** Consolidated and Date-Enforced Documentation Structure  
-
-Welcome to the comprehensive documentation for Toka OS, a deterministic, capability-based operating system for agentic AI systems built in Rust.
-
----
+Welcome to the Toka documentation hub. This directory contains all project documentation organized by category for easy navigation.
 
 ## 📚 Documentation Structure
 
-### Core Specifications
-These documents define the fundamental architecture and protocols that power Toka OS.
+### Core Documentation
+- **[DEVELOPMENT_ENVIRONMENT.md](./DEVELOPMENT_ENVIRONMENT.md)** - Comprehensive development environment setup
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guidelines for contributing to the project
+- **[CRATES.md](./CRATES.md)** - Overview of all crates in the workspace
 
-| Document | Version | Status | Description |
-|----------|---------|--------|-------------|
-| [Toka Kernel Specification](44_toka_kernel_spec_v0.2.md) | v0.2.1 | **Stable** | Deterministic kernel architecture and operation model |
-| [Capability Tokens Specification](40_capability_tokens_spec_v0.2.md) | v0.2 | **Stable** | Security token format and validation rules |
-| [Capability Tokens Architecture](41_capability_tokens_architecture.md) | v0.2 | **Stable** | Three-tier implementation architecture |
+### Project Summaries & Reports
+- **[CLEANUP_SUMMARY.md](./CLEANUP_SUMMARY.md)** - Project cleanup and organization summary
+- **[CONFIG_CLI_IMPLEMENTATION_SUMMARY.md](./CONFIG_CLI_IMPLEMENTATION_SUMMARY.md)** - Configuration CLI implementation details
+- **[REFACTOR_SUMMARY.md](./REFACTOR_SUMMARY.md)** - Major refactoring changes and improvements
+- **[SECURITY_HARDENING_SUMMARY.md](./SECURITY_HARDENING_SUMMARY.md)** - Security improvements and hardening measures
+- **[MEMORY_LEAK_ANALYSIS.md](./MEMORY_LEAK_ANALYSIS.md)** - Memory leak analysis and fixes
 
-### Development & Maintenance
-Essential guides for contributors and maintainers.
+### Specifications & Architecture
+- **[44_toka_kernel_spec_v0.2.md](./44_toka_kernel_spec_v0.2.md)** - Toka kernel specification v0.2
+- **[40_capability_tokens_spec_v0.2.md](./40_capability_tokens_spec_v0.2.md)** - Capability tokens specification v0.2
+- **[41_capability_tokens_architecture.md](./41_capability_tokens_architecture.md)** - Capability tokens architecture
 
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| [Development Environment](DEVELOPMENT_ENVIRONMENT.md) | Complete setup guide for Rust development with Cursor agents | Developers |
-| [Documentation Generation](30_doc-generation.mdc) | API and reference doc generation procedures | Maintainers |
-| [Documentation Maintenance](31_doc-maintenance.mdc) | Pre-merge documentation checklist | All Contributors |
-| [Code Coverage Guide](code_coverage_guide.mdc) | Testing and coverage requirements | Developers |
+### Development Guides
+- **[30_doc-generation.mdc](./30_doc-generation.mdc)** - Documentation generation guide
+- **[31_doc-maintenance.mdc](./31_doc-maintenance.mdc)** - Documentation maintenance guide
+- **[code_coverage_guide.mdc](./code_coverage_guide.mdc)** - Code coverage guide
+- **[github-cicd-fixes-report.md](./github-cicd-fixes-report.md)** - GitHub CI/CD fixes report
 
-### Protocol Integration
-Standards and protocols that Toka OS implements and supports.
+### Organized Subdirectories
+- **[protocols/](./protocols/)** - Protocol specifications and definitions
+- **[reports/](./reports/)** - Various project reports and analyses
+- **[research/](./research/)** - Research documents and findings
+- **[proposals/](./proposals/)** - Project proposals and RFCs
+- **[code_coverage_reports/](./code_coverage_reports/)** - Code coverage reports
+- **[data/](./data/)** - Data files and large metadata
 
-| Protocol | Version | Documentation | Status |
-|----------|---------|---------------|--------|
-| **MCP** (Model Context Protocol) | v2025-03-26 | [MCP Rust Guidance](protocols/mcp_rust.md) | Current |
-| **A2A** (Agent-to-Agent) | v0.4-draft | [A2A Google Guidance](protocols/a2a_google.md) | Draft |
+## 🔍 Quick Navigation
 
----
+### For New Contributors
+1. Start with [CONTRIBUTING.md](./CONTRIBUTING.md)
+2. Set up your environment using [DEVELOPMENT_ENVIRONMENT.md](./DEVELOPMENT_ENVIRONMENT.md)
+3. Review the [CRATES.md](./CRATES.md) for workspace overview
 
-## 🚀 Enhancement Roadmap
+### For Developers
+- **Environment Setup**: [DEVELOPMENT_ENVIRONMENT.md](./DEVELOPMENT_ENVIRONMENT.md)
+- **Architecture**: Check specifications in the main directory
+- **Testing**: [code_coverage_guide.mdc](./code_coverage_guide.mdc)
+- **Security**: [SECURITY_HARDENING_SUMMARY.md](./SECURITY_HARDENING_SUMMARY.md)
 
-### Current Development (v0.3)
-- [v0.3 Enhancement Roadmap](proposals/2025-07-04_v0_3_enhancement_roadmap.md) - Active parallel development across six workstreams
+### For Maintainers
+- **Project Status**: Various summary reports
+- **Documentation**: [30_doc-generation.mdc](./30_doc-generation.mdc) and [31_doc-maintenance.mdc](./31_doc-maintenance.mdc)
+- **CI/CD**: [github-cicd-fixes-report.md](./github-cicd-fixes-report.md)
 
-### Research Foundation
-- [Workspace Deep-Dive Report](research/20250703_231515_workspace_report.md) - Comprehensive architecture analysis
-- [Capability Security Report](research/cap-security-report.md) - Security model assessment
+## 🏗️ Project Structure
 
-### Recent Achievements
-- [GitHub Issues & Orchestration Setup](reports/2025-07-04_github_issues_and_orchestration_setup.md) - Infrastructure improvements and multi-agent orchestration
+This documentation follows the principle of organizing files by their semantic purpose:
 
----
+```
+docs/
+├── README.md                              # This file - documentation index
+├── DEVELOPMENT_ENVIRONMENT.md             # Development setup
+├── CONTRIBUTING.md                        # Contribution guidelines
+├── CRATES.md                             # Crates overview
+├── *_SUMMARY.md                          # Project summaries
+├── *_spec_*.md                           # Specifications
+├── *_architecture.md                     # Architecture documents
+├── *.mdc                                 # Guides and workflows
+├── protocols/                            # Protocol specifications
+├── reports/                              # Project reports
+├── research/                             # Research documents
+├── proposals/                            # Project proposals
+├── code_coverage_reports/                # Coverage reports
+└── data/                                 # Data files and metadata
+```
 
-## 🎯 Quick Start Guides
+## � Recent Changes
 
-### For New Developers
-1. **Environment Setup:** Start with [Development Environment](DEVELOPMENT_ENVIRONMENT.md)
-2. **Architecture Overview:** Read [Toka Kernel Specification](44_toka_kernel_spec_v0.2.md)
-3. **Security Model:** Understand [Capability Tokens](40_capability_tokens_spec_v0.2.md)
-4. **Development Workflow:** Follow [Documentation Maintenance](31_doc-maintenance.mdc) checklist
+### File Organization (Latest)
+- Moved all documentation from project root to `docs/` directory
+- Created semantic subdirectories for better organization
+- Removed duplicate files and consolidated documentation
+- Created visual dependency graph for `toka-auth` crate
+- Organized large data files in `docs/data/`
 
-### For Integration Partners
-1. **Protocol Support:** Review [Protocol Reference](protocols/README.md)
-2. **Security Integration:** Implement [Capability Tokens Architecture](41_capability_tokens_architecture.md)
-3. **API Documentation:** Generate with [Documentation Generation](30_doc-generation.mdc) guide
+### Key Improvements
+- **Better Navigation**: Clear categorization of documentation
+- **Reduced Clutter**: Clean project root with only essential files
+- **Enhanced Discoverability**: Logical grouping of related documents
+- **Visual Dependencies**: Added dependency graphs for better understanding
 
-### For Researchers
-1. **Architecture Analysis:** [Workspace Deep-Dive Report](research/20250703_231515_workspace_report.md)
-2. **Security Assessment:** [Capability Security Report](research/cap-security-report.md)
-3. **Future Roadmap:** [v0.3 Enhancement Roadmap](proposals/2025-07-04_v0_3_enhancement_roadmap.md)
+## 🎯 Contributing to Documentation
 
----
+When adding new documentation:
 
-## 📋 Documentation Standards
+1. **Place files in appropriate subdirectories** based on their purpose
+2. **Update this README** if adding new categories or important documents
+3. **Follow naming conventions** for consistency
+4. **Cross-reference related documents** for better navigation
+5. **Keep summaries current** when making significant changes
 
-### Date Enforcement
-All documentation follows strict **date accuracy enforcement**:
-- Dates reflect actual creation/modification times (UTC)
-- Historical references require `<!-- DATE:EXEMPT -->` tags
-- Automated validation in CI prevents date hallucination
+## 🔧 Tools and Resources
 
-### Version Control
-- **Specifications:** Semantic versioning with explicit version in filename
-- **Guides:** Updated dates reflect content changes
-- **Reports:** Timestamped with generation date
-
-### Quality Standards
-- ✅ **API Coverage:** >95% documentation for public APIs
-- ✅ **Link Validation:** Automated broken link detection
-- ✅ **Code Examples:** All examples are tested and current
-- ✅ **Migration Guides:** Clear upgrade paths between versions
-
----
-
-## 🔍 Finding Information
-
-### By Topic
-- **Architecture:** Kernel spec, capability tokens, workspace analysis
-- **Development:** Environment setup, code coverage, maintenance procedures
-- **Integration:** Protocol guides, API documentation
-- **Security:** Capability tokens, security reports, audit procedures
-
-### By Audience
-- **Core Developers:** All specifications and maintenance guides
-- **Contributors:** Development environment and documentation standards
-- **Integrators:** Protocol guides and architecture documents
-- **Researchers:** Analysis reports and enhancement roadmaps
-
-### By Status
-- **Stable:** Production-ready specifications and procedures
-- **Draft:** Work-in-progress documents for review
-- **Archived:** Historical documents maintained for reference
-
----
-
-## 🛠️ Contributing to Documentation
-
-### Before Making Changes
-1. Read [Documentation Maintenance Checklist](31_doc-maintenance.mdc)
-2. Ensure proper date enforcement compliance
-3. Validate all links and code examples
-4. Follow the established numbering and naming conventions
-
-### Adding New Documentation
-1. Choose appropriate directory based on content type
-2. Follow naming conventions (numbered for ordered content)
-3. Include proper version headers and date information
-4. Update this index with new additions
+- **Mermaid Diagrams**: Used for visual representations (dependency graphs, flowcharts)
+- **Markdown**: Standard format for all documentation
+- **MDC Files**: Markdown with custom extensions for specific workflows
 
 ---
 
-## 📈 Documentation Metrics
-
-### Coverage Statistics
-- **API Documentation:** >95% coverage
-- **Integration Tests:** >95% coverage with testing framework
-- **Code Examples:** 100% tested and validated
-- **Cross-References:** Comprehensive linking between related documents
-
-### Quality Indicators
-- **Date Accuracy:** 100% compliance with date enforcement
-- **Link Validity:** Automated validation in CI
-- **Version Consistency:** Semantic versioning across all specifications
-- **Maintenance Status:** Regular updates aligned with codebase changes
-
----
-
-**Last Updated:** 2025-07-04  
-**Maintained By:** Toka OS Documentation Team  
-**License:** Apache 2.0
+For questions about documentation structure or content, refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) guidelines or open an issue in the project repository.
