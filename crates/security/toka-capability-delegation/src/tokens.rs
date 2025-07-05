@@ -423,7 +423,7 @@ pub mod utils {
         }
 
         let payload = parts[1];
-        let decoded = base64::engine::general_purpose::STANDARD.decode(payload)
+        let decoded = base64::engine::general_purpose::STANDARD_NO_PAD.decode(payload)
             .map_err(|e| DelegationError::InvalidScope(format!("Failed to decode JWT payload: {}", e)))?;
 
         let claims: serde_json::Value = serde_json::from_slice(&decoded)
@@ -442,7 +442,7 @@ pub mod utils {
         }
 
         let payload = parts[1];
-        let decoded = base64::engine::general_purpose::STANDARD.decode(payload)
+        let decoded = base64::engine::general_purpose::STANDARD_NO_PAD.decode(payload)
             .map_err(|e| DelegationError::InvalidScope(format!("Failed to decode JWT payload: {}", e)))?;
 
         let claims: serde_json::Value = serde_json::from_slice(&decoded)

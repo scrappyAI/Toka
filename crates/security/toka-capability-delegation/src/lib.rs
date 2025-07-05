@@ -192,8 +192,8 @@ impl DelegationMetadata {
             });
         }
 
-        // Check for circular delegation
-        if self.chain.iter().any(|entry| entry.delegatee == delegator) {
+        // Check for circular delegation (prevent delegatee from appearing as delegator in chain)
+        if self.chain.iter().any(|entry| entry.delegator == delegatee) {
             return Err(DelegationError::CircularDelegation);
         }
 

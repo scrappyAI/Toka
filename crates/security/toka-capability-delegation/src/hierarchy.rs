@@ -106,16 +106,25 @@ impl SimplePermissionHierarchy {
     pub async fn get_stats(&self) -> HierarchyStats {
         let hierarchy = self.hierarchy.read().await;
         
-        let total_permissions = hierarchy.keys().len();
+        // Count all unique permissions (both parents and children)
+        let mut all_permissions = HashSet::new();
+        for (parent, children) in hierarchy.iter() {
+            all_permissions.insert(parent.clone());
+            for child in children {
+                all_permissions.insert(child.clone());
+            }
+        }
+        let total_permissions = all_permissions.len();
+        
         let total_relationships = hierarchy.values()
             .map(|children| children.len())
             .sum();
         
         let max_depth = self.calculate_max_depth(&hierarchy);
-        let leaf_permissions = hierarchy.keys()
+        let leaf_permissions = all_permissions.iter()
             .filter(|perm| {
                 // A permission is a leaf if it's not a parent of any other permission
-                !hierarchy.values().any(|children| children.contains(*perm))
+                !hierarchy.contains_key(*perm)
             })
             .count();
         
@@ -158,10 +167,12 @@ impl SimplePermissionHierarchy {
                 let child_depth = self.calculate_depth_for_permission(child, hierarchy, visited);
                 max_child_depth = max_child_depth.max(child_depth);
             }
+            // If this node has children, depth is 1 + max depth of children
+            max_child_depth += 1;
         }
         
         visited.remove(permission);
-        1 + max_child_depth
+        max_child_depth
     }
 }
 
@@ -402,7 +413,7 @@ mod tests {
         
         let stats = hierarchy.get_stats().await;
         
-        assert_eq!(stats.total_permissions, 2); // admin, write (read has no children)
+        assert_eq!(stats.total_permissions, 3); // admin, write, read
         assert_eq!(stats.total_relationships, 3);
         assert_eq!(stats.max_depth, 2);
         assert_eq!(stats.leaf_permissions, 1); // read is a leaf
