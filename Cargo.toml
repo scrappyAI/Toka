@@ -33,6 +33,9 @@ members = [
     # Raft consensus algorithm implementation
     "crates/raft-core",
     "crates/raft-storage",
+    
+    # Security enhancements
+    "crates/security/toka-key-rotation",
 ]
 
 [workspace.dependencies]
