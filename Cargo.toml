@@ -35,9 +35,13 @@ members = [
     "crates/raft-storage",
     
     # Security enhancements
+    "crates/security/toka-capability-core",
+    "crates/security/toka-capability-jwt-hs256",
     "crates/security/toka-key-rotation",
     "crates/security/toka-rate-limiter",
     "crates/security/toka-capability-delegation",
+    "crates/security/toka-cvm",
+    "crates/security/toka-revocation",
 ]
 
 [workspace.dependencies]

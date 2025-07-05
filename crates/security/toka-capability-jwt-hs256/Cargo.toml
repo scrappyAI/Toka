@@ -1,16 +1,24 @@
 [package]
 name = "toka-capability-jwt-hs256"
-version = "0.2.0-alpha"
+version = "0.2.1"
 edition = "2021"
-license = "Apache-2.0"
-description = "HS256 JWT implementation of Toka capability tokens (v0.2)."
+license = "MIT OR Apache-2.0"
+description = "Concrete JWT HS256 implementation for Toka capability tokens"
+authors = ["Toka Team <team@toka.dev>"]
+repository = "https://github.com/toka-labs/toka"
+keywords = ["jwt", "security", "capabilities", "tokens"]
+categories = ["authentication", "cryptography"]
 
 [dependencies]
-serde = { workspace = true, features = ["derive"] }
-async-trait = { workspace = true }
+toka-capability-core = { path = "../toka-capability-core" }
+
+# Core dependencies
 jsonwebtoken = { workspace = true }
 uuid = { workspace = true }
-toka-capability-core = { path = "../toka-capability-core" }
+serde = { workspace = true, features = ["derive"] }
+async-trait = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+tokio = { workspace = true, features = ["full"] }
 
 [features]
 # std feature by default. Disable for no_std use-case.

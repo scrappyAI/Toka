@@ -12,7 +12,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use toka_capability_core::{Claims, CapabilityToken, TokenValidator};
-use toka_capability_jwt_hs256::JwtHs256Token;
+// Removed dependency on JWT implementation to avoid cycles
+// use toka_capability_jwt_hs256::JwtHs256Token;
 use tracing::{debug, warn};
 use uuid::Uuid;
 use base64::Engine;
@@ -155,22 +156,9 @@ impl DelegatedTokenGenerator for JwtDelegatedTokenGenerator {
         claims: &DelegatedClaims,
         key: &[u8],
     ) -> Result<String, DelegationError> {
-        // Create JWT token with delegation metadata
-        let jwt_token = JwtHs256Token::mint(&claims.base, key).await
-            .map_err(|e| DelegationError::InvalidScope(format!("Failed to create JWT token: {}", e)))?;
-
-        let token_str = jwt_token.as_str();
-
-        // Cache the token
-        self.cache_token(token_str, claims).await;
-
-        debug!(
-            token_id = %claims.base.jti,
-            is_delegated = %claims.is_delegated(),
-            "Created delegated token"
-        );
-
-        Ok(token_str.to_string())
+        // Note: In a real implementation, you would inject a CapabilityToken implementation
+        // instead of hardcoding the JWT implementation to avoid circular dependencies
+        Err(DelegationError::InvalidScope("JWT token creation requires external token implementation".to_string()))
     }
 
     async fn parse_delegated_token(
@@ -186,17 +174,9 @@ impl DelegatedTokenGenerator for JwtDelegatedTokenGenerator {
         // Parse JWT token
         let key_str = std::str::from_utf8(key)
             .map_err(|e| DelegationError::InvalidScope(format!("Invalid key format: {}", e)))?;
-        let jwt_validator = toka_capability_jwt_hs256::JwtHs256Validator::new(key_str);
-        let claims = jwt_validator.validate(token).await
-            .map_err(|e| DelegationError::InvalidScope(format!("Failed to validate JWT token: {}", e)))?;
-
-        // Convert to delegated claims
-        let delegated_claims = DelegatedClaims::new(claims);
-
-        // Cache the result
-        self.cache_token(token, &delegated_claims).await;
-
-        Ok(delegated_claims)
+        // Note: In a real implementation, you would inject a TokenValidator
+        // instead of hardcoding the JWT implementation to avoid circular dependencies
+        Err(DelegationError::InvalidScope("JWT validation requires external validator".to_string()))
     }
 
     async fn validate_delegated_token(

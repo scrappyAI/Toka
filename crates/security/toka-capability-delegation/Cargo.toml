@@ -17,7 +17,6 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 base64 = "0.21"
 toka-capability-core = { path = "../toka-capability-core" }
-toka-capability-jwt-hs256 = { path = "../toka-capability-jwt-hs256" }
 
 [dev-dependencies]
 tokio-test = { workspace = true }
