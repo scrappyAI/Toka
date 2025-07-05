@@ -1,0 +1,27 @@
+[package]
+name = "toka-capability-delegation"
+version = "0.3.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Hierarchical capability delegation primitives for Toka security framework"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+async-trait = { workspace = true }
+tokio = { workspace = true, features = ["time", "sync"] }
+chrono = { workspace = true, features = ["serde"] }
+uuid = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+base64 = "0.21"
+toka-capability-core = { path = "../toka-capability-core" }
+toka-capability-jwt-hs256 = { path = "../toka-capability-jwt-hs256" }
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+
+[features]
+default = ["std"]
+std = [] 
