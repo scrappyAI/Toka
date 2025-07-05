@@ -627,6 +627,10 @@ mod tests {
         let entry = LogEntry::new_command(1, 1, b"test".to_vec());
         storage.store_log_entry(&entry).await.unwrap();
         
+        // Read the entry to trigger read operations counter
+        let retrieved = storage.get_log_entry(1).await.unwrap();
+        assert_eq!(retrieved, Some(entry));
+        
         let metrics = storage.metrics().await.unwrap();
         assert_eq!(metrics.implementation, "memory");
         assert_eq!(metrics.total_log_entries, 1);

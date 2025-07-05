@@ -35,7 +35,7 @@ pub struct LogEntry {
 }
 
 /// Type of log entry
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Hash)]
 pub enum LogEntryType {
     /// Regular application command
     Command,

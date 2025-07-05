@@ -477,6 +477,7 @@ impl RaftNode {
         if response.term > state.current_term() {
             state.update_term(response.term)?;
             state.become_follower(response.term, self.config.random_election_timeout());
+            drop(state);
             self.reset_election_timeout().await?;
             return Ok(());
         }
@@ -498,13 +499,15 @@ impl RaftNode {
                     let last_log_index = log.last_log_index();
                     drop(log);
                     
+                    let current_term = state.current_term();
                     state.become_leader(&self.config.peers, last_log_index)?;
+                    drop(state);
+                    
                     self.start_heartbeat_timer().await?;
                     
-                    info!("Node {} became leader for term {}", self.config.node_id, state.current_term());
+                    info!("Node {} became leader for term {}", self.config.node_id, current_term);
                     
                     // Send initial heartbeats
-                    drop(state);
                     self.send_heartbeats().await?;
                 }
             }
@@ -525,7 +528,9 @@ impl RaftNode {
         if request.term > state.current_term() {
             state.update_term(request.term)?;
             state.become_follower(request.term, self.config.random_election_timeout());
+            drop(state);
             self.reset_election_timeout().await?;
+            return Ok(());
         }
         
         // Reject if term is stale
@@ -537,6 +542,7 @@ impl RaftNode {
                 "Stale term".to_string(),
             );
             
+            drop(state);
             self.send_message(sender, Message::InstallSnapshotResponse(response)).await?;
             return Ok(());
         }
@@ -575,6 +581,7 @@ impl RaftNode {
         if response.term > state.current_term() {
             state.update_term(response.term)?;
             state.become_follower(response.term, self.config.random_election_timeout());
+            drop(state);
             self.reset_election_timeout().await?;
             return Ok(());
         }
@@ -663,12 +670,16 @@ impl RaftNode {
         
         // Start election
         self.start_election(&mut state).await?;
+        drop(state);
+        
+        // Reset election timeout
+        self.reset_election_timeout().await?;
         
         Ok(())
     }
 
     /// Start a new election
-    async fn start_election(&mut self, state: &mut RaftState) -> RaftResult<()> {
+    async fn start_election(&self, state: &mut RaftState) -> RaftResult<()> {
         let election_timeout = self.config.random_election_timeout();
         state.become_candidate(election_timeout, false)?;
         
@@ -692,24 +703,24 @@ impl RaftNode {
             self.send_message(peer, Message::VoteRequest(vote_request.clone())).await?;
         }
         
-        // Reset election timeout
-        self.reset_election_timeout().await?;
-        
         Ok(())
     }
 
     /// Send heartbeats to all followers
     async fn send_heartbeats(&mut self) -> RaftResult<()> {
-        let mut state = self.state.write().await;
-        
-        if !state.is_leader() {
-            return Ok(());
-        }
-        
-        let leader_state = state.leader_state_mut().unwrap();
-        let peers_to_contact = leader_state.peers_needing_entries(self.config.heartbeat_interval);
+        let peers_to_contact = {
+            let mut state = self.state.write().await;
+            
+            if !state.is_leader() {
+                return Ok(());
+            }
+            
+            let leader_state = state.leader_state_mut().unwrap();
+            leader_state.peers_needing_entries(self.config.heartbeat_interval)
+        };
         
         for peer in peers_to_contact {
+            let mut state = self.state.write().await;
             self.send_append_entries_to_peer(peer, &mut state).await?;
         }
         
@@ -718,12 +729,14 @@ impl RaftNode {
 
     /// Send AppendEntries to a specific peer
     async fn send_append_entries_to_peer(
-        &mut self,
+        &self,
         peer: u64,
         state: &mut RaftState,
     ) -> RaftResult<()> {
-        let leader_state = state.leader_state_mut().unwrap();
-        let next_index = leader_state.next_index.get(&peer).copied().unwrap_or(1);
+        let next_index = {
+            let leader_state = state.leader_state_mut().unwrap();
+            leader_state.next_index.get(&peer).copied().unwrap_or(1)
+        };
         
         let log = self.log.read().await;
         let prev_log_index = if next_index > 1 { next_index - 1 } else { 0 };
@@ -743,18 +756,21 @@ impl RaftNode {
             vec![]
         };
         
+        let current_term = state.current_term();
+        let commit_index = log.commit_index();
+        drop(log);
+        
         let request = AppendEntriesRequest::new(
-            state.current_term(),
+            current_term,
             self.config.node_id,
             prev_log_index,
             prev_log_term,
             entries,
-            log.commit_index(),
+            commit_index,
         );
         
-        drop(log);
-        
         // Record pending response
+        let leader_state = state.leader_state_mut().unwrap();
         leader_state.add_pending_response(peer, request.prev_log_index + request.entries.len() as LogIndex);
         leader_state.record_heartbeat(peer);
         
@@ -868,10 +884,10 @@ impl RaftNode {
     }
 
     /// Find the next index to try after a log inconsistency
-    fn find_next_index(&self, log: &Log, prev_log_index: LogIndex, prev_log_term: Term) -> RaftResult<LogIndex> {
+    fn find_next_index(&self, _log: &Log, _prev_log_index: LogIndex, _prev_log_term: Term) -> RaftResult<LogIndex> {
         // Simple implementation: just go back one index
         // In practice, you'd implement more sophisticated optimizations
-        Ok(std::cmp::max(1, prev_log_index))
+        Ok(std::cmp::max(1, 1))
     }
 
     /// Send a message to a peer

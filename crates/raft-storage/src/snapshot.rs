@@ -403,11 +403,11 @@ mod tests {
             };
             
             let metadata = SnapshotMetadata::new(
-                i * 100,
-                i,
+                (i * 100) as u64,
+                i as u64,
                 snapshot_data.len() as u64,
                 checksum,
-                i * 50,
+                (i * 50) as u64,
                 vec![1, 2, 3],
             );
             
@@ -446,11 +446,11 @@ mod tests {
             };
             
             let metadata = SnapshotMetadata::new(
-                i * 100,
-                i,
+                (i * 100) as u64,
+                i as u64,
                 snapshot_data.len() as u64,
                 checksum,
-                i * 50,
+                (i * 50) as u64,
                 vec![1, 2, 3],
             );
             
@@ -521,11 +521,11 @@ mod tests {
             };
             
             let metadata = SnapshotMetadata::new(
-                i * 100,
-                i,
+                (i * 100) as u64,
+                i as u64,
                 snapshot_data.len() as u64,
                 checksum,
-                i * 50,
+                (i * 50) as u64,
                 vec![1, 2, 3],
             );
             

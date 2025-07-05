@@ -184,8 +184,10 @@ impl LeaderState {
         indices.sort_by(|a, b| b.cmp(a)); // Sort in descending order
 
         // Find the highest index that is replicated on a majority of servers
-        if indices.len() >= majority - 1 { // -1 because leader doesn't include itself
-            let majority_index = indices[majority - 2]; // -2 because 0-indexed and leader not included
+        // For a cluster of N nodes, we need majority = (N/2) + 1 nodes to agree
+        // Since the leader always has the latest entries, we need (majority - 1) followers
+        if indices.len() >= majority {
+            let majority_index = indices[majority - 1]; // majority-1 because 0-indexed
             std::cmp::max(current_commit, majority_index)
         } else {
             current_commit

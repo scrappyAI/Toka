@@ -12,8 +12,10 @@ use async_trait::async_trait;
 use raft_core::{LogEntry, LogIndex, Term};
 use std::ops::Range;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tokio::fs;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
+use tokio::sync::RwLock;
 
 /// File-based storage implementation
 pub struct FileStorage {
@@ -24,7 +26,7 @@ pub struct FileStorage {
     config: StorageConfig,
     
     /// Storage metrics
-    metrics: StorageMetrics,
+    metrics: Arc<RwLock<StorageMetrics>>,
 }
 
 impl FileStorage {
@@ -48,10 +50,10 @@ impl FileStorage {
         let mut storage = Self {
             base_dir,
             config,
-            metrics: StorageMetrics {
+            metrics: Arc::new(RwLock::new(StorageMetrics {
                 implementation: "file".to_string(),
                 ..Default::default()
-            },
+            })),
         };
         
         // Initialize storage files if needed
@@ -151,7 +153,10 @@ impl Storage for FileStorage {
         // Atomic rename
         tokio::fs::rename(temp_path, path).await?;
         
-        self.metrics.write_operations += 1;
+        {
+            let mut metrics = self.metrics.write().await;
+            metrics.write_operations += 1;
+        }
         Ok(())
     }
 
@@ -170,7 +175,10 @@ impl Storage for FileStorage {
         
         let state: PersistentState = serde_json::from_slice(&contents)?;
         
-        self.metrics.read_operations += 1;
+        {
+            let mut metrics = self.metrics.write().await;
+            metrics.read_operations += 1;
+        }
         Ok(Some(state))
     }
 
@@ -195,8 +203,11 @@ impl Storage for FileStorage {
         
         self.sync_file(&mut file).await?;
         
-        self.metrics.write_operations += 1;
-        self.metrics.total_log_entries += 1;
+        {
+            let mut metrics = self.metrics.write().await;
+            metrics.write_operations += 1;
+            metrics.total_log_entries += 1;
+        }
         
         Ok(())
     }
@@ -234,7 +245,10 @@ impl Storage for FileStorage {
             
             if stored_entry.entry.index == index {
                 if stored_entry.verify_integrity() {
-                    self.metrics.read_operations += 1;
+                    {
+                        let mut metrics = self.metrics.write().await;
+                        metrics.read_operations += 1;
+                    }
                     return Ok(Some(stored_entry.entry));
                 } else {
                     return Err(StorageError::corruption(format!(
@@ -245,7 +259,10 @@ impl Storage for FileStorage {
             }
         }
         
-        self.metrics.read_operations += 1;
+        {
+            let mut metrics = self.metrics.write().await;
+            metrics.read_operations += 1;
+        }
         Ok(None)
     }
 
@@ -349,8 +366,11 @@ impl Storage for FileStorage {
         
         self.sync_file(&mut file).await?;
         
-        self.metrics.write_operations += 1;
-        self.metrics.snapshot_count += 1;
+        {
+            let mut metrics = self.metrics.write().await;
+            metrics.write_operations += 1;
+            metrics.snapshot_count += 1;
+        }
         
         Ok(())
     }
@@ -396,7 +416,10 @@ impl Storage for FileStorage {
             let mut snapshot_data = vec![0u8; snapshot_size as usize];
             file.read_exact(&mut snapshot_data).await?;
             
-            self.metrics.read_operations += 1;
+            {
+                let mut metrics = self.metrics.write().await;
+                metrics.read_operations += 1;
+            }
             Ok(Some((snapshot_data, last_included_index, last_included_term)))
         } else {
             Ok(None)
@@ -441,11 +464,15 @@ impl Storage for FileStorage {
     }
 
     async fn metrics(&self) -> StorageResult<StorageMetrics> {
-        Ok(self.metrics.clone())
+        let metrics = self.metrics.read().await;
+        Ok(metrics.clone())
     }
 
     async fn sync(&mut self) -> StorageResult<()> {
-        self.metrics.sync_operations += 1;
+        {
+            let mut metrics = self.metrics.write().await;
+            metrics.sync_operations += 1;
+        }
         Ok(())
     }
 
@@ -521,7 +548,10 @@ impl Storage for FileStorage {
         self.cleanup_snapshots().await?;
         
         let duration = start.elapsed();
-        self.metrics.last_maintenance = Some(chrono::Utc::now());
+        {
+            let mut metrics = self.metrics.write().await;
+            metrics.last_maintenance = Some(chrono::Utc::now());
+        }
         
         Ok(MaintenanceReport {
             operations_performed: vec![crate::storage::MaintenanceOperation::SnapshotCleanup {
