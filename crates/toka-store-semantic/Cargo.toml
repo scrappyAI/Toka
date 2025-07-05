@@ -1,0 +1,39 @@
+[package]
+name = "toka-store-semantic"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Semantic analysis implementation for Toka OS event store - provides concrete plugin registry and engine implementations."
+
+[dependencies]
+# Core dependencies
+toka-store-core = { path = "../toka-store-core" }
+toka-types = { path = "../toka-types" }
+
+# Async and serialization
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }
+chrono = { workspace = true }
+
+# Collections and utilities
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
+thiserror = { workspace = true }
+smallvec = { version = "1.13", features = ["serde"] }
+
+# Optional ML/NLP dependencies for advanced plugins
+# regex = { version = "1.10", optional = true }
+# text-analysis = { version = "0.1", optional = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3.8"
+
+[features]
+default = []
+# Advanced features for ML-based plugins
+# ml = ["regex", "text-analysis"] 
