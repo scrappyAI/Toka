@@ -1,472 +1,476 @@
-#![forbid(unsafe_code)]
-#![deny(missing_docs)]
-
-//! **toka-runtime** – Runtime adapter for Toka OS.
+//! Toka Runtime - Dynamic Code Execution with Kernel Enforcement
 //!
-//! This crate provides the configuration and runtime management layer that
-//! bridges the deterministic kernel with storage backends and other fuzzy
-//! components. It handles the lifecycle of kernel instances, storage
-//! persistence, and provides convenient APIs for building Toka applications.
+//! This crate provides the runtime layer for dynamic code generation and execution
+//! while maintaining security through the toka-kernel enforcement layer. It supports
+//! multiple execution environments including WebAssembly, Python scripting, and
+//! sandboxed native code execution.
 //!
-//! The runtime sits above the deterministic core and coordinates between:
-//! - The kernel (deterministic state machine)
-//! - Storage backends (event persistence)
-//! - Event bus (real-time notifications)
-//! - Authentication (capability validation)
+//! # Architecture
+//!
+//! The runtime layer consists of:
+//!
+//! - **Execution Engines**: Different runtime environments (WASM, Python, etc.)
+//! - **Sandboxing**: Isolated execution environments with resource limits
+//! - **Code Generation**: Dynamic code creation with validation
+//! - **Security Integration**: Full kernel enforcement for all operations
+//! - **Resource Management**: Memory, CPU, and I/O tracking per execution
+//!
+//! # Usage
+//!
+//! ```rust
+//! use toka_runtime::{RuntimeManager, ExecutionRequest, CodeType};
+//! use toka_kernel::{ToolKernel, SecurityLevel};
+//!
+//! #[tokio::main]
+//! async fn main() -> anyhow::Result<()> {
+//!     // Initialize kernel and runtime
+//!     let kernel = ToolKernel::new().await?;
+//!     let runtime = RuntimeManager::new(kernel).await?;
+//!     
+//!     // Execute Python code dynamically
+//!     let request = ExecutionRequest {
+//!         code_type: CodeType::Python,
+//!         code: "print('Hello from dynamic execution!')".to_string(),
+//!         session_id: "user_session".to_string(),
+//!         security_level: SecurityLevel::Sandboxed,
+//!         inputs: serde_json::json!({}),
+//!     };
+//!     
+//!     let result = runtime.execute_code(request).await?;
+//!     println!("Execution result: {}", result.output);
+//!     Ok(())
+//! }
+//! ```
 
+use std::collections::HashMap;
 use std::sync::Arc;
-
+use std::time::{Duration, Instant};
+use tokio::sync::RwLock;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use tokio::sync::broadcast;
-use tracing::{info, debug, error as log_error};
+use serde_json::Value as JsonValue;
 
-use toka_types::Message;
-use toka_auth::TokenValidator;
-use toka_bus_core::{EventBus, InMemoryBus, KernelEvent};
-use toka_kernel::{Kernel, WorldState};
-use toka_store_core::StorageBackend;
+// Re-export kernel types
+pub use toka_kernel::{
+    ToolKernel, ExecutionContext, SecurityLevel, KernelError,
+    Capability, CapabilitySet, ExecutionMode,
+};
 
-#[cfg(feature = "memory-storage")]
-use toka_store_memory::MemoryBackend;
+pub mod engines;
+pub mod sandbox;
+pub mod generation;
+pub mod validation;
 
-#[cfg(feature = "sled-storage")]
-use toka_store_sled::SledBackend;
-
-#[cfg(feature = "sqlite-storage")]
-use toka_store_sqlite::SqliteBackend;
-
-//─────────────────────────────
-//  Configuration
-//─────────────────────────────
-
-/// Configuration for the Toka runtime.
-///
-/// This struct contains all the settings needed to configure and start
-/// a Toka runtime instance, including storage backend selection,
-/// bus settings, and operational parameters.
+/// Runtime execution request
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RuntimeConfig {
-    /// Event bus ring buffer capacity
-    pub bus_capacity: usize,
-    /// Storage backend configuration
-    pub storage: StorageConfig,
-    /// Whether to spawn the kernel in a separate task
-    pub spawn_kernel: bool,
-    /// Maximum number of events to buffer for persistence
-    pub persistence_buffer_size: usize,
+pub struct ExecutionRequest {
+    /// Type of code to execute
+    pub code_type: CodeType,
+    /// Source code to execute
+    pub code: String,
+    /// Session identifier for capability checking
+    pub session_id: String,
+    /// Security level for execution
+    pub security_level: SecurityLevel,
+    /// Input data for the code
+    pub inputs: JsonValue,
+    /// Optional timeout override
+    pub timeout_override: Option<Duration>,
+    /// Environment variables
+    pub environment: Option<HashMap<String, String>>,
 }
 
-impl Default for RuntimeConfig {
-    fn default() -> Self {
-        Self {
-            bus_capacity: 1024,
-            storage: StorageConfig::Memory,
-            spawn_kernel: false,
-            persistence_buffer_size: 256,
-        }
-    }
-}
-
-/// Storage backend configuration options.
+/// Supported code execution types
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum StorageConfig {
-    /// In-memory storage (non-persistent)
-    Memory,
-    /// Sled-based persistent storage
-    #[cfg(feature = "sled-storage")]
-    Sled { 
-        /// Database file path
-        path: String 
-    },
-    /// SQLite-based persistent storage
-    #[cfg(feature = "sqlite-storage")]
-    Sqlite {
-        /// Database file path
-        path: String
-    },
+pub enum CodeType {
+    /// Python script execution
+    Python,
+    /// JavaScript execution (Node.js)
+    JavaScript,
+    /// WebAssembly module
+    WebAssembly,
+    /// Bash script execution
+    Shell,
+    /// Rust code compilation and execution
+    Rust,
 }
 
-//─────────────────────────────
-//  Runtime context
-//─────────────────────────────
-
-/// A complete Toka runtime instance.
-///
-/// This struct encapsulates a configured Toka system including the kernel,
-/// storage backend, event bus, and authentication. It provides the main
-/// entry point for interacting with the Toka system.
-pub struct Runtime {
-    kernel: Arc<Kernel>,
-    storage: Arc<dyn StorageBackend>,
-    bus: Arc<dyn EventBus>,
-    _persistence_task: Option<tokio::task::JoinHandle<()>>,
+/// Runtime execution result
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExecutionResult {
+    /// Whether execution was successful
+    pub success: bool,
+    /// Standard output from execution
+    pub output: String,
+    /// Standard error from execution
+    pub error: String,
+    /// Exit code (for process-based execution)
+    pub exit_code: Option<i32>,
+    /// Execution metadata
+    pub metadata: RuntimeMetadata,
+    /// Generated artifacts (compiled binaries, etc.)
+    pub artifacts: Vec<Artifact>,
 }
 
-impl Runtime {
-    /// Create a new runtime with the given configuration and auth validator.
-    ///
-    /// This will initialize all components according to the configuration
-    /// and optionally start background tasks for event persistence.
-    pub async fn new(
-        config: RuntimeConfig,
-        auth: Arc<dyn TokenValidator>,
-    ) -> Result<Self> {
-        info!("Initializing Toka runtime with config: {:?}", config);
+/// Runtime execution metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RuntimeMetadata {
+    /// Code type executed
+    pub code_type: CodeType,
+    /// Session identifier
+    pub session_id: String,
+    /// Execution duration
+    pub duration: Duration,
+    /// Peak resource usage
+    pub resource_usage: RuntimeResourceUsage,
+    /// Security level used
+    pub security_level: SecurityLevel,
+    /// Engine version used
+    pub engine_version: String,
+    /// Execution timestamp
+    pub executed_at: std::time::SystemTime,
+}
 
-        // Create event bus
-        let bus: Arc<dyn EventBus> = Arc::new(InMemoryBus::new(config.bus_capacity));
-        debug!("Created event bus with capacity {}", config.bus_capacity);
+/// Resource usage during runtime execution
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RuntimeResourceUsage {
+    /// Peak memory usage in MB
+    pub peak_memory_mb: u64,
+    /// CPU time used in milliseconds
+    pub cpu_time_ms: u64,
+    /// Number of system calls made
+    pub syscall_count: u32,
+    /// Files accessed during execution
+    pub files_accessed: Vec<String>,
+    /// Network connections attempted
+    pub network_attempts: u32,
+}
 
-        // Create storage backend
-        let storage = Self::create_storage_backend(&config.storage).await?;
-        debug!("Created storage backend: {:?}", config.storage);
+/// Generated artifact from code execution
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Artifact {
+    /// Artifact type (binary, library, etc.)
+    pub artifact_type: String,
+    /// File path or identifier
+    pub path: String,
+    /// Size in bytes
+    pub size_bytes: u64,
+    /// Checksum for integrity
+    pub checksum: String,
+}
 
-        // Create kernel
-        let kernel = Arc::new(Kernel::new(
-            WorldState::default(),
-            auth,
-            bus.clone(),
-        ));
-        debug!("Created kernel with default world state");
+/// Main runtime manager for dynamic code execution
+pub struct RuntimeManager {
+    kernel: Arc<ToolKernel>,
+    engines: RwLock<HashMap<CodeType, Box<dyn ExecutionEngine + Send + Sync>>>,
+    execution_history: RwLock<Vec<ExecutionResult>>,
+    code_cache: RwLock<HashMap<String, CachedExecution>>,
+}
 
-        // Start persistence task if configured
-        let persistence_task = if config.persistence_buffer_size > 0 {
-            Some(Self::spawn_persistence_task(
-                bus.clone(),
-                storage.clone(),
-                config.persistence_buffer_size,
-            ).await?)
-        } else {
-            None
-        };
+/// Cached execution for performance optimization
+#[derive(Debug, Clone)]
+struct CachedExecution {
+    code_hash: String,
+    compiled_artifact: Option<Artifact>,
+    last_used: Instant,
+    execution_count: u32,
+}
 
-        info!("Toka runtime initialized successfully");
+/// Trait for execution engines
+#[async_trait::async_trait]
+pub trait ExecutionEngine {
+    /// Get engine metadata
+    fn metadata(&self) -> EngineMetadata;
+    
+    /// Validate code before execution
+    async fn validate_code(&self, code: &str) -> Result<()>;
+    
+    /// Execute code with kernel enforcement
+    async fn execute(
+        &self,
+        context: &ExecutionContext,
+        request: &ExecutionRequest,
+        kernel: &ToolKernel,
+    ) -> Result<ExecutionResult>;
+    
+    /// Check if engine supports specific capabilities
+    fn supports_capabilities(&self, capabilities: &CapabilitySet) -> bool;
+    
+    /// Get required capabilities for this engine
+    fn required_capabilities(&self) -> CapabilitySet;
+}
 
+/// Engine metadata
+#[derive(Debug, Clone)]
+pub struct EngineMetadata {
+    pub name: String,
+    pub version: String,
+    pub code_type: CodeType,
+    pub description: String,
+    pub supported_features: Vec<String>,
+}
+
+impl RuntimeManager {
+    /// Create new runtime manager with kernel
+    pub async fn new(kernel: ToolKernel) -> Result<Self> {
+        let mut engines: HashMap<CodeType, Box<dyn ExecutionEngine + Send + Sync>> = HashMap::new();
+        
+        // Register default engines
+        engines.insert(CodeType::Python, Box::new(engines::PythonEngine::new()));
+        engines.insert(CodeType::JavaScript, Box::new(engines::JavaScriptEngine::new()));
+        engines.insert(CodeType::WebAssembly, Box::new(engines::WasmEngine::new()));
+        engines.insert(CodeType::Shell, Box::new(engines::ShellEngine::new()));
+        engines.insert(CodeType::Rust, Box::new(engines::RustEngine::new()));
+        
         Ok(Self {
-            kernel,
-            storage,
-            bus,
-            _persistence_task: persistence_task,
+            kernel: Arc::new(kernel),
+            engines: RwLock::new(engines),
+            execution_history: RwLock::new(Vec::new()),
+            code_cache: RwLock::new(HashMap::new()),
         })
     }
-
-    /// Create a storage backend based on configuration.
-    async fn create_storage_backend(config: &StorageConfig) -> Result<Arc<dyn StorageBackend>> {
-        match config {
-            #[cfg(feature = "memory-storage")]
-            StorageConfig::Memory => {
-                debug!("Creating in-memory storage backend");
-                Ok(Arc::new(MemoryBackend::new()))
-            }
-            #[cfg(feature = "sled-storage")]
-            StorageConfig::Sled { path } => {
-                debug!("Creating sled storage backend at path: {}", path);
-                let backend = SledBackend::open(path)?;
-                Ok(Arc::new(backend))
-            }
-            #[cfg(feature = "sqlite-storage")]
-            StorageConfig::Sqlite { path } => {
-                debug!("Creating SQLite storage backend at path: {}", path);
-                let backend = SqliteBackend::open(path).await?;
-                Ok(Arc::new(backend))
-            }
-            #[cfg(not(feature = "memory-storage"))]
-            StorageConfig::Memory => {
-                Err(anyhow::anyhow!("Memory storage feature not enabled"))
-            }
-        }
-    }
-
-    /// Spawn a background task that persists events from the bus to storage.
-    async fn spawn_persistence_task(
-        bus: Arc<dyn EventBus>,
-        storage: Arc<dyn StorageBackend>,
-        buffer_size: usize,
-    ) -> Result<tokio::task::JoinHandle<()>> {
-        let mut rx = bus.subscribe();
+    
+    /// Execute code dynamically with kernel enforcement
+    pub async fn execute_code(&self, request: ExecutionRequest) -> Result<ExecutionResult> {
+        let start_time = Instant::now();
         
-        let task = tokio::spawn(async move {
-            debug!("Starting persistence task with buffer size {}", buffer_size);
-            
-            loop {
-                match rx.recv().await {
-                    Ok(event) => {
-                        if let Err(e) = Self::persist_event(&*storage, &event).await {
-                            log_error!("Failed to persist event {:?}: {}", event, e);
-                        } else {
-                            debug!("Persisted event: {:?}", event);
-                        }
-                    }
-                    Err(broadcast::error::RecvError::Lagged(skipped)) => {
-                        log_error!("Persistence task lagged, skipped {} events", skipped);
-                    }
-                    Err(broadcast::error::RecvError::Closed) => {
-                        info!("Event bus closed, stopping persistence task");
-                        break;
-                    }
-                }
-            }
-        });
-
-        Ok(task)
-    }
-
-    /// Persist a single kernel event to storage.
-    async fn persist_event(_storage: &dyn StorageBackend, _event: &KernelEvent) -> Result<()> {
-        // For now, we don't persist kernel events directly since they don't have
-        // the full event header structure. In a full implementation, this would
-        // convert kernel events to storage events and persist them.
-        // This is intentionally simplified for the refactor.
-        debug!("Event persistence not yet implemented");
-        Ok(())
-    }
-
-    /// Submit a message to the kernel for processing.
-    ///
-    /// This is the main entry point for interacting with the Toka system.
-    /// The message will be validated, processed by the kernel, and result
-    /// in events being emitted on the bus.
-    pub async fn submit(&self, message: Message) -> Result<KernelEvent> {
-        debug!("Submitting message from entity {:?}", message.origin);
-        self.kernel.submit(message).await
-    }
-
-    /// Get a reference to the kernel's world state.
-    ///
-    /// This provides read-only access to the current system state for
-    /// queries and introspection.
-    pub fn world_state(&self) -> Arc<tokio::sync::RwLock<WorldState>> {
-        self.kernel.state_ptr()
-    }
-
-    /// Subscribe to the live event stream.
-    ///
-    /// Returns a receiver that will receive all events emitted by the kernel
-    /// as they happen. Useful for real-time monitoring and reactive systems.
-    pub fn subscribe(&self) -> broadcast::Receiver<KernelEvent> {
-        self.bus.subscribe()
-    }
-
-    /// Get a reference to the storage backend.
-    ///
-    /// This allows direct access to the storage layer for advanced use cases
-    /// that need to query or manipulate stored events directly.
-    pub fn storage(&self) -> Arc<dyn StorageBackend> {
-        self.storage.clone()
-    }
-
-    /// Get a reference to the event bus.
-    ///
-    /// This provides access to the event bus for publishing custom events
-    /// or creating additional subscriptions.
-    pub fn bus(&self) -> Arc<dyn EventBus> {
-        self.bus.clone()
-    }
-
-    /// Shutdown the runtime gracefully.
-    ///
-    /// This will stop background tasks and ensure all pending operations
-    /// are completed before returning.
-    pub async fn shutdown(self) -> Result<()> {
-        info!("Shutting down Toka runtime");
-
-        if let Some(task) = self._persistence_task {
-            task.abort();
-            let _ = task.await;
+        // Get appropriate execution engine
+        let engines = self.engines.read().await;
+        let engine = engines.get(&request.code_type)
+            .ok_or_else(|| anyhow::anyhow!("Unsupported code type: {:?}", request.code_type))?;
+        
+        // Get required capabilities for this engine
+        let required_capabilities = engine.required_capabilities();
+        
+        // Create execution context with kernel
+        let context = self.kernel.create_execution_context(
+            &format!("runtime_{:?}", request.code_type),
+            &request.session_id,
+            &required_capabilities,
+            request.security_level.clone(),
+        ).await?;
+        
+        // Validate code before execution
+        engine.validate_code(&request.code).await?;
+        
+        // Check cache for previously compiled code
+        let code_hash = self.calculate_code_hash(&request.code);
+        let cached_artifact = self.get_cached_execution(&code_hash).await;
+        
+        // Execute with kernel enforcement
+        let result = self.kernel.enforce_execution(&context, async {
+            // Execute through the appropriate engine
+            engine.execute(&context, &request, &self.kernel).await
+        }).await?;
+        
+        // Update cache if compilation occurred
+        if let Some(artifact) = result.artifacts.first() {
+            self.update_cache(code_hash, artifact.clone()).await;
         }
-
-        info!("Toka runtime shutdown complete");
+        
+        // Store execution history
+        let mut history = self.execution_history.write().await;
+        history.push(result.clone());
+        
+        // Keep only recent executions
+        if history.len() > 1000 {
+            history.drain(0..100);
+        }
+        
+        Ok(result)
+    }
+    
+    /// Generate code dynamically based on requirements
+    pub async fn generate_code(
+        &self,
+        prompt: &str,
+        code_type: CodeType,
+        session_id: &str,
+    ) -> Result<String> {
+        // Validate code generation capability
+        let capabilities = CapabilitySet::with_capabilities(vec![
+            Capability::CodeGeneration,
+        ]);
+        
+        let context = self.kernel.create_execution_context(
+            "code_generator",
+            session_id,
+            &capabilities,
+            SecurityLevel::Restricted,
+        ).await?;
+        
+        // Generate code through kernel enforcement
+        self.kernel.enforce_execution(&context, async {
+            generation::generate_code(prompt, code_type).await
+        }).await
+    }
+    
+    /// Register a custom execution engine
+    pub async fn register_engine(
+        &self,
+        code_type: CodeType,
+        engine: Box<dyn ExecutionEngine + Send + Sync>,
+    ) -> Result<()> {
+        let mut engines = self.engines.write().await;
+        engines.insert(code_type, engine);
         Ok(())
     }
-}
-
-//─────────────────────────────
-//  Convenience functions
-//─────────────────────────────
-
-/// Run a Toka runtime with the given configuration and authentication.
-///
-/// This is a high-level convenience function that creates and runs a runtime
-/// instance. It's suitable for simple applications that don't need fine-grained
-/// control over the runtime lifecycle.
-pub async fn run(
-    config: RuntimeConfig,
-    auth: Arc<dyn TokenValidator>,
-) -> Result<Runtime> {
-    Runtime::new(config, auth).await
-}
-
-/// Create a runtime configuration for testing purposes.
-///
-/// This returns a configuration suitable for unit tests and integration tests,
-/// using in-memory storage and small buffer sizes.
-pub fn test_config() -> RuntimeConfig {
-    RuntimeConfig {
-        bus_capacity: 16,
-        storage: StorageConfig::Memory,
-        spawn_kernel: false,
-        persistence_buffer_size: 0, // Disable persistence for tests
+    
+    /// List available execution engines
+    pub async fn list_engines(&self) -> Vec<EngineMetadata> {
+        let engines = self.engines.read().await;
+        engines.values()
+            .map(|engine| engine.metadata())
+            .collect()
+    }
+    
+    /// Get execution history
+    pub async fn get_execution_history(&self) -> Vec<ExecutionResult> {
+        let history = self.execution_history.read().await;
+        history.clone()
+    }
+    
+    /// Clear execution cache
+    pub async fn clear_cache(&self) {
+        let mut cache = self.code_cache.write().await;
+        cache.clear();
+    }
+    
+    /// Calculate hash for code caching
+    fn calculate_code_hash(&self, code: &str) -> String {
+        use sha2::{Sha256, Digest};
+        let mut hasher = Sha256::new();
+        hasher.update(code.as_bytes());
+        format!("{:x}", hasher.finalize())
+    }
+    
+    /// Get cached execution if available
+    async fn get_cached_execution(&self, code_hash: &str) -> Option<Artifact> {
+        let mut cache = self.code_cache.write().await;
+        
+        if let Some(cached) = cache.get_mut(code_hash) {
+            cached.last_used = Instant::now();
+            cached.execution_count += 1;
+            cached.compiled_artifact.clone()
+        } else {
+            None
+        }
+    }
+    
+    /// Update code cache with new execution
+    async fn update_cache(&self, code_hash: String, artifact: Artifact) {
+        let mut cache = self.code_cache.write().await;
+        
+        cache.insert(code_hash.clone(), CachedExecution {
+            code_hash,
+            compiled_artifact: Some(artifact),
+            last_used: Instant::now(),
+            execution_count: 1,
+        });
+        
+        // Cleanup old cache entries
+        if cache.len() > 1000 {
+            let cutoff = Instant::now() - Duration::from_secs(3600); // 1 hour
+            cache.retain(|_, cached| cached.last_used > cutoff);
+        }
     }
 }
 
-//─────────────────────────────
-//  Error types
-//─────────────────────────────
+/// Builder for runtime manager with custom configuration
+pub struct RuntimeBuilder {
+    kernel: ToolKernel,
+    engines: HashMap<CodeType, Box<dyn ExecutionEngine + Send + Sync>>,
+}
 
-/// Errors that can occur during runtime operations.
-#[derive(Debug, thiserror::Error)]
-pub enum RuntimeError {
-    /// Configuration error
-    #[error("runtime configuration error: {0}")]
-    Configuration(String),
-    /// Storage backend error
-    #[error("storage backend error: {0}")]
-    Storage(String),
-    /// Kernel operation error
-    #[error("kernel operation error: {0}")]
-    Kernel(String),
-    /// Authentication error
-    #[error("authentication error: {0}")]
-    Authentication(String),
+impl RuntimeBuilder {
+    /// Create new runtime builder
+    pub fn new(kernel: ToolKernel) -> Self {
+        Self {
+            kernel,
+            engines: HashMap::new(),
+        }
+    }
+    
+    /// Add custom execution engine
+    pub fn with_engine(
+        mut self,
+        code_type: CodeType,
+        engine: Box<dyn ExecutionEngine + Send + Sync>,
+    ) -> Self {
+        self.engines.insert(code_type, engine);
+        self
+    }
+    
+    /// Build runtime manager
+    pub async fn build(self) -> Result<RuntimeManager> {
+        let runtime = RuntimeManager::new(self.kernel).await?;
+        
+        // Register custom engines
+        for (code_type, engine) in self.engines {
+            runtime.register_engine(code_type, engine).await?;
+        }
+        
+        Ok(runtime)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use async_trait::async_trait;
-    use toka_auth::{Claims, TokenValidator};
-    use toka_types::{Operation, TaskSpec};
-    // Removed unused import
-
-    #[derive(Clone, Debug)]
-    struct TestValidator;
-
-    #[async_trait]
-    impl TokenValidator for TestValidator {
-        async fn validate(&self, raw: &str) -> toka_auth::Result<Claims> {
-            Ok(Claims {
-                sub: raw.to_string(),  // Use the token as the subject for testing
-                vault: "test".into(),
-                permissions: vec![],
-                iat: 0,
-                exp: u64::MAX,
-                jti: "test".into(),
-            })
-        }
-    }
+    use toka_kernel::presets;
 
     #[tokio::test]
     async fn test_runtime_creation() {
-        let config = test_config();
-        let auth = Arc::new(TestValidator);
-
-        let runtime = Runtime::new(config, auth).await.unwrap();
-        // Just verify we can get references to storage and bus
-        let _storage = runtime.storage();
-        let _bus = runtime.bus();
-    }
-
-    #[tokio::test]
-    async fn test_message_submission() {
-        let config = test_config();
-        let auth = Arc::new(TestValidator);
-        let runtime = Runtime::new(config, auth).await.unwrap();
-
-        let entity = toka_types::EntityId(42);
-        let message = Message {
-            origin: entity,
-            capability: "42".to_string(),  // Token that matches EntityId(42)
-            op: Operation::ScheduleAgentTask {
-                agent: entity,
-                task: TaskSpec {
-                    description: "test task".to_string(),
-                },
-            },
-        };
-
-        let event = runtime.submit(message).await.unwrap();
+        let kernel = presets::testing_kernel().await.unwrap();
+        let runtime = RuntimeManager::new(kernel).await.unwrap();
         
-        // Verify the event is correct
-        match event {
-            KernelEvent::TaskScheduled { agent, .. } => {
-                assert_eq!(agent, entity);
-            }
-            _ => panic!("Unexpected event type"),
-        }
+        let engines = runtime.list_engines().await;
+        assert!(engines.len() > 0);
+        
+        // Should have default engines registered
+        let engine_types: Vec<CodeType> = engines.iter()
+            .map(|e| e.code_type.clone())
+            .collect();
+        assert!(engine_types.contains(&CodeType::Python));
+        assert!(engine_types.contains(&CodeType::WebAssembly));
     }
-
+    
     #[tokio::test]
-    async fn test_event_subscription() {
-        let config = test_config();
-        let auth = Arc::new(TestValidator);
-        let runtime = Runtime::new(config, auth).await.unwrap();
-
-        let mut rx = runtime.subscribe();
-
-        let entity = toka_types::EntityId(123);
-        let message = Message {
-            origin: entity,
-            capability: "123".to_string(),  // Token that matches EntityId(123)
-            op: Operation::ScheduleAgentTask {
-                agent: entity,
-                task: TaskSpec {
-                    description: "subscription test".to_string(),
-                },
-            },
+    async fn test_code_execution_request() {
+        let kernel = presets::development_kernel().await.unwrap();
+        let runtime = RuntimeManager::new(kernel).await.unwrap();
+        
+        let request = ExecutionRequest {
+            code_type: CodeType::Python,
+            code: "print('Hello, World!')".to_string(),
+            session_id: "development".to_string(),
+            security_level: SecurityLevel::Sandboxed,
+            inputs: serde_json::json!({}),
+            timeout_override: None,
+            environment: None,
         };
-
-        // Submit message
-        let _event = runtime.submit(message).await.unwrap();
-
-        // Should receive event via subscription
-        let received_event = rx.recv().await.unwrap();
-        match received_event {
-            KernelEvent::TaskScheduled { agent, .. } => {
-                assert_eq!(agent, entity);
-            }
-            _ => panic!("Unexpected event type"),
-        }
+        
+        // For this test, we'd need to implement the actual Python engine
+        // This is just testing the request structure
+        assert_eq!(request.code_type, CodeType::Python);
+        assert!(!request.code.is_empty());
     }
-
-    #[tokio::test]
-    async fn test_world_state_access() {
-        let config = test_config();
-        let auth = Arc::new(TestValidator);
-        let runtime = Runtime::new(config, auth).await.unwrap();
-
-        let entity = toka_types::EntityId(999);
-        let task = TaskSpec {
-            description: "state test".to_string(),
-        };
-
-        let message = Message {
-            origin: entity,
-            capability: "999".to_string(),  // Token that matches EntityId(999)
-            op: Operation::ScheduleAgentTask {
-                agent: entity,
-                task: task.clone(),
-            },
-        };
-
-        // Submit message to modify state
-        let _event = runtime.submit(message).await.unwrap();
-
-        // Check world state was updated
-        let state = runtime.world_state();
-        let state_guard = state.read().await;
-        let agent_tasks = state_guard.agent_tasks.get(&entity).unwrap();
-        assert_eq!(agent_tasks.len(), 1);
-        assert_eq!(agent_tasks[0], task);
-    }
-
-    #[tokio::test]
-    async fn test_runtime_shutdown() {
-        let config = test_config();
-        let auth = Arc::new(TestValidator);
-        let runtime = Runtime::new(config, auth).await.unwrap();
-
-        // Should shutdown without errors
-        runtime.shutdown().await.unwrap();
+    
+    #[test]
+    fn test_code_hash_calculation() {
+        let kernel = toka_kernel::presets::testing_kernel().await.unwrap();
+        let runtime = RuntimeManager::new(kernel).await.unwrap();
+        
+        let code1 = "print('hello')";
+        let code2 = "print('hello')";
+        let code3 = "print('world')";
+        
+        let hash1 = runtime.calculate_code_hash(code1);
+        let hash2 = runtime.calculate_code_hash(code2);
+        let hash3 = runtime.calculate_code_hash(code3);
+        
+        assert_eq!(hash1, hash2); // Same code should have same hash
+        assert_ne!(hash1, hash3); // Different code should have different hash
+        assert_eq!(hash1.len(), 64); // SHA256 hash length
     }
 }

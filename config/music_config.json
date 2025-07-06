@@ -1,0 +1,121 @@
+{
+  "spotify": {
+    "client_id": "${SPOTIFY_CLIENT_ID}",
+    "client_secret": "${SPOTIFY_CLIENT_SECRET}",
+    "redirect_uri": "http://localhost:8888/callback",
+    "scope": "playlist-modify-public playlist-modify-private user-library-read user-library-modify"
+  },
+  "youtube": {
+    "api_key": "${YOUTUBE_API_KEY}",
+    "credentials_file": "${YOUTUBE_CREDENTIALS_FILE}",
+    "application_name": "Toka Music Playlist Generator"
+  },
+  "nlp": {
+    "model_name": "en_core_web_sm",
+    "use_gpu": false,
+    "confidence_threshold": 0.7,
+    "max_entities": 50
+  },
+  "voice": {
+    "model_name": "base",
+    "language": "en",
+    "sample_rate": 16000,
+    "chunk_size": 1024,
+    "vad_aggressiveness": 2,
+    "noise_reduction": true,
+    "normalization": true,
+    "silence_removal": true
+  },
+  "general": {
+    "default_platform": "both",
+    "default_max_songs": 50,
+    "default_public": true,
+    "cache_duration": 3600,
+    "rate_limit_requests": 100,
+    "rate_limit_window": 60,
+    "timeout": 30,
+    "retry_attempts": 3,
+    "retry_delay": 1
+  },
+  "audio_processing": {
+    "supported_formats": [".mp3", ".wav", ".m4a", ".ogg", ".flac"],
+    "max_file_size": "50MB",
+    "max_duration": "300s",
+    "sample_rate": 16000,
+    "channels": 1,
+    "bit_depth": 16
+  },
+  "playlist_generation": {
+    "genre_weights": {
+      "pop": 1.0,
+      "rock": 0.9,
+      "hip-hop": 0.8,
+      "electronic": 0.7,
+      "jazz": 0.6,
+      "classical": 0.5,
+      "country": 0.4
+    },
+    "mood_mapping": {
+      "happy": {"valence": 0.8, "energy": 0.7},
+      "sad": {"valence": 0.2, "energy": 0.3},
+      "energetic": {"valence": 0.7, "energy": 0.9},
+      "calm": {"valence": 0.5, "energy": 0.3},
+      "upbeat": {"valence": 0.8, "energy": 0.8},
+      "chill": {"valence": 0.6, "energy": 0.4}
+    },
+    "tempo_mapping": {
+      "slow": {"min_bpm": 60, "max_bpm": 90},
+      "medium": {"min_bpm": 90, "max_bpm": 140},
+      "fast": {"min_bpm": 140, "max_bpm": 200}
+    },
+    "diversity_factor": 0.3,
+    "popularity_weight": 0.4,
+    "recency_weight": 0.2
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/music_playlist.log",
+    "max_size": "10MB",
+    "backup_count": 5,
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  },
+  "security": {
+    "encrypt_tokens": true,
+    "token_expiry": 3600,
+    "max_concurrent_requests": 10,
+    "allowed_domains": ["spotify.com", "youtube.com", "googleapis.com"],
+    "sandbox_mode": false
+  },
+  "features": {
+    "voice_input": true,
+    "natural_language": true,
+    "smart_recommendations": true,
+    "playlist_analysis": true,
+    "cross_platform_sync": true,
+    "social_sharing": false,
+    "collaborative_playlists": false
+  },
+  "ui": {
+    "show_progress": true,
+    "show_song_details": true,
+    "show_duration": true,
+    "show_popularity": true,
+    "color_theme": "default",
+    "language": "en"
+  },
+  "cache": {
+    "enabled": true,
+    "directory": "cache/music",
+    "max_size": "100MB",
+    "cleanup_interval": 86400,
+    "audio_features_ttl": 86400,
+    "search_results_ttl": 3600
+  },
+  "backup": {
+    "enabled": true,
+    "directory": "backups/music",
+    "frequency": "daily",
+    "retention_days": 30,
+    "compress": true
+  }
+} 

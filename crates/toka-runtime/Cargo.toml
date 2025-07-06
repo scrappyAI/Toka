@@ -1,40 +1,66 @@
 [package]
 name = "toka-runtime"
-version.workspace = true
-authors.workspace = true
-edition.workspace = true
-license.workspace = true
-repository.workspace = true
-description = "Runtime adapter for Toka OS - bridges deterministic kernel with storage and provides configuration management."
+version = "0.1.0"
+edition = "2021"
+description = "Dynamic code execution runtime with kernel enforcement"
+documentation = "https://docs.rs/toka-runtime"
+repository = "https://github.com/user/Toka"
+license = "MIT OR Apache-2.0"
+keywords = ["runtime", "execution", "dynamic", "sandbox"]
+categories = ["development-tools", "os"]
 
 [dependencies]
-# Core dependencies
-toka-types = { path = "../toka-types" }
-toka-auth = { path = "../toka-auth" }
-toka-bus-core = { path = "../toka-bus-core" }
+# Kernel enforcement
 toka-kernel = { path = "../toka-kernel" }
-toka-store-core = { path = "../toka-store-core" }
 
-# Optional storage drivers
-toka-store-memory = { path = "../toka-store-memory", optional = true }
-toka-store-sled = { path = "../toka-store-sled", optional = true }
-toka-store-sqlite = { path = "../toka-store-sqlite", optional = true }
+# Core async runtime and utilities
+tokio = { version = "1.0", features = ["full"] }
+anyhow = "1.0"
+thiserror = "1.0"
+async-trait = "0.1"
 
-# Runtime dependencies
-anyhow = { workspace = true }
-async-trait = { workspace = true }
-tokio = { workspace = true, features = ["sync", "rt", "time"] }
-tracing = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
-thiserror = { workspace = true }
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Cryptography for code hashing
+sha2 = "0.10"
+
+# Logging
+tracing = "0.1"
+
+# WebAssembly execution (optional)
+wasmtime = { version = "20.0", optional = true }
+wasmtime-wasi = { version = "20.0", optional = true }
+
+# Python execution (optional)
+pyo3 = { version = "0.21", features = ["auto-initialize"], optional = true }
+
+# Process execution
+tokio-process = "0.2"
+
+# Templating for code generation
+tera = { version = "1.19", optional = true }
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "test-util"] }
-uuid = { workspace = true, features = ["v4"] }
-tempfile = "3.8"
+tempfile = "3.0"
+tokio-test = "0.4"
 
 [features]
-default = ["memory-storage"]
-memory-storage = ["dep:toka-store-memory"]
-sled-storage = ["dep:toka-store-sled"]
-sqlite-storage = ["dep:toka-store-sqlite"]
+default = ["python", "wasm", "codegen"]
+python = ["pyo3"]
+wasm = ["wasmtime", "wasmtime-wasi"]
+codegen = ["tera"]
+all-engines = ["python", "wasm", "codegen"]
+
+[[example]]
+name = "python_execution"
+required-features = ["python"]
+
+[[example]]
+name = "wasm_execution"
+required-features = ["wasm"]
+
+[[example]]
+name = "code_generation"
+required-features = ["codegen"]

@@ -1,19 +1,45 @@
 [package]
 name = "toka-kernel"
-version.workspace = true
-authors.workspace = true
-edition.workspace = true
-license.workspace = true
-repository.workspace = true
-description.workspace = true
+version = "0.1.0"
+edition = "2021"
+description = "Kernel-level enforcement and security for Toka tool execution"
+documentation = "https://docs.rs/toka-kernel"
+repository = "https://github.com/user/Toka"
+license = "MIT OR Apache-2.0"
+keywords = ["kernel", "security", "tools", "enforcement"]
+categories = ["os", "development-tools"]
 
 [dependencies]
-toka-types = { path = "../toka-types" }
-toka-auth = { path = "../toka-auth" }
-toka-bus-core = { path = "../toka-bus-core" }
-anyhow = { workspace = true }
-thiserror = { workspace = true }
-tokio = { workspace = true, features=["sync"] }
-async-trait = { workspace = true }
-once_cell = { workspace = true }
-chrono = { workspace = true, features = ["serde"] }
+# Core async runtime and utilities
+tokio = { version = "1.0", features = ["full"] }
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Serialization for configuration and capabilities
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Logging and tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", optional = true }
+
+# Security and cryptography
+sha2 = "0.10"
+uuid = { version = "1.0", features = ["v4"] }
+
+# System monitoring (optional, for advanced resource tracking)
+sysinfo = { version = "0.30", optional = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3.0"
+
+[features]
+default = ["monitoring"]
+monitoring = ["sysinfo", "tracing-subscriber"]
+testing = ["tokio-test"]
+
+[[bin]]
+name = "toka-kernel-monitor"
+path = "src/bin/monitor.rs"
+required-features = ["monitoring"]
