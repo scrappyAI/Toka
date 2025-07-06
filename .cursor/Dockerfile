@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     strace \
     ltrace \
     perf-tools-unstable \
+    linux-perf \
     # System monitoring and analysis
     htop \
     iotop \
@@ -75,8 +76,8 @@ RUN cargo install --locked \
     cargo-audit \
     cargo-outdated \
     cargo-tree \
-    cargo-flamegraph \
-    cargo-profdata \
+    flamegraph \
+    cargo-pgo \
     cargo-llvm-cov \
     cargo-nextest \
     cargo-udeps \

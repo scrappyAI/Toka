@@ -386,7 +386,8 @@ mod tests {
     use super::*;
     use toka_types::{
         AgentMetadata, AgentSpecConfig, AgentPriority, AgentCapabilities, 
-        AgentTasks, AgentDependencies, ReportingConfig, SecurityConfig, ResourceLimits
+        AgentTasks, AgentDependencies, ReportingConfig, SecurityConfig, ResourceLimits,
+        TaskPriority, ReportingFrequency
     };
     use std::collections::HashMap;
 
@@ -413,11 +414,11 @@ mod tests {
                 default: vec![
                     TaskConfig {
                         description: "Test task 1".to_string(),
-                        priority: toka_orchestration::TaskPriority::High,
+                        priority: TaskPriority::High,
                     },
                     TaskConfig {
                         description: "Test task 2".to_string(),
-                        priority: toka_orchestration::TaskPriority::Medium,
+                        priority: TaskPriority::Medium,
                     },
                 ],
             },
@@ -426,7 +427,7 @@ mod tests {
                 optional: HashMap::new(),
             },
             reporting: ReportingConfig {
-                frequency: toka_orchestration::ReportingFrequency::Daily,
+                frequency: ReportingFrequency::Daily,
                 channels: vec!["test".to_string()],
                 metrics: HashMap::new(),
             },

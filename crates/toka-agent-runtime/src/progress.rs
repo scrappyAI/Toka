@@ -303,7 +303,12 @@ impl TaskResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use toka_types::{AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority};
+    use toka_types::{
+        AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority,
+        AgentCapabilities, AgentTasks, AgentDependencies, ReportingConfig, 
+        SecurityConfig, ResourceLimits, ReportingFrequency
+    };
+    use std::collections::HashMap;
     
     fn create_test_context() -> AgentContext {
         let config = AgentConfig {
@@ -319,12 +324,32 @@ mod tests {
                 domain: "test".to_string(),
                 priority: AgentPriority::Medium,
             },
-            capabilities: Default::default(),
+            capabilities: AgentCapabilities {
+                primary: vec![],
+                secondary: vec![],
+            },
             objectives: vec![],
-            tasks: Default::default(),
-            dependencies: Default::default(),
-            reporting: Default::default(),
-            security: Default::default(),
+            tasks: AgentTasks {
+                default: vec![],
+            },
+            dependencies: AgentDependencies {
+                required: HashMap::new(),
+                optional: HashMap::new(),
+            },
+            reporting: ReportingConfig {
+                frequency: ReportingFrequency::Daily,
+                channels: vec![],
+                metrics: HashMap::new(),
+            },
+            security: SecurityConfig {
+                sandbox: true,
+                capabilities_required: vec![],
+                resource_limits: ResourceLimits {
+                    max_memory: "100MB".to_string(),
+                    max_cpu: "50%".to_string(),
+                    timeout: "5m".to_string(),
+                },
+            },
         };
 
         AgentContext {
