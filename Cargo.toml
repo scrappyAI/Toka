@@ -30,6 +30,9 @@ members = [
     # Agent orchestration
     "crates/toka-orchestration",
     
+    # Agent execution runtime
+    "crates/toka-agent-runtime",
+    
     # Raft consensus algorithm implementation
     "crates/raft-core",
     "crates/raft-storage",
