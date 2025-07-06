@@ -1,562 +1,75 @@
-//! Standard **toolkit** crate with essential tools for agent functionality.
+//! Core tool implementations for the Toka ecosystem
 //!
-//! This crate provides:
-//! 1. `ToolRegistry` – thin wrapper around `toka_toolkit_core::ToolRegistry`
-//! 2. Essential tools for file operations, process management, network requests, and text processing
-//! 3. Authoring guidelines (`TOOL_GUIDELINES`) embedded as a constant string
+//! This module provides essential tools that are built into the system,
+//! including file operations, text processing, and validation tools.
 
-use anyhow::Result;
-use async_trait::async_trait;
 use std::sync::Arc;
-use std::collections::HashMap;
-use std::time::Instant;
+use anyhow::Result;
 
-use crate::core::{Tool, ToolParams, ToolResult, ToolMetadata};
-use crate::errors::ValidationError;
+use crate::core::{Tool, ToolRegistry};
 
-/// Thin wrapper that delegates every call to an inner `CoreRegistry`.
-/// Essential tools are registered by default for common agent operations.
-pub type ToolRegistry = crate::core::ToolRegistry;
+// Tool modules
+pub mod file_tools;
+pub mod text_tools;
+pub mod validation;
 
-/// Canonical guidelines for building agent tools – markdown formatted.
-pub const TOOL_GUIDELINES: &str = include_str!("../../TOOL_DEVELOPMENT.md");
+// Re-export tools for easy access
+pub use file_tools::{FileReader, FileWriter, FileLister};
+pub use text_tools::{TextProcessor, RegexTool};
+pub use validation::{DateValidator, BuildValidator};
 
-/// File system tool for reading file contents
-pub struct ReadFileTool {
-    name: String,
-    description: String,
-    version: String,
-}
-
-impl ReadFileTool {
-    pub fn new() -> Self {
-        Self {
-            name: "read_file".to_string(),
-            description: "Read contents of a file".to_string(),
-            version: "1.0.0".to_string(),
-        }
-    }
-}
-
-#[async_trait]
-impl Tool for ReadFileTool {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn description(&self) -> &str {
-        &self.description
-    }
-
-    fn version(&self) -> &str {
-        &self.version
-    }
-
-    async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
-        let start_time = Instant::now();
-        
-        let file_path = params
-            .args
-            .get("path")
-            .ok_or_else(|| anyhow::anyhow!("Missing 'path' parameter"))?;
-
-        let content = match tokio::fs::read_to_string(file_path).await {
-            Ok(content) => content,
-            Err(e) => return Ok(ToolResult {
-                success: false,
-                output: format!("Error reading file: {}", e),
-                metadata: ToolMetadata {
-                    execution_time_ms: start_time.elapsed().as_millis() as u64,
-                    tool_version: self.version.clone(),
-                    timestamp: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs(),
-                },
-            }),
-        };
-
-        Ok(ToolResult {
-            success: true,
-            output: content,
-            metadata: ToolMetadata {
-                execution_time_ms: start_time.elapsed().as_millis() as u64,
-                tool_version: self.version.clone(),
-                timestamp: std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs(),
-            },
-        })
-    }
-
-    fn validate_params(&self, params: &ToolParams) -> Result<()> {
-        if !params.args.contains_key("path") {
-            return Err(ValidationError::RequiredFieldMissing {
-                field_name: "path".to_string(),
-                context: self.name.clone(),
-            }.into());
-        }
-        
-        // Validate that the path is not empty
-        if let Some(path) = params.args.get("path") {
-            if path.trim().is_empty() {
-                return Err(ValidationError::InvalidFieldValue {
-                    field_name: "path".to_string(),
-                    context: self.name.clone(),
-                    reason: "path cannot be empty".to_string(),
-                }.into());
-            }
-        }
-        
-        Ok(())
-    }
-}
-
-/// File system tool for writing file contents
-pub struct WriteFileTool {
-    name: String,
-    description: String,
-    version: String,
-}
-
-impl WriteFileTool {
-    pub fn new() -> Self {
-        Self {
-            name: "write_file".to_string(),
-            description: "Write contents to a file".to_string(),
-            version: "1.0.0".to_string(),
-        }
-    }
-}
-
-#[async_trait]
-impl Tool for WriteFileTool {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn description(&self) -> &str {
-        &self.description
-    }
-
-    fn version(&self) -> &str {
-        &self.version
-    }
-
-    async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
-        let start_time = Instant::now();
-        
-        let file_path = params
-            .args
-            .get("path")
-            .ok_or_else(|| anyhow::anyhow!("Missing 'path' parameter"))?;
-        
-        let content = params
-            .args
-            .get("content")
-            .ok_or_else(|| anyhow::anyhow!("Missing 'content' parameter"))?;
-
-        let result = match tokio::fs::write(file_path, content).await {
-            Ok(_) => ToolResult {
-                success: true,
-                output: format!("Successfully wrote {} bytes to {}", content.len(), file_path),
-                metadata: ToolMetadata {
-                    execution_time_ms: start_time.elapsed().as_millis() as u64,
-                    tool_version: self.version.clone(),
-                    timestamp: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs(),
-                },
-            },
-            Err(e) => ToolResult {
-                success: false,
-                output: format!("Error writing file: {}", e),
-                metadata: ToolMetadata {
-                    execution_time_ms: start_time.elapsed().as_millis() as u64,
-                    tool_version: self.version.clone(),
-                    timestamp: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs(),
-                },
-            },
-        };
-
-        Ok(result)
-    }
-
-    fn validate_params(&self, params: &ToolParams) -> Result<()> {
-        if !params.args.contains_key("path") {
-            return Err(ValidationError::RequiredFieldMissing {
-                field_name: "path".to_string(),
-                context: self.name.clone(),
-            }.into());
-        }
-        if !params.args.contains_key("content") {
-            return Err(ValidationError::RequiredFieldMissing {
-                field_name: "content".to_string(),
-                context: self.name.clone(),
-            }.into());
-        }
-        
-        // Validate that the path is not empty
-        if let Some(path) = params.args.get("path") {
-            if path.trim().is_empty() {
-                return Err(ValidationError::InvalidFieldValue {
-                    field_name: "path".to_string(),
-                    context: self.name.clone(),
-                    reason: "path cannot be empty".to_string(),
-                }.into());
-            }
-        }
-        
-        Ok(())
-    }
-}
-
-/// Process execution tool for running commands
-pub struct RunCommandTool {
-    name: String,
-    description: String,
-    version: String,
-}
-
-impl RunCommandTool {
-    pub fn new() -> Self {
-        Self {
-            name: "run_command".to_string(),
-            description: "Execute a system command".to_string(),
-            version: "1.0.0".to_string(),
-        }
-    }
-}
-
-#[async_trait]
-impl Tool for RunCommandTool {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn description(&self) -> &str {
-        &self.description
-    }
-
-    fn version(&self) -> &str {
-        &self.version
-    }
-
-    async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
-        let start_time = Instant::now();
-        
-        let command = params
-            .args
-            .get("command")
-            .ok_or_else(|| anyhow::anyhow!("Missing 'command' parameter"))?;
-        
-        let working_dir = params.args.get("working_dir").cloned();
-        
-        let mut cmd = tokio::process::Command::new("sh");
-        cmd.arg("-c").arg(command);
-        
-        if let Some(dir) = working_dir {
-            cmd.current_dir(dir);
-        }
-        
-        let result = match cmd.output().await {
-            Ok(output) => {
-                let stdout = String::from_utf8_lossy(&output.stdout);
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                
-                ToolResult {
-                    success: output.status.success(),
-                    output: if output.status.success() {
-                        stdout.to_string()
-                    } else {
-                        format!("Command failed with exit code: {}\nstderr: {}", 
-                                output.status.code().unwrap_or(-1), stderr)
-                    },
-                    metadata: ToolMetadata {
-                        execution_time_ms: start_time.elapsed().as_millis() as u64,
-                        tool_version: self.version.clone(),
-                        timestamp: std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .unwrap()
-                            .as_secs(),
-                    },
-                }
-            },
-            Err(e) => ToolResult {
-                success: false,
-                output: format!("Error executing command: {}", e),
-                metadata: ToolMetadata {
-                    execution_time_ms: start_time.elapsed().as_millis() as u64,
-                    tool_version: self.version.clone(),
-                    timestamp: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs(),
-                },
-            },
-        };
-
-        Ok(result)
-    }
-
-    fn validate_params(&self, params: &ToolParams) -> Result<()> {
-        if !params.args.contains_key("command") {
-            return Err(ValidationError::RequiredFieldMissing {
-                field_name: "command".to_string(),
-                context: self.name.clone(),
-            }.into());
-        }
-        
-        // Validate that the command is not empty
-        if let Some(command) = params.args.get("command") {
-            if command.trim().is_empty() {
-                return Err(ValidationError::InvalidFieldValue {
-                    field_name: "command".to_string(),
-                    context: self.name.clone(),
-                    reason: "command cannot be empty".to_string(),
-                }.into());
-            }
-        }
-        
-        Ok(())
-    }
-}
-
-/// HTTP request tool for making web requests
-pub struct HttpRequestTool {
-    name: String,
-    description: String,
-    version: String,
-}
-
-impl HttpRequestTool {
-    pub fn new() -> Self {
-        Self {
-            name: "http_request".to_string(),
-            description: "Make HTTP requests".to_string(),
-            version: "1.0.0".to_string(),
-        }
-    }
-}
-
-#[async_trait]
-impl Tool for HttpRequestTool {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn description(&self) -> &str {
-        &self.description
-    }
-
-    fn version(&self) -> &str {
-        &self.version
-    }
-
-    async fn execute(&self, params: &ToolParams) -> Result<ToolResult> {
-        let start_time = Instant::now();
-        
-        let url = params
-            .args
-            .get("url")
-            .ok_or_else(|| anyhow::anyhow!("Missing 'url' parameter"))?;
-        
-        let method = params.args.get("method").cloned().unwrap_or_else(|| "GET".to_string());
-        let body = params.args.get("body").cloned();
-        
-        let client = reqwest::Client::new();
-        let mut request = match method.to_uppercase().as_str() {
-            "GET" => client.get(url),
-            "POST" => client.post(url),
-            "PUT" => client.put(url),
-            "DELETE" => client.delete(url),
-            _ => return Ok(ToolResult {
-                success: false,
-                output: format!("Unsupported HTTP method: {}", method),
-                metadata: ToolMetadata {
-                    execution_time_ms: start_time.elapsed().as_millis() as u64,
-                    tool_version: self.version.clone(),
-                    timestamp: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs(),
-                },
-            }),
-        };
-        
-        if let Some(body_content) = body {
-            request = request.body(body_content);
-        }
-        
-        let result = match request.send().await {
-            Ok(response) => {
-                let status = response.status();
-                let text = response.text().await.unwrap_or_else(|e| format!("Error reading response: {}", e));
-                
-                ToolResult {
-                    success: status.is_success(),
-                    output: format!("Status: {}\nBody: {}", status, text),
-                    metadata: ToolMetadata {
-                        execution_time_ms: start_time.elapsed().as_millis() as u64,
-                        tool_version: self.version.clone(),
-                        timestamp: std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .unwrap()
-                            .as_secs(),
-                    },
-                }
-            },
-            Err(e) => ToolResult {
-                success: false,
-                output: format!("HTTP request failed: {}", e),
-                metadata: ToolMetadata {
-                    execution_time_ms: start_time.elapsed().as_millis() as u64,
-                    tool_version: self.version.clone(),
-                    timestamp: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs(),
-                },
-            },
-        };
-
-        Ok(result)
-    }
-
-    fn validate_params(&self, params: &ToolParams) -> Result<()> {
-        if !params.args.contains_key("url") {
-            return Err(ValidationError::RequiredFieldMissing {
-                field_name: "url".to_string(),
-                context: self.name.clone(),
-            }.into());
-        }
-        
-        // Validate URL format
-        if let Some(url) = params.args.get("url") {
-            if url.trim().is_empty() {
-                return Err(ValidationError::InvalidFieldValue {
-                    field_name: "url".to_string(),
-                    context: self.name.clone(),
-                    reason: "URL cannot be empty".to_string(),
-                }.into());
-            }
-            
-            // Basic URL validation
-            if !url.starts_with("http://") && !url.starts_with("https://") {
-                return Err(ValidationError::InvalidFieldValue {
-                    field_name: "url".to_string(),
-                    context: self.name.clone(),
-                    reason: "URL must start with http:// or https://".to_string(),
-                }.into());
-            }
-        }
-        
-        // Validate method if provided
-        if let Some(method) = params.args.get("method") {
-            let valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
-            if !valid_methods.contains(&method.to_uppercase().as_str()) {
-                return Err(ValidationError::InvalidFieldValue {
-                    field_name: "method".to_string(),
-                    context: self.name.clone(),
-                    reason: format!("Invalid HTTP method. Must be one of: {}", valid_methods.join(", ")),
-                }.into());
-            }
-        }
-        
-        Ok(())
-    }
-}
-
-/// Helper function to register all essential tools
+/// Register essential tools with the registry
+/// 
+/// This function registers all the core tools that should be available
+/// by default in any Toka installation.
+/// 
+/// # Arguments
+/// 
+/// * `registry` - The tool registry to register tools with
+/// 
+/// # Examples
+/// 
+/// ```rust
+/// use toka_tools::{ToolRegistry, tools};
+/// 
+/// # tokio_test::block_on(async {
+/// let registry = ToolRegistry::new().await?;
+/// tools::register_essential_tools(&registry).await?;
+/// 
+/// // Now you can use the registered tools
+/// assert!(registry.has_tool("file-reader").await);
+/// assert!(registry.has_tool("date-validator").await);
+/// # Ok::<(), anyhow::Error>(())
+/// # });
+/// ```
 pub async fn register_essential_tools(registry: &ToolRegistry) -> Result<()> {
-    registry.register_tool(Arc::new(ReadFileTool::new())).await?;
-    registry.register_tool(Arc::new(WriteFileTool::new())).await?;
-    registry.register_tool(Arc::new(RunCommandTool::new())).await?;
-    registry.register_tool(Arc::new(HttpRequestTool::new())).await?;
+    // File operations
+    registry.register_tool(Arc::new(FileReader::new())).await?;
+    registry.register_tool(Arc::new(FileWriter::new())).await?;
+    registry.register_tool(Arc::new(FileLister::new())).await?;
+    
+    // Text processing
+    registry.register_tool(Arc::new(TextProcessor::new())).await?;
+    registry.register_tool(Arc::new(RegexTool::new())).await?;
+    
+    // Validation tools
+    registry.register_tool(Arc::new(DateValidator::new()?)).await?;
+    registry.register_tool(Arc::new(BuildValidator::new())).await?;
+    
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::NamedTempFile;
-    use std::io::Write;
-
-    #[tokio::test]
-    async fn test_read_file_tool() -> Result<()> {
-        let mut temp_file = NamedTempFile::new()?;
-        writeln!(temp_file, "Hello, World!")?;
-        let temp_path = temp_file.path().to_str().unwrap();
-        
-        let tool = ReadFileTool::new();
-        let mut params = ToolParams {
-            name: "read_file".to_string(),
-            args: HashMap::new(),
-        };
-        params.args.insert("path".to_string(), temp_path.to_string());
-        
-        let result = tool.execute(&params).await?;
-        assert!(result.success);
-        assert!(result.output.contains("Hello, World!"));
-        
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_write_file_tool() -> Result<()> {
-        let temp_file = NamedTempFile::new()?;
-        let temp_path = temp_file.path().to_str().unwrap();
-        
-        let tool = WriteFileTool::new();
-        let mut params = ToolParams {
-            name: "write_file".to_string(),
-            args: HashMap::new(),
-        };
-        params.args.insert("path".to_string(), temp_path.to_string());
-        params.args.insert("content".to_string(), "Test content".to_string());
-        
-        let result = tool.execute(&params).await?;
-        assert!(result.success);
-        
-        // Verify file was written
-        let content = tokio::fs::read_to_string(temp_path).await?;
-        assert_eq!(content, "Test content");
-        
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_run_command_tool() -> Result<()> {
-        let tool = RunCommandTool::new();
-        let mut params = ToolParams {
-            name: "run_command".to_string(),
-            args: HashMap::new(),
-        };
-        params.args.insert("command".to_string(), "echo 'Hello from command'".to_string());
-        
-        let result = tool.execute(&params).await?;
-        assert!(result.success);
-        assert!(result.output.contains("Hello from command"));
-        
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_tool_registry_with_essential_tools() -> Result<()> {
-        let registry = ToolRegistry::new().await?;
-        register_essential_tools(&registry).await?;
-
-        let tools = registry.list_tools().await;
-        assert!(tools.contains(&"read_file".to_string()));
-        assert!(tools.contains(&"write_file".to_string()));
-        assert!(tools.contains(&"run_command".to_string()));
-        assert!(tools.contains(&"http_request".to_string()));
-
-        Ok(())
-    }
+/// Get a list of all essential tool names
+/// 
+/// This is useful for testing or introspection purposes.
+pub fn essential_tool_names() -> Vec<&'static str> {
+    vec![
+        "file-reader",
+        "file-writer", 
+        "file-lister",
+        "text-processor",
+        "regex-tool",
+        "date-validator",
+        "build-validator",
+    ]
 }
