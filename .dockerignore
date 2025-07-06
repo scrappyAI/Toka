@@ -1,0 +1,120 @@
+# Git and version control
+.git
+.gitignore
+.gitmodules
+.gitattributes
+
+# Documentation
+*.md
+docs/
+README*
+CHANGELOG*
+LICENSE*
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+target/
+Cargo.lock
+*.lock
+
+# Test files
+tests/
+test_*
+*_test.rs
+
+# Configuration files (keep only necessary ones)
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# Docker files (except main ones)
+docker-compose.yml
+docker-compose.*.yml
+!Dockerfile
+
+# Scripts and tools
+scripts/
+tools/
+*.sh
+*.bat
+*.ps1
+
+# CI/CD files
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# IDE and editor files
+*.sublime-*
+*.code-workspace
+
+# Log files
+*.log
+logs/
+
+# Cache directories
+node_modules/
+.npm/
+.cache/
+.cargo/registry/
+.cargo/git/
+
+# Temporary directories
+tmp/
+temp/
+
+# Secrets and sensitive files
+secrets/
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# Performance and profiling
+*.prof
+*.perf
+flamegraph.svg
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Archive files
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# Large media files
+*.mp4
+*.avi
+*.mov
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+
+# Keep only essential config files
+!config/agents.toml
+!config/prometheus.yml 

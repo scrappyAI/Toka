@@ -1,0 +1,55 @@
+# Prometheus configuration for Toka Background Agents
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Toka Background Agents
+  - job_name: 'toka-agents'
+    static_configs:
+      - targets: ['toka-agents:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    honor_labels: true
+    
+  # Agent Management Interface
+  - job_name: 'toka-management'
+    static_configs:
+      - targets: ['toka-agents:9000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    
+  # Agent Health Check
+  - job_name: 'toka-health'
+    static_configs:
+      - targets: ['toka-agents:3000']
+    metrics_path: '/health/metrics'
+    scrape_interval: 30s
+    
+  # Redis Monitoring
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+# Alerting rules for agent monitoring
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Recording rules for agent metrics
+rule_files:
+  - "agent_rules.yml" 

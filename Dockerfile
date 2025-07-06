@@ -1,0 +1,98 @@
+# Multi-stage build for optimal security and performance
+# Stage 1: Build environment
+FROM rust:1.86-slim AS builder
+
+# Install build dependencies in a single layer
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    ca-certificates \
+    git \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create app user for build
+RUN groupadd --gid 10001 app \
+    && useradd --uid 10001 --gid app --shell /bin/bash --create-home app
+
+# Set up Rust environment for optimal builds
+ENV RUSTFLAGS="-C target-cpu=native -C link-arg=-fuse-ld=lld"
+ENV CARGO_NET_RETRY=10
+ENV CARGO_NET_TIMEOUT=60
+ENV CARGO_INCREMENTAL=0
+ENV CARGO_TARGET_DIR=/tmp/target
+
+# Install required Rust components and cargo tools
+RUN rustup component add clippy rustfmt \
+    && rustup target add x86_64-unknown-linux-gnu \
+    && cargo install --locked cargo-auditable
+
+# Copy source code and build dependencies
+WORKDIR /build
+COPY --chown=app:app . .
+
+# Build application with security auditing
+USER app
+RUN cargo auditable build --release --locked \
+    && cargo audit \
+    && strip target/release/toka-cli \
+    && strip target/release/toka-config-cli
+
+# Stage 2: Runtime environment
+FROM debian:bookworm-slim AS runtime
+
+# Install only essential runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    curl \
+    tini \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user for runtime
+RUN groupadd --gid 10001 toka \
+    && useradd --uid 10001 --gid toka --shell /bin/bash --create-home toka \
+    && mkdir -p /app/data /app/logs /app/config \
+    && chown -R toka:toka /app
+
+# Copy compiled binaries from builder
+COPY --from=builder --chown=toka:toka /build/target/release/toka-cli /app/bin/
+COPY --from=builder --chown=toka:toka /build/target/release/toka-config-cli /app/bin/
+
+# Set up runtime environment
+USER toka
+WORKDIR /app
+
+# Environment variables for optimal agent performance
+ENV RUST_LOG=info
+ENV RUST_BACKTRACE=1
+ENV TOKIO_WORKER_THREADS=4
+ENV AGENT_DATA_DIR=/app/data
+ENV AGENT_LOG_DIR=/app/logs
+ENV AGENT_CONFIG_DIR=/app/config
+
+# Security hardening
+ENV RUST_SECURE_ZERO_MEMORY=1
+ENV MALLOC_ARENA_MAX=2
+
+# Agent-specific optimizations
+ENV AGENT_POOL_SIZE=10
+ENV AGENT_SPAWN_TIMEOUT=30
+ENV AGENT_WORKSTREAM_TIMEOUT=3600
+ENV CONTEXT_CACHE_SIZE=1024
+ENV CONTEXT_CACHE_TTL=3600
+
+# Health check for background agents
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Expose default ports for agent communication
+EXPOSE 8080 9000
+
+# Use tini as init system for proper signal handling
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Default command starts the agent orchestration system
+CMD ["/app/bin/toka-cli", "orchestrate", "--config", "/app/config/agents.toml"] 

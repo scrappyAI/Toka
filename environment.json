@@ -1,0 +1,47 @@
+{
+  "name": "Toka Background Agent Runtime",
+  "user": "toka",
+  "container": {
+    "build": {
+      "dockerfile": "Dockerfile",
+      "context": "."
+    },
+    "agentCanUpdateSnapshot": true
+  },
+  "install": "cargo build --release --locked",
+  "start": "/app/bin/toka-cli orchestrate --config /app/config/agents.toml",
+  "ports": [
+    {
+      "name": "Agent API",
+      "port": 8080
+    },
+    {
+      "name": "Agent Management",
+      "port": 9000
+    },
+    {
+      "name": "Health Check",
+      "port": 3000
+    }
+  ],
+  "terminals": [
+    {
+      "name": "Agent Monitor",
+      "command": "/app/bin/toka-cli monitor --real-time",
+      "description": "Real-time monitoring of background agents and their tasks"
+    },
+    {
+      "name": "Agent Logs",
+      "command": "tail -f /app/logs/agents.log",
+      "description": "Live tail of agent execution logs"
+    },
+    {
+      "name": "System Metrics",
+      "command": "/app/bin/toka-cli metrics --export-prometheus",
+      "description": "System performance metrics for agent optimization"
+    }
+  ],
+  "repositoryDependencies": [
+    "github.com/ScrappyAI/toka"
+  ]
+} 

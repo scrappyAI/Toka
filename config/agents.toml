@@ -1,0 +1,159 @@
+# Toka Background Agent Configuration
+# This file defines the agents that will be spawned and orchestrated
+
+[orchestration]
+# Maximum number of agents that can run concurrently
+max_concurrent_agents = 8
+
+# Default timeout for agent spawning (seconds)
+agent_spawn_timeout = 30
+
+# Default timeout for workstream completion (seconds)
+workstream_timeout = 3600
+
+# Agent pool size for efficient resource management
+agent_pool_size = 10
+
+[security]
+# Enable sandbox mode for agent execution
+sandbox_enabled = true
+
+# Capability validation level: strict, moderate, permissive
+capability_validation = "strict"
+
+# Default resource limits for agents
+[security.resource_limits]
+max_memory = "512MB"
+max_cpu = "0.5"
+timeout = "1800"
+
+[storage]
+# Storage backend type: memory, sqlite, sled
+backend = "sqlite"
+
+# Database connection string
+database_url = "sqlite:///app/data/agents.db"
+
+# Event persistence settings
+persistence_buffer_size = 256
+persistence_interval = 30
+
+[llm]
+# LLM provider configuration
+provider = "anthropic"
+model = "claude-3-5-sonnet-20241022"
+rate_limit = 50
+timeout = 30
+debug_mode = false
+
+[monitoring]
+# Enable metrics collection
+metrics_enabled = true
+
+# Enable distributed tracing
+tracing_enabled = true
+
+# Log level: error, warn, info, debug, trace
+log_level = "info"
+
+# Prometheus metrics endpoint
+metrics_endpoint = "0.0.0.0:9090"
+
+[caching]
+# Context cache settings for optimal performance
+context_cache_size = 2048
+context_cache_ttl = 7200
+
+# Response cache for LLM calls
+response_cache_enabled = true
+response_cache_size = 1024
+response_cache_ttl = 3600
+
+# Agent definitions
+[[agents]]
+name = "code-analyst"
+version = "1.0.0"
+domain = "code-analysis"
+priority = "high"
+workstream = "main"
+branch = "feature/code-analysis"
+
+[agents.capabilities]
+primary = ["code-review", "static-analysis", "security-scan"]
+secondary = ["documentation", "refactoring-suggestions"]
+
+[[agents.objectives]]
+description = "Analyze code quality and security"
+deliverable = "Code analysis report"
+validation = "Report completeness and accuracy"
+
+[[agents.tasks.default]]
+description = "Perform static code analysis"
+priority = "high"
+dependencies = []
+
+[[agents]]
+name = "test-orchestrator"
+version = "1.0.0"
+domain = "testing"
+priority = "critical"
+workstream = "main"
+branch = "feature/test-automation"
+
+[agents.capabilities]
+primary = ["test-execution", "test-generation", "coverage-analysis"]
+secondary = ["performance-testing", "integration-testing"]
+
+[[agents.objectives]]
+description = "Orchestrate comprehensive testing"
+deliverable = "Test execution report"
+validation = "All tests pass with adequate coverage"
+
+[[agents.tasks.default]]
+description = "Execute test suite"
+priority = "critical"
+dependencies = []
+
+[[agents]]
+name = "security-auditor"
+version = "1.0.0"
+domain = "security"
+priority = "high"
+workstream = "security"
+branch = "feature/security-audit"
+
+[agents.capabilities]
+primary = ["vulnerability-scan", "dependency-audit", "security-policy-check"]
+secondary = ["penetration-testing", "compliance-check"]
+
+[[agents.objectives]]
+description = "Perform security audit"
+deliverable = "Security audit report"
+validation = "No critical vulnerabilities found"
+
+[[agents.tasks.default]]
+description = "Scan for security vulnerabilities"
+priority = "high"
+dependencies = []
+
+[[agents]]
+name = "performance-optimizer"
+version = "1.0.0"
+domain = "performance"
+priority = "medium"
+workstream = "optimization"
+branch = "feature/performance-optimization"
+
+[agents.capabilities]
+primary = ["performance-profiling", "bottleneck-analysis", "optimization-suggestions"]
+secondary = ["memory-analysis", "cpu-profiling"]
+
+[[agents.objectives]]
+description = "Optimize system performance"
+deliverable = "Performance optimization report"
+validation = "Performance metrics improved"
+
+[[agents.tasks.default]]
+description = "Profile and optimize performance"
+priority = "medium"
+dependencies = [] 
