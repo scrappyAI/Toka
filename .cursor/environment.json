@@ -1,7 +1,3 @@
 {
-  "agentCanUpdateSnapshot": true,
-  "build": {
-    "context": ".",
-    "dockerfile": "../Dockerfile.cursor"
-  }
+  "agentCanUpdateSnapshot": true
 }

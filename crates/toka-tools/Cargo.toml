@@ -7,6 +7,8 @@ edition = "2021"
 # Core Toka components
 toka-kernel = { path = "../toka-kernel" }
 toka-runtime = { path = "../toka-runtime" }
+toka-auth = { path = "../toka-auth" }
+toka-bus-core = { path = "../toka-bus-core" }
 # TODO: toka-core-tools and toka-vector-registry need Cargo.toml files
 # toka-core-tools = { path = "../toka-core-tools", optional = true }
 # toka-vector-registry = { path = "../toka-vector-registry", optional = true }
