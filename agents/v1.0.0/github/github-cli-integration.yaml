@@ -1,12 +1,12 @@
 metadata:
   name: github-cli-integration
-  version: v1.0.2
+  version: v1.0.3
   created: '2025-07-06'
   workstream: GitHub CLI Integration & Automation
   branch: feature/github-cli-integration
-  modified: '2025-07-06T03:22:39.574376+00:00'
+  modified: '2025-07-06T03:24:55.376618+00:00'
   schema_version: 1.0.0
-  checksum: 9f795d1d868831c1
+  checksum: ce8e01ec08bf0779
 spec:
   name: GitHub CLI Integration Agent
   domain: cli-tooling
