@@ -1,8 +1,6 @@
 [build]
 # Limit parallel jobs to reduce memory usage in constrained environments
 jobs = 1
-# Use faster linker when available
-rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 
 [profile.dev]
 # Fast development builds with minimal optimization
@@ -42,21 +40,17 @@ strip = "symbols"
 RUST_BACKTRACE = "1"
 CARGO_NET_RETRY = "10"
 CARGO_NET_TIMEOUT = "60"
-# Use faster linker when available
-RUSTFLAGS = "-C link-arg=-fuse-ld=lld"
 
 # Target-specific configurations
 [target.x86_64-unknown-linux-gnu]
-linker = "clang"
+linker = "gcc"
 rustflags = [
-    "-C", "link-arg=-fuse-ld=lld",
     "-C", "target-cpu=native"
 ]
 
 [target.aarch64-unknown-linux-gnu]
-linker = "clang"
+linker = "gcc"
 rustflags = [
-    "-C", "link-arg=-fuse-ld=lld",
     "-C", "target-cpu=native"
 ]
 
