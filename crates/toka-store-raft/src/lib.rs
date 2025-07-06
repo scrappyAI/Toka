@@ -61,6 +61,9 @@ pub mod config;
 pub mod error;
 pub mod distributed_kernel;
 
+#[cfg(test)]
+pub mod integration_tests;
+
 pub use storage::RaftStorage;
 pub use state_machine::TokaStateMachine;
 pub use network::RaftNetwork;

@@ -301,14 +301,14 @@ impl Default for DistributedKernelConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use toka_auth::MockTokenValidator;
+    use toka_auth::hs256::JwtHs256Validator;
     use toka_bus_core::InMemoryBus;
     use toka_types::{Operation, TaskSpec};
     
     #[tokio::test]
     async fn test_distributed_kernel_creation() {
         let world_state = WorldState::default();
-        let auth = Arc::new(MockTokenValidator::new());
+        let auth = Arc::new(JwtHs256Validator::new("test_secret"));
         let event_bus = Arc::new(InMemoryBus::new(100));
         let cluster_config = RaftClusterConfig::new(1)
             .add_peer(2, "127.0.0.1:8081".to_string())
@@ -328,11 +328,12 @@ mod tests {
     #[tokio::test]
     async fn test_cluster_topology() {
         let world_state = WorldState::default();
-        let auth = Arc::new(MockTokenValidator::new());
+        let auth = Arc::new(JwtHs256Validator::new("test_secret"));
         let event_bus = Arc::new(InMemoryBus::new(100));
         let cluster_config = RaftClusterConfig::new(1)
-            .add_peer(2, "127.0.0.1:8081".to_string())
-            .add_peer(3, "127.0.0.1:8082".to_string());
+            .with_bind_address("127.0.0.1:19100".to_string())
+            .add_peer(2, "127.0.0.1:19101".to_string())
+            .add_peer(3, "127.0.0.1:19102".to_string());
         
         let kernel = DistributedKernel::new(
             world_state,

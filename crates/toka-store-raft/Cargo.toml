@@ -44,6 +44,7 @@ rand = { workspace = true }
 # Collections and data structures
 dashmap = { workspace = true }
 indexmap = { workspace = true }
+smallvec = "1.13"
 
 # Networking
 tokio-util = { workspace = true, features = ["codec"] }

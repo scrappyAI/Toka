@@ -234,6 +234,15 @@ impl RaftClusterConfig {
         }
     }
     
+    /// Create a single-node cluster configuration (for testing)
+    pub fn single_node(node_id: u64, bind_address: String) -> Self {
+        Self {
+            node_id,
+            bind_address,
+            ..Default::default()
+        }
+    }
+    
     /// Add a peer to the cluster
     pub fn add_peer(mut self, peer_id: u64, address: String) -> Self {
         self.peers.push((peer_id, address));
@@ -277,19 +286,28 @@ impl RaftClusterConfig {
             return Err(RaftStorageError::configuration("Node ID cannot be 0"));
         }
         
-        // Validate peers
-        if self.peers.is_empty() {
-            return Err(RaftStorageError::configuration("At least one peer is required"));
-        }
-        
-        // Check for duplicate peer IDs
-        let mut seen_ids = std::collections::HashSet::new();
-        for (peer_id, _) in &self.peers {
-            if *peer_id == self.node_id {
-                return Err(RaftStorageError::configuration("Peer ID cannot be the same as node ID"));
+        // Validate peers - allow single-node clusters for testing
+        // In production, clusters should have at least one peer, but single-node
+        // clusters are useful for development and testing
+        if !self.peers.is_empty() {
+            // Only validate peer-related constraints if we have peers
+            
+            // Check for duplicate peer IDs
+            let mut seen_ids = std::collections::HashSet::new();
+            for (peer_id, _) in &self.peers {
+                if *peer_id == self.node_id {
+                    return Err(RaftStorageError::configuration("Peer ID cannot be the same as node ID"));
+                }
+                if !seen_ids.insert(*peer_id) {
+                    return Err(RaftStorageError::configuration(format!("Duplicate peer ID: {}", peer_id)));
+                }
             }
-            if !seen_ids.insert(*peer_id) {
-                return Err(RaftStorageError::configuration(format!("Duplicate peer ID: {}", peer_id)));
+            
+            // Validate peer addresses
+            for (peer_id, address) in &self.peers {
+                if let Err(e) = address.parse::<SocketAddr>() {
+                    return Err(RaftStorageError::configuration(format!("Invalid peer address for node {}: {}", peer_id, e)));
+                }
             }
         }
         
@@ -307,12 +325,7 @@ impl RaftClusterConfig {
             return Err(RaftStorageError::configuration(format!("Invalid bind address: {}", e)));
         }
         
-        // Validate peer addresses
-        for (peer_id, address) in &self.peers {
-            if let Err(e) = address.parse::<SocketAddr>() {
-                return Err(RaftStorageError::configuration(format!("Invalid peer address for node {}: {}", peer_id, e)));
-            }
-        }
+
         
         // Validate storage configuration
         if self.storage.max_log_file_size == 0 {

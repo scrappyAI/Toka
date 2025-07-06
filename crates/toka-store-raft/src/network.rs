@@ -463,7 +463,7 @@ mod tests {
             from: 1,
             to: 2,
             message_id: 12345,
-            message_type: MessageType::AppendEntries,
+            message_type: MessageType::AppendEntriesRequest,
             payload: b"test payload".to_vec(),
             timestamp: chrono::Utc::now(),
         };
