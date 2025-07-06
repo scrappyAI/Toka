@@ -28,8 +28,8 @@ Complete agent execution runtime with 6 core modules:
 - Updated workspace dependencies and module exports
 
 #### 3. **Documentation**
-- **`AGENT_RUNTIME_IMPLEMENTATION_GUIDE.md`** - Comprehensive usage guide
-- **`IMPLEMENTATION_SUMMARY.md`** - This summary document
+- **`../guides/AGENT_RUNTIME_IMPLEMENTATION_GUIDE.md`** - Comprehensive usage guide
+- **`agent_runtime_implementation_summary.md`** - This summary document
 - Extensive inline documentation and examples
 
 ## 🏗️ **Architecture Overview**
