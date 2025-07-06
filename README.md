@@ -19,8 +19,8 @@
 git clone https://github.com/ScrappyAI/toka.git
 cd toka
 
-# Validate build system
-./scripts/validate-build-system.sh
+# Setup development environment
+./scripts/setup/setup_toka_testing.sh
 
 # Build the workspace
 cargo build --workspace
