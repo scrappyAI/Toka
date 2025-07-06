@@ -12,8 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use toka_capability_core::{Claims, CapabilityToken, TokenValidator};
-// Removed dependency on JWT implementation to avoid cycles
-// use toka_capability_jwt_hs256::JwtHs256Token;
+use toka_capability_jwt_hs256::{JwtHs256Token, JwtHs256Validator};
 use tracing::{debug, warn};
 use uuid::Uuid;
 use base64::Engine;
@@ -156,9 +155,36 @@ impl DelegatedTokenGenerator for JwtDelegatedTokenGenerator {
         claims: &DelegatedClaims,
         key: &[u8],
     ) -> Result<String, DelegationError> {
-        // Note: In a real implementation, you would inject a CapabilityToken implementation
-        // instead of hardcoding the JWT implementation to avoid circular dependencies
-        Err(DelegationError::InvalidScope("JWT token creation requires external token implementation".to_string()))
+        // Serialize delegation claims to JWT format
+        let jwt_claims = Self::serialize_delegation_claims(claims)?;
+        
+        // Create base Claims struct compatible with JWT implementation
+        let base_claims = Claims {
+            sub: claims.base.sub.clone(),
+            vault: claims.base.vault.clone(),
+            permissions: claims.effective_permissions(),
+            iat: claims.base.iat,
+            exp: claims.base.exp,
+            jti: claims.base.jti.clone(),
+        };
+
+        // Use the JWT HS256 implementation to create the token
+        let jwt_token = JwtHs256Token::mint(&base_claims, key).await
+            .map_err(|e| DelegationError::InvalidScope(format!("Failed to create JWT token: {}", e)))?;
+
+        // Get the token string
+        let token_str = jwt_token.as_str().to_string();
+
+        // Cache the token for future validation
+        self.cache_token(&token_str, claims).await;
+
+        debug!(
+            token_id = %claims.base.jti,
+            is_delegated = %claims.is_delegated(),
+            "Created delegated token"
+        );
+
+        Ok(token_str)
     }
 
     async fn parse_delegated_token(
@@ -171,12 +197,22 @@ impl DelegatedTokenGenerator for JwtDelegatedTokenGenerator {
             return Ok(cached_claims);
         }
 
-        // Parse JWT token
+        // Use JWT validator to parse and validate the token
         let key_str = std::str::from_utf8(key)
             .map_err(|e| DelegationError::InvalidScope(format!("Invalid key format: {}", e)))?;
-        // Note: In a real implementation, you would inject a TokenValidator
-        // instead of hardcoding the JWT implementation to avoid circular dependencies
-        Err(DelegationError::InvalidScope("JWT validation requires external validator".to_string()))
+        
+        let validator = JwtHs256Validator::new(key_str);
+        let base_claims = validator.validate(token).await
+            .map_err(|e| DelegationError::InvalidScope(format!("JWT validation failed: {}", e)))?;
+
+        // For now, create delegated claims from base claims
+        // In a full implementation, you would extract delegation metadata from custom JWT claims
+        let delegated_claims = DelegatedClaims::new(base_claims);
+
+        // Cache the parsed token
+        self.cache_token(token, &delegated_claims).await;
+
+        Ok(delegated_claims)
     }
 
     async fn validate_delegated_token(
@@ -235,9 +271,92 @@ impl DelegatedTokenGenerator for JwtDelegatedTokenGenerator {
 
 impl JwtDelegatedTokenGenerator {
     /// Validate time-based restrictions
-    async fn validate_time_restrictions(&self, _restrictions: &crate::TimeRestrictions) -> bool {
-        // TODO: Implement time-based validation
-        // For now, always return true
+    async fn validate_time_restrictions(&self, restrictions: &crate::TimeRestrictions) -> bool {
+        use chrono::{NaiveTime, Datelike, Timelike};
+        
+        let now = Utc::now();
+        
+        // Check allowed days of week (1=Monday, 7=Sunday)
+        if !restrictions.allowed_days.is_empty() {
+            let current_weekday = now.weekday().number_from_monday();
+            if !restrictions.allowed_days.contains(&current_weekday) {
+                debug!(
+                    current_day = %current_weekday,
+                    allowed_days = ?restrictions.allowed_days,
+                    "Current day not in allowed days"
+                );
+                return false;
+            }
+        }
+
+        // Check time windows
+        if !restrictions.allowed_time_windows.is_empty() {
+            let current_time = now.time();
+            let mut in_allowed_window = false;
+
+            for window in &restrictions.allowed_time_windows {
+                // Parse start and end times
+                let start_time = match NaiveTime::parse_from_str(&window.start_time, "%H:%M") {
+                    Ok(time) => time,
+                    Err(e) => {
+                        warn!(
+                            start_time = %window.start_time,
+                            error = %e,
+                            "Invalid start time format"
+                        );
+                        continue;
+                    }
+                };
+
+                let end_time = match NaiveTime::parse_from_str(&window.end_time, "%H:%M") {
+                    Ok(time) => time,
+                    Err(e) => {
+                        warn!(
+                            end_time = %window.end_time,
+                            error = %e,
+                            "Invalid end time format"
+                        );
+                        continue;
+                    }
+                };
+
+                // Handle overnight time spans (e.g., 22:00-06:00)
+                let in_window = if start_time <= end_time {
+                    // Normal time window (e.g., 09:00-17:00)
+                    current_time >= start_time && current_time <= end_time
+                } else {
+                    // Overnight time window (e.g., 22:00-06:00)
+                    current_time >= start_time || current_time <= end_time
+                };
+
+                if in_window {
+                    in_allowed_window = true;
+                    break;
+                }
+            }
+
+            if !in_allowed_window {
+                debug!(
+                    current_time = %current_time.format("%H:%M"),
+                    time_windows = ?restrictions.allowed_time_windows,
+                    "Current time not in any allowed time window"
+                );
+                return false;
+            }
+        }
+
+        // TODO: Handle timezone conversion properly
+        // For now, we assume UTC. In a full implementation, you would:
+        // 1. Parse the timezone from restrictions.timezone
+        // 2. Convert current UTC time to that timezone
+        // 3. Perform time window validation in the target timezone
+
+        debug!(
+            current_time = %now.format("%Y-%m-%d %H:%M:%S UTC"),
+            current_day = %now.weekday().number_from_monday(),
+            "Time-based validation passed"
+        );
+
         true
     }
 }
