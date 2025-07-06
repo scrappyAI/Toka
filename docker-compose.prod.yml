@@ -1,0 +1,170 @@
+version: '3.8'
+
+services:
+  toka-agents-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: toka-background-agents-prod
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "9000:9000"
+    env_file:
+      - .env.prod
+    environment:
+      # Production database configuration
+      - DATABASE_URL=${DATABASE_URL}
+      - STORAGE_TYPE=${STORAGE_TYPE:-postgres}
+      
+      # Production LLM Configuration
+      - LLM_PROVIDER=${LLM_PROVIDER:-anthropic}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LLM_MODEL=${LLM_MODEL:-claude-3-5-sonnet-20241022}
+      - LLM_RATE_LIMIT=${LLM_RATE_LIMIT:-100}
+      - LLM_TIMEOUT=${LLM_TIMEOUT:-30}
+      - LLM_DEBUG=${LLM_DEBUG:-false}
+      
+      # Production agent settings
+      - AGENT_POOL_SIZE=${AGENT_POOL_SIZE:-20}
+      - MAX_CONCURRENT_AGENTS=${MAX_CONCURRENT_AGENTS:-16}
+      - AGENT_SPAWN_TIMEOUT=${AGENT_SPAWN_TIMEOUT:-30}
+      - WORKSTREAM_TIMEOUT=${WORKSTREAM_TIMEOUT:-7200}
+      
+      # Production performance settings
+      - RUST_LOG=${RUST_LOG:-info}
+      - RUST_BACKTRACE=${RUST_BACKTRACE:-0}
+      - TOKIO_WORKER_THREADS=${TOKIO_WORKER_THREADS:-8}
+      - CONTEXT_CACHE_SIZE=${CONTEXT_CACHE_SIZE:-2048}
+      - CONTEXT_CACHE_TTL=${CONTEXT_CACHE_TTL:-7200}
+      
+      # Production security settings
+      - RUST_SECURE_ZERO_MEMORY=${RUST_SECURE_ZERO_MEMORY:-1}
+      - AGENT_SANDBOX_ENABLED=${AGENT_SANDBOX_ENABLED:-true}
+      - CAPABILITY_VALIDATION=${CAPABILITY_VALIDATION:-strict}
+      - JWT_SECRET=${JWT_SECRET}
+      
+      # Production monitoring
+      - METRICS_ENABLED=${METRICS_ENABLED:-true}
+      - TRACING_ENABLED=${TRACING_ENABLED:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    
+    volumes:
+      - agent_data_prod:/app/data
+      - agent_logs_prod:/app/logs
+      - agent_config_prod:/app/config
+      - ./config/agents.prod.toml:/app/config/agents.toml:ro
+    
+    depends_on:
+      - prometheus-prod
+      - grafana-prod
+      - postgres-prod
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    security_opt:
+      - no-new-privileges:true
+    
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+    
+    networks:
+      - toka-network-prod
+
+  prometheus-prod:
+    image: prom/prometheus:latest
+    container_name: toka-prometheus-prod
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data_prod:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - toka-network-prod
+
+  grafana-prod:
+    image: grafana/grafana:latest
+    container_name: toka-grafana-prod
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data_prod:/var/lib/grafana
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus-prod
+    networks:
+      - toka-network-prod
+
+  postgres-prod:
+    image: postgres:15-alpine
+    container_name: toka-postgres-prod
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-toka_agents}
+      - POSTGRES_USER=${POSTGRES_USER:-toka}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    networks:
+      - toka-network-prod
+
+  redis-prod:
+    image: redis:7-alpine
+    container_name: toka-redis-prod
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data_prod:/data
+    networks:
+      - toka-network-prod
+
+volumes:
+  agent_data_prod:
+    driver: local
+  agent_logs_prod:
+    driver: local
+  agent_config_prod:
+    driver: local
+  prometheus_data_prod:
+    driver: local
+  grafana_data_prod:
+    driver: local
+  postgres_data_prod:
+    driver: local
+  redis_data_prod:
+    driver: local
+
+networks:
+  toka-network-prod:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16 

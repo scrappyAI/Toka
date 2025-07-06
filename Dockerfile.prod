@@ -1,4 +1,6 @@
+# Production Dockerfile for Toka
 # Multi-stage build for optimal security and performance
+
 # Stage 1: Build environment
 FROM rust:1.86-slim AS builder
 
@@ -69,8 +71,8 @@ WORKDIR /app
 
 # Environment variables for optimal agent performance
 ENV RUST_LOG=info
-ENV RUST_BACKTRACE=1
-ENV TOKIO_WORKER_THREADS=4
+ENV RUST_BACKTRACE=0
+ENV TOKIO_WORKER_THREADS=8
 ENV AGENT_DATA_DIR=/app/data
 ENV AGENT_LOG_DIR=/app/logs
 ENV AGENT_CONFIG_DIR=/app/config
@@ -79,14 +81,14 @@ ENV AGENT_CONFIG_DIR=/app/config
 ENV RUST_SECURE_ZERO_MEMORY=1
 ENV MALLOC_ARENA_MAX=2
 
-# Agent-specific optimizations
-ENV AGENT_POOL_SIZE=10
+# Production optimizations
+ENV AGENT_POOL_SIZE=20
 ENV AGENT_SPAWN_TIMEOUT=30
-ENV AGENT_WORKSTREAM_TIMEOUT=3600
-ENV CONTEXT_CACHE_SIZE=1024
-ENV CONTEXT_CACHE_TTL=3600
+ENV AGENT_WORKSTREAM_TIMEOUT=7200
+ENV CONTEXT_CACHE_SIZE=2048
+ENV CONTEXT_CACHE_TTL=7200
 
-# Health check for background agents
+# Health check for production agents
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 

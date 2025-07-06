@@ -1,0 +1,66 @@
+# Development Dockerfile for Toka
+# Optimized for development with debugging and hot reloading
+
+FROM rust:1.86-slim AS dev-builder
+
+# Install development dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    ca-certificates \
+    git \
+    curl \
+    vim \
+    htop \
+    procps \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create development user
+RUN groupadd --gid 10001 dev \
+    && useradd --uid 10001 --gid dev --shell /bin/bash --create-home dev
+
+# Set up Rust development environment
+ENV RUSTFLAGS="-C target-cpu=native"
+ENV CARGO_NET_RETRY=10
+ENV CARGO_NET_TIMEOUT=60
+ENV CARGO_INCREMENTAL=1
+
+# Install development tools
+RUN rustup component add clippy rustfmt rust-analyzer \
+    && rustup target add x86_64-unknown-linux-gnu \
+    && cargo install --locked cargo-watch cargo-auditable cargo-tarpaulin
+
+# Development stage
+FROM dev-builder AS development
+
+USER dev
+WORKDIR /app
+
+# Copy source code
+COPY --chown=dev:dev . .
+
+# Install dependencies for faster subsequent builds
+RUN cargo fetch
+
+# Development environment variables
+ENV RUST_LOG=debug
+ENV RUST_BACKTRACE=1
+ENV TOKIO_WORKER_THREADS=2
+ENV AGENT_DATA_DIR=/app/data
+ENV AGENT_LOG_DIR=/app/logs
+ENV AGENT_CONFIG_DIR=/app/config
+
+# Development-specific settings
+ENV AGENT_POOL_SIZE=5
+ENV AGENT_SPAWN_TIMEOUT=60
+ENV AGENT_WORKSTREAM_TIMEOUT=1800
+ENV CONTEXT_CACHE_SIZE=512
+ENV CONTEXT_CACHE_TTL=1800
+
+# Expose ports for development
+EXPOSE 8080 9000 3000
+
+# Default command for development (can be overridden)
+CMD ["cargo", "watch", "-x", "run", "--bin", "toka-orchestration"] 

@@ -221,35 +221,42 @@ cargo llvm-cov --workspace --all-features --html
 
 ### Project Organization
 
-All documentation has been organized into the `docs/` directory:
+All documentation has been organized into the `docs/` directory following the document organization agent specification:
 
-- **[docs/guides/](docs/guides/)**: Setup and user guides
-  - [RAFT Monitoring Setup](docs/guides/RAFT_MONITORING_README.md)
-  - [Testing Setup Guide](docs/guides/TOKA_TESTING_SETUP_GUIDE.md)
-  - [Quick Start Testing](docs/guides/QUICK_START_TESTING.md)
-  - [RAFT Monitoring Deployment](docs/guides/RAFT_MONITORING_DEPLOYMENT_SUMMARY.md)
+- **[docs/architecture/](docs/architecture/)**: System design and specifications
+  - [Architecture Overview](docs/architecture/README.md)
+  - [Capability Tokens Specification](docs/architecture/40_capability_tokens_spec_v0.2.md)
+  - [Kernel Specification](docs/architecture/44_toka_kernel_spec_v0.2.md)
 
-- **[docs/reports/](docs/reports/)**: Technical analysis and implementation reports
-  - [Unified Tools Integration](docs/reports/UNIFIED_PYTHON_TOOLS_INTEGRATION_README.md)
-  - [Implementation Roadmap](docs/reports/IMPLEMENTATION_ROADMAP.md)
-  - [Control Flow Analysis](docs/reports/CONTROL_FLOW_SUMMARY.md)
-  - [Dependency Analysis](docs/reports/DEPENDENCY_GRAPH_README.md)
-  - [Workspace Cleanup Summary](docs/reports/WORKSPACE_CLEANUP_SUMMARY.md)
+- **[docs/development/](docs/development/)**: Development guides and workflows
+  - [Development Guide](docs/development/README.md)
+  - [Testing Guide](docs/development/TOKA_TESTING_GUIDE.md)
+  - [CLI Guide](docs/development/TOKA_CLI_GUIDE.md)
+  - [Environment Setup](docs/development/DEVELOPMENT_ENVIRONMENT.md)
 
-- **[docs/proposals/](docs/proposals/)**: Architecture proposals and RFCs
-- **[docs/protocols/](docs/protocols/)**: Protocol specifications
-- **[docs/research/](docs/research/)**: Research documents and analysis
+- **[docs/operations/](docs/operations/)**: Deployment and monitoring
+  - [Operations Guide](docs/operations/README.md)
+  - [Docker Guide](docs/operations/README-Docker.md)
+  - [Docker Environments](docs/operations/README-Docker-Environments.md)
+  - [Security Hardening](docs/operations/SECURITY_HARDENING_SUMMARY.md)
 
-### Generated Visualizations
+- **[docs/agents/](docs/agents/)**: Agent system and orchestration
+  - [Agent System Guide](docs/agents/README.md)
+  - [Orchestration Guide](docs/agents/README-Orchestration.md)
+  - [Workstream Configurations](../../agents/v0.3.0/workstreams/)
 
-- **[dependency_graphs/](dependency_graphs/)**: System dependency visualizations
-- **[control_flow_graphs/](control_flow_graphs/)**: Control flow analysis reports
+- **[docs/api/](docs/api/)**: Integration guides and references
+  - [API Documentation](docs/api/README.md)
 
-### Additional Resources
+- **[docs/reports/](docs/reports/)**: Analysis and status reports
+- **[docs/research/](docs/research/)**: Technical research and proposals
+- **[docs/proposals/](docs/proposals/)**: Enhancement proposals
 
-- [Agent Configuration Guide](agents/v0.3.0/README.md)
-- [API Documentation](https://docs.rs/toka-kernel)
-- [Docker Setup Guide](README-Docker.md)
+### Documentation Index
+
+- [Complete Documentation Overview](docs/README.md) - Central navigation hub
+- [Agent Configuration Guide](agents/v0.3.0/README.md) - Agent setup and configuration
+- [API Documentation](https://docs.rs/toka-kernel) - Rust API reference
 
 ## 🛠️ Development
 

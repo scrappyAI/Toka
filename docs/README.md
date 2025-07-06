@@ -1,8 +1,9 @@
 # Toka Documentation
 
-> **Last Updated:** 2025-07-06
+> **Last Updated:** 2025-07-06  
+> **Status**: Reorganized and Cleaned
 
-Welcome to the Toka documentation. This directory contains all project documentation organized by category.
+Welcome to the Toka documentation. This directory contains all project documentation organized by category according to the document organization agent specification.
 
 ## 📋 Quick Navigation
 
@@ -10,106 +11,127 @@ Welcome to the Toka documentation. This directory contains all project documenta
 - [**Architecture**](#architecture) - System design and specifications  
 - [**Development**](#development) - Development guides and processes
 - [**Operations**](#operations) - Deployment and monitoring
+- [**Agent System**](#agent-system) - Agent configurations and orchestration
+- [**API**](#api) - Integration guides and references
 - [**Research**](#research) - Technical research and proposals
 - [**Reports**](#reports) - Analysis and status reports
 
 ## 🚀 Getting Started
 
-| Document | Description |
-|----------|-------------|
-| [QUICK_START_TESTING.md](../QUICK_START_TESTING.md) | Quick setup guide for testing |
-| [TOKA_TESTING_SETUP_GUIDE.md](../TOKA_TESTING_SETUP_GUIDE.md) | Comprehensive testing setup |
-| [DEVELOPMENT_ENVIRONMENT.md](DEVELOPMENT_ENVIRONMENT.md) | Development environment setup |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributing guidelines |
+| Document | Description | Location |
+|----------|-------------|----------|
+| [QUICKSTART.md](../QUICKSTART.md) | Quick start guide | Root |
+| [Development Environment](development/README.md) | Development setup | Development |
+| [Contributing Guidelines](development/CONTRIBUTING.md) | How to contribute | Development |
 
 ## 🏗️ Architecture
 
-| Document | Description |
-|----------|-------------|
-| [CRATES.md](CRATES.md) | Crate architecture overview |
-| [40_capability_tokens_spec_v0.2.md](40_capability_tokens_spec_v0.2.md) | Capability tokens specification |
-| [41_capability_tokens_architecture.md](41_capability_tokens_architecture.md) | Capability tokens architecture |
-| [44_toka_kernel_spec_v0.2.md](44_toka_kernel_spec_v0.2.md) | Toka kernel specification |
-| [protocols/](protocols/) | Protocol specifications |
+| Document | Description | Location |
+|----------|-------------|----------|
+| [Architecture Overview](architecture/README.md) | System design and specifications | Architecture |
+| [CRATES.md](CRATES.md) | Crate architecture overview | Root |
+| [Capability Tokens Spec](architecture/40_capability_tokens_spec_v0.2.md) | Security model specification | Architecture |
+| [Capability Architecture](architecture/41_capability_tokens_architecture.md) | Implementation details | Architecture |
+| [Kernel Specification](architecture/44_toka_kernel_spec_v0.2.md) | Core system design | Architecture |
 
 ## 💻 Development
 
-| Document | Description |
-|----------|-------------|
-| [guides/](guides/) | Development guides |
-| [30_doc-generation.mdc](30_doc-generation.mdc) | Documentation generation |
-| [31_doc-maintenance.mdc](31_doc-maintenance.mdc) | Documentation maintenance |
-| [code_coverage_guide.mdc](code_coverage_guide.mdc) | Code coverage guide |
+| Document | Description | Location |
+|----------|-------------|----------|
+| [Development Guide](development/README.md) | Development workflows and tools | Development |
+| [Testing Guide](development/TOKA_TESTING_GUIDE.md) | Testing strategies and setup | Development |
+| [CLI Guide](development/TOKA_CLI_GUIDE.md) | Command-line interface | Development |
+| [Environment Setup](development/DEVELOPMENT_ENVIRONMENT.md) | Development environment | Development |
 
 ## 🔧 Operations
 
-| Document | Description |
-|----------|-------------|
-| [RAFT_MONITORING_README.md](../RAFT_MONITORING_README.md) | Raft monitoring system |
-| [RAFT_MONITORING_DEPLOYMENT_SUMMARY.md](../RAFT_MONITORING_DEPLOYMENT_SUMMARY.md) | Deployment summary |
-| [SECURITY_HARDENING_SUMMARY.md](SECURITY_HARDENING_SUMMARY.md) | Security hardening |
-| [MEMORY_LEAK_ANALYSIS.md](MEMORY_LEAK_ANALYSIS.md) | Memory leak analysis |
+| Document | Description | Location |
+|----------|-------------|----------|
+| [Operations Guide](operations/README.md) | Deployment and monitoring | Operations |
+| [Docker Guide](operations/README-Docker.md) | Docker deployment | Operations |
+| [Docker Environments](operations/README-Docker-Environments.md) | Environment configuration | Operations |
+| [Environment Config](operations/README-Environment.md) | Environment setup | Operations |
+| [Security Hardening](operations/SECURITY_HARDENING_SUMMARY.md) | Security best practices | Operations |
+| [Memory Analysis](operations/MEMORY_LEAK_ANALYSIS.md) | Performance optimization | Operations |
+
+## 🤖 Agent System
+
+| Document | Description | Location |
+|----------|-------------|----------|
+| [Agent System Guide](agents/README.md) | Agent configuration and orchestration | Agents |
+| [Orchestration Guide](agents/README-Orchestration.md) | Multi-agent orchestration | Agents |
+| [Workstream Configs](../../agents/v0.3.0/workstreams/) | Workstream specifications | Agents |
+
+## 🔌 API
+
+| Document | Description | Location |
+|----------|-------------|----------|
+| [API Documentation](api/README.md) | Integration guides and references | API |
 
 ## 🔬 Research
 
-| Document | Description |
-|----------|-------------|
-| [research/](research/) | Technical research papers |
-| [proposals/](proposals/) | Enhancement proposals |
-| [data/](data/) | Research data and analysis |
+| Document | Description | Location |
+|----------|-------------|----------|
+| [research/](research/) | Technical research papers | Research |
+| [proposals/](proposals/) | Enhancement proposals | Proposals |
+| [data/](data/) | Research data and analysis | Data |
 
 ## 📊 Reports
 
-| Document | Description |
-|----------|-------------|
-| [reports/](reports/) | Analysis and status reports |
-| [code_coverage_reports/](code_coverage_reports/) | Code coverage reports |
-| [CLEANUP_SUMMARY.md](CLEANUP_SUMMARY.md) | Cleanup activities |
-| [REFACTOR_SUMMARY.md](REFACTOR_SUMMARY.md) | Refactoring activities |
-| [PROJECT_ORGANIZATION_SUMMARY.md](PROJECT_ORGANIZATION_SUMMARY.md) | Project organization |
+| Document | Description | Location |
+|----------|-------------|----------|
+| [reports/](reports/) | Analysis and status reports | Reports |
+| [code_coverage_reports/](code_coverage_reports/) | Code coverage reports | Coverage |
+| [Cleanup Summary](reports/CLEANUP_SUMMARY.md) | Cleanup activities | Reports |
+| [Refactor Summary](reports/REFACTOR_SUMMARY.md) | Refactoring activities | Reports |
+| [Project Organization](reports/PROJECT_ORGANIZATION_SUMMARY.md) | Project organization | Reports |
+| [Config CLI Implementation](reports/CONFIG_CLI_IMPLEMENTATION_SUMMARY.md) | CLI implementation | Reports |
+| [Memory Context Management](reports/memory-context-management-report.md) | Memory management research | Reports |
+| [GitHub CI/CD Fixes](reports/github-cicd-fixes-report.md) | CI/CD improvements | Reports |
 
 ## 🏷️ Documentation Standards
 
-### Date Enforcement
+### Organization Standards
 
-All documentation follows strict date accuracy requirements:
-- Use `2025-07-06` for current date placeholders
-- Use `2025-07-06` for release/commit dates
-- Historical dates require `<!-- DATE:EXEMPT source="reference" -->` exemption
-- Run `scripts/validate_dates.py` to check compliance
+All documentation follows the document organization agent specification:
+- **Architecture & Design** → `docs/architecture/`
+- **Development Guides** → `docs/development/`
+- **API Documentation** → `docs/api/`
+- **Deployment & Operations** → `docs/operations/`
+- **Agent System** → `docs/agents/`
 
-### Format Standards
+### Quality Standards
 
-- Use clear, descriptive headings
-- Include table of contents for long documents
-- Use consistent date format: `YYYY-MM-DD`
-- Include status indicators: **Draft**, **Stable**, **Deprecated**
-- Link to related documents
+- **Formatting**: Consistent markdown with clear headings
+- **Navigation**: Table of contents for long documents
+- **Status Indicators**: Draft, Stable, Deprecated
+- **Cross-references**: Link to related documents
+- **Date Format**: `YYYY-MM-DD` for all dates
 
 ### Maintenance
 
-- Documents are reviewed monthly for accuracy
-- Outdated information is marked for update or removal
-- Version numbers track major content changes
-- Use semantic versioning for specifications
+- **Monthly Review**: Documents reviewed for accuracy
+- **Version Control**: Track major content changes
+- **Link Validation**: Ensure all links remain functional
+- **Content Updates**: Remove outdated information
 
 ## 🔍 Finding Information
 
-Use the following strategies to find what you need:
+Use these strategies to find what you need:
 
-1. **Check this index** - organized by category
-2. **Search by file name** - descriptive naming convention
-3. **Use grep** - most documents are well-tagged
-4. **Check proposals/** - for planned features
-5. **Check reports/** - for historical analysis
+1. **Category Navigation** - Use the organized directory structure
+2. **Search by Topic** - Look in the appropriate category
+3. **Cross-references** - Follow links between related documents
+4. **Status Indicators** - Check document status for relevance
+5. **Quick Navigation** - Use the table of contents in each category
 
 ## 🤝 Contributing to Documentation
 
-1. Follow the [CONTRIBUTING.md](CONTRIBUTING.md) guidelines
-2. Use the date enforcement tools (`scripts/validate_dates.py`)
+1. Follow the [Contributing Guidelines](development/CONTRIBUTING.md)
+2. Use the appropriate category directory
 3. Update this index when adding new documents
 4. Maintain consistent formatting and structure
-5. Link to related documents
+5. Link to related documents within the same category
 
 ---
 

@@ -1,0 +1,82 @@
+# Cursor Background Agent Dockerfile
+# Minimal image for Cursor IDE background agents
+# Only includes essential Rust tooling for agent execution
+
+FROM rust:1.86-slim AS cursor-builder
+
+# Install minimal build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create cursor user
+RUN groupadd --gid 10002 cursor \
+    && useradd --uid 10002 --gid cursor --shell /bin/bash --create-home cursor
+
+# Set up minimal Rust environment
+ENV RUSTFLAGS="-C target-cpu=native"
+ENV CARGO_NET_RETRY=5
+ENV CARGO_NET_TIMEOUT=30
+ENV CARGO_INCREMENTAL=0
+
+# Install only essential Rust components
+RUN rustup component add rustfmt \
+    && rustup target add x86_64-unknown-linux-gnu
+
+# Copy only necessary source files for cursor agents
+WORKDIR /cursor
+COPY --chown=cursor:cursor Cargo.toml Cargo.lock ./
+COPY --chown=cursor:cursor crates/ ./crates/
+
+# Build cursor-specific binaries
+USER cursor
+RUN cargo build --release --bin toka-cli \
+    && strip target/release/toka-cli
+
+# Runtime stage - ultra minimal
+FROM debian:bookworm-slim AS cursor-runtime
+
+# Install only runtime essentials
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create cursor runtime user
+RUN groupadd --gid 10002 cursor \
+    && useradd --uid 10002 --gid cursor --shell /bin/bash --create-home cursor \
+    && mkdir -p /cursor/data /cursor/logs \
+    && chown -R cursor:cursor /cursor
+
+# Copy only the cursor agent binary
+COPY --from=cursor-builder --chown=cursor:cursor /cursor/target/release/toka-cli /cursor/bin/
+
+# Set up cursor environment
+USER cursor
+WORKDIR /cursor
+
+# Cursor-specific environment variables
+ENV RUST_LOG=warn
+ENV RUST_BACKTRACE=0
+ENV CURSOR_AGENT_MODE=true
+ENV AGENT_DATA_DIR=/cursor/data
+ENV AGENT_LOG_DIR=/cursor/logs
+
+# Minimal resource usage for cursor agents
+ENV AGENT_POOL_SIZE=1
+ENV AGENT_SPAWN_TIMEOUT=10
+ENV AGENT_WORKSTREAM_TIMEOUT=300
+ENV CONTEXT_CACHE_SIZE=128
+ENV CONTEXT_CACHE_TTL=600
+
+# No networking - cursor agents don't need external ports
+# No health checks - cursor manages agent lifecycle
+# No init system - cursor handles process management
+
+# Default command for cursor background agent
+CMD ["/cursor/bin/toka-cli", "agent", "--cursor-mode"] 
