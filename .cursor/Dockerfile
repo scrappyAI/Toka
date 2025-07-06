@@ -54,8 +54,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN groupadd --gid 1000 vscode \
     && useradd --uid 1000 --gid vscode --shell /bin/bash --create-home vscode \
     && usermod -aG docker vscode \
-    && mkdir -p /app/data /app/logs /app/config \
-    && chown -R vscode:vscode /app
+    && mkdir -p /home/vscode/data /home/vscode/logs /home/vscode/config \
+    && chown -R vscode:vscode /home/vscode
 
 # Install Rust development tools and components
 RUN rustup component add \
@@ -93,25 +93,25 @@ RUN cargo install --locked \
     cargo-deps \
     tokio-console
 
-# Set up development environment
-WORKDIR /app
+# Set up development environment - use user's home directory
+WORKDIR /home/vscode
 USER vscode
 
 # Environment variables optimized for development
 ENV RUST_LOG=debug
 ENV RUST_BACKTRACE=full
 ENV CARGO_INCREMENTAL=1
-ENV CARGO_TARGET_DIR=/app/target
-ENV SCCACHE_DIR=/app/.sccache
+ENV CARGO_TARGET_DIR=/home/vscode/target
+ENV SCCACHE_DIR=/home/vscode/.sccache
 ENV RUSTFLAGS="-C debuginfo=2 -C opt-level=0"
 
 # Development-specific agent environment
 ENV AGENT_DEV_MODE=true
 ENV AGENT_DEBUG_ENABLED=true
 ENV AGENT_PROFILING_ENABLED=true
-ENV AGENT_DATA_DIR=/app/data
-ENV AGENT_LOG_DIR=/app/logs
-ENV AGENT_CONFIG_DIR=/app/config
+ENV AGENT_DATA_DIR=/home/vscode/data
+ENV AGENT_LOG_DIR=/home/vscode/logs
+ENV AGENT_CONFIG_DIR=/home/vscode/config
 
 # Performance monitoring for development
 ENV TOKIO_CONSOLE_BIND=0.0.0.0:6669
@@ -124,23 +124,13 @@ ENV CAPABILITY_VALIDATION=moderate
 
 # Create necessary directories with proper permissions
 RUN mkdir -p \
-    /app/data \
-    /app/logs \
-    /app/config \
-    /app/target \
-    /app/.sccache \
-    /app/.cargo \
-    && chown -R vscode:vscode /app
-
-# Copy source code (will be mounted in development)
-COPY --chown=vscode:vscode . .
-
-# Health check for development environment
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
-
-# Expose all necessary ports for development
-EXPOSE 8080 9000 9001 9090 3001 6379 8081 6669
+    /home/vscode/data \
+    /home/vscode/logs \
+    /home/vscode/config \
+    /home/vscode/target \
+    /home/vscode/.sccache \
+    /home/vscode/.cargo \
+    && chown -R vscode:vscode /home/vscode
 
 # Default command for development
 CMD ["bash"] 

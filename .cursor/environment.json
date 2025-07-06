@@ -2,7 +2,7 @@
   "name": "Rust Development Environment",
   "user": "vscode",
   "build": {
-    "dockerfile": "Dockerfile.dev",
+    "dockerfile": "Dockerfile",
     "context": "."
   },
   "agentCanUpdateSnapshot": true,
@@ -16,6 +16,10 @@
     {
       "name": "Tests",
       "command": "cargo test"
+    },
+    {
+      "name": "Checks",
+      "command": "cargo check"
     },
     {
       "name": "Watch Mode",
