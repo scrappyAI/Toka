@@ -1,29 +1,7 @@
 {
   "name": "Rust Development Environment",
   "user": "vscode",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": "."
-  },
   "agentCanUpdateSnapshot": true,
-  "install": "cargo build --release",
   "start": "echo 'Rust environment ready'",
-  "terminals": [
-    {
-      "name": "Run Application",
-      "command": "cargo run"
-    },
-    {
-      "name": "Tests",
-      "command": "cargo test"
-    },
-    {
-      "name": "Checks",
-      "command": "cargo check"
-    },
-    {
-      "name": "Watch Mode",
-      "command": "cargo watch -x run"
-    }
-  ]
+  "install": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
 }
