@@ -107,17 +107,90 @@ async fn main() -> anyhow::Result<()> {
 - 🤖 **LLM Credentials Setup Agent** - Enables secure AI-powered orchestration
 - 📊 **Storage Layer Advancement Agent** - Next priority for v0.3.0 roadmap
 
-## 🏗️ Architecture
+## 🔧 Unified Tool System
 
-Toka OS consists of several key components:
+**New in v1.0**: All tools have been consolidated into a unified, composable system with hot-swappable execution capabilities.
 
-- **toka-kernel**: Deterministic kernel with capability-based security
-- **toka-runtime**: Agent execution environment with lifecycle management
-- **toka-storage**: Pluggable storage backends with transaction support
-- **toka-orchestration**: Multi-agent coordination and dependency resolution
-- **toka-llm-gateway**: Secure LLM provider integration with cost controls
-- **toka-auth**: JWT-based authentication with capability delegation
-- **toka-bus-core**: Event bus for inter-agent communication
+### Architecture Overview
+
+The unified tool system provides:
+- **Composable Tools**: All tools are discoverable and executable through a unified interface
+- **Hot-Swappable Execution**: Tools can be updated without agent restart
+- **Sandbox Security**: Capability-based security with resource limits and network restrictions
+- **YAML Configuration**: Consistent configuration format across all tools and agents
+
+### Directory Structure
+
+```
+tools/
+├── README.md              # Unified tool system overview
+├── manifests/            # YAML tool manifests
+│   ├── README.md           # Manifest documentation
+│   ├── control-flow-analyzer.yaml
+│   ├── dependency-visualizer.yaml
+│   ├── raft-analyzer.yaml
+│   ├── build-validator.yaml
+│   ├── date-validator.yaml
+│   └── date-template-processor.yaml
+├── agents/               # Agent configurations (YAML)
+│   └── date-enforcement-agent.yaml
+├── analysis/            # Code and system analysis tools
+│   ├── control_flow_graph_visualizer.py
+│   ├── dependency_graph_visualizer.py
+│   ├── raft_analysis.py
+│   ├── monitor_raft_development.py
+│   └── cfg_demo.py
+├── system/             # System management tools
+│   ├── validate-build-system.sh
+│   ├── setup-env.sh
+│   ├── setup-parallel-workstreams.sh
+│   └── test-toka-system.sh
+├── validation/         # Quality assurance and validation
+│   ├── validate_dates.py
+│   └── insert_date.sh
+└── runtime/           # Runtime integration tools
+```
+
+### Integration with Agent Runtime
+
+The unified tool system integrates seamlessly with the Toka agent runtime through:
+
+1. **RuntimeToolRegistry**: Automatic tool discovery and manifest loading
+2. **Capability Validation**: Tools validate agent capabilities before execution
+3. **Event Hooks**: Runtime event processing for agent lifecycle and task completion
+4. **Protocol Support**: MCP and A2A protocol integration
+
+### Usage Example
+
+```rust
+use toka_tools::{RuntimeToolRegistry, RuntimeContext};
+
+// Initialize the unified tool system
+let registry = RuntimeToolRegistry::new("tools").await?;
+
+// Create execution context
+let context = RuntimeContext {
+    agent_id: "analysis-agent-001".to_string(),
+    agent_type: "analysis".to_string(),
+    capabilities: vec!["filesystem-read", "code-analysis", "visualization"],
+    // ... other fields
+};
+
+// Execute a tool with runtime integration
+let result = registry.execute_tool_runtime(
+    "control-flow-analyzer",
+    &params,
+    &context.capabilities,
+    &context,
+).await?;
+```
+
+### Tool Categories
+
+- **Analysis**: Code analysis, dependency graphing, control flow visualization
+- **System**: Build validation, environment setup, system management
+- **Validation**: Date validation, compliance checking, quality assurance
+- **Runtime**: Agent lifecycle, orchestration, runtime management
 
 ## 🔒 Security Features
 

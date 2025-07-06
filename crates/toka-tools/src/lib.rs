@@ -1,70 +1,111 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
+//! Toka Tools - Unified tool system for composable, hot-swappable execution
 //!
-//! **toka-tools** – Standard library of _agent tools_ for **Toka OS**.
+//! This crate provides a comprehensive tool system that enables:
+//! - Automatic discovery of Python, Shell, and external tools
+//! - Unified YAML manifest format for tool configuration
+//! - Sandboxed execution with capability-based security
+//! - Hot-swappable tool registration and execution
+//! - Integration with the Toka agent runtime system
 //!
-//! The crate complements the deterministic [`toka-kernel`](../../toka-kernel) by providing
-//! reusable building blocks that agents can invoke _at arm's length_.  Tools **never** bypass the
-//! kernel's capability checks – they are regular Rust (or WASM) functions that prepare
-//! [`Operation`](toka_types::Operation)s and submit authenticated [`Message`](toka_types::Message)s.
+//! ## Architecture
 //!
-//! 📜 For the canonical opcode semantics see [`docs/42_toka_kernel_spec_v0.1.md`](../../../docs/42_toka_kernel_spec_v0.1.md).
+//! The unified tool system consists of several key components:
 //!
-//! _Design goals_
-//! * **Modularity** – every tool lives behind its own Cargo feature flag.
-//! * **Determinism** – tools must be side-effect free unless explicitly documented.
-//! * **Minimal deps** – keep the dependency graph shallow so agents can vendor-select.
+//! - **Core**: Basic tool traits, registry, and execution framework
+//! - **Wrappers**: Security-focused wrappers for different tool types
+//! - **Manifests**: YAML-based tool configuration and metadata
+//! - **Runtime Integration**: Connection to Toka agent runtime for hot-swappable execution
 //!
-//! ## Feature Flags
-//! | Feature        | Tool / Capability | Extra Deps |
-//! |----------------|-------------------|------------|
-//! | `echo` *(default via `minimal`)* | Simple *echo* tool used in tutorials | – |
-//! | `minimal`      | Alias that enables only the lightweight demo tools | – |
-//! | _future_       | More heavy-weight tools will land behind dedicated flags | varies |
+//! ## Usage
 //!
-//! Enable just the *echo* tool:
-//! ```toml
-//! [dependencies]
-//! toka-tools = { version = "0.1", default-features = false, features = ["echo"] }
-//! ```
-//!
-//! ## Quick Example
-//! ```rust
-//! use std::sync::Arc;
-//! use toka_tools::{ToolRegistry, ToolParams};
+//! ```no_run
+//! use toka_tools::{RuntimeToolRegistry, RuntimeContext};
+//! use std::path::Path;
 //!
 //! #[tokio::main]
 //! async fn main() -> anyhow::Result<()> {
-//!     // Empty registry – you pick which tools to install.
-//!     let registry = ToolRegistry::new_empty();
-//!
-//!     // Register the demo echo tool (behind `echo` feature flag).
-//!     registry.register_tool(Arc::new(toka_tools::tools::EchoTool::new())).await?;
-//!
-//!     let mut args = std::collections::HashMap::new();
-//!     args.insert("message".into(), "hello".into());
-//!     let res = registry.execute_tool("echo", &ToolParams { name: "echo".into(), args }).await?;
-//!
-//!     assert_eq!(res.output, "hello");
+//!     // Initialize runtime tool registry
+//!     let registry = RuntimeToolRegistry::new("tools").await?;
+//!     
+//!     // Create runtime context
+//!     let context = RuntimeContext {
+//!         agent_id: "analysis-agent-001".to_string(),
+//!         agent_type: "analysis".to_string(),
+//!         workstream: Some("code-analysis".to_string()),
+//!         execution_environment: "development".to_string(),
+//!         capabilities: vec![
+//!             "filesystem-read".to_string(),
+//!             "code-analysis".to_string(),
+//!             "visualization".to_string(),
+//!         ],
+//!     };
+//!     
+//!     // Execute a tool
+//!     let params = toka_tools::ToolParams {
+//!         name: "control-flow-analyzer".to_string(),
+//!         args: [
+//!             ("output_format", "mermaid"),
+//!             ("complexity_analysis", "true"),
+//!         ].into_iter().map(|(k, v)| (k.to_string(), v.to_string())).collect(),
+//!     };
+//!     
+//!     let result = registry.execute_tool_runtime(
+//!         "control-flow-analyzer",
+//!         &params,
+//!         &context.capabilities,
+//!         &context,
+//!     ).await?;
+//!     
+//!     println!("Tool execution result: {}", result.tool_result.output);
 //!     Ok(())
 //! }
 //! ```
-//!
-//! ---
-//! This crate forbids `unsafe` and keeps its public API intentionally small
-//! so that downstream workspaces can vendor or fork individual tools without
-//! pulling the entire Toka dependency graph.
-//!
-//! ⚠️ **Experimental crate** – public APIs are subject to change without notice.  Expect **breaking
-//! changes** until the project reaches `v1.0` maturity.
-//!
-//! _Note_: The former **`toka-toolkit-core`** crate has been fully merged into *toka-tools* as of
-//! July 2025.  All core abstractions now live under [`crate::core`]. Downstream crates should
-//! simply depend on `toka-tools` instead of the removed legacy crate.
 
 pub mod core;
-
 pub mod tools;
+pub mod wrappers;
+pub mod manifest;
+pub mod loader;
+pub mod runtime_integration;
 
-// Re-export the important types so downstream code can simply `use toka_tools::{Tool, ToolRegistry}`
-pub use crate::core::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};
+// Re-export core types
+pub use core::{Tool, ToolParams, ToolResult, ToolMetadata, ToolRegistry};
+
+// Re-export wrapper types for unified tool system
+pub use wrappers::{
+    UnifiedToolRegistry, DiscoveredTool, ToolType, ToolExecutionMetrics,
+    ToolSecurityClassification, SecurityLevel, SecurityConfig, 
+    SandboxConfig, ResourceLimits, CapabilityValidator
+};
+
+// Re-export manifest types
+pub use manifest::{ToolManifest, Transport, SideEffect, ProtocolMapping};
+
+// Re-export runtime integration types
+pub use runtime_integration::{
+    RuntimeToolRegistry, RuntimeContext, RuntimeToolResult,
+    UnifiedToolManifest, ToolMetadata as RuntimeToolMetadata,
+    ToolSpec, ExecutableSpec, CapabilitiesSpec, SecuritySpec,
+    SandboxSpec, ParameterSpec, ToolInterface, ProtocolMapping as RuntimeProtocolMapping,
+};
+
+/// Version of the unified tool system
+pub const TOOLS_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// Default tools directory relative to workspace root
+pub const DEFAULT_TOOLS_DIR: &str = "tools";
+
+/// Default manifests directory within tools directory  
+pub const DEFAULT_MANIFESTS_DIR: &str = "manifests";
+
+/// Initialize a runtime tool registry with default settings
+pub async fn init_runtime_registry() -> anyhow::Result<RuntimeToolRegistry> {
+    RuntimeToolRegistry::new(DEFAULT_TOOLS_DIR).await
+}
+
+/// Initialize a runtime tool registry with custom tools directory
+pub async fn init_runtime_registry_with_dir(tools_dir: impl AsRef<std::path::Path>) -> anyhow::Result<RuntimeToolRegistry> {
+    RuntimeToolRegistry::new(tools_dir).await
+}
