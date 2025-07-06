@@ -42,6 +42,7 @@ members = [
     "crates/security/toka-capability-delegation",
     "crates/security/toka-cvm",
     "crates/security/toka-revocation",
+    "crates/toka-performance",
 ]
 
 [workspace.dependencies]
