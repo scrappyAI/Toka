@@ -27,7 +27,6 @@
 //! ```
 
 use std::sync::Arc;
-use std::time::Duration;
 
 use anyhow::{Context, Result};
 use axum::{
@@ -239,7 +238,18 @@ async fn main() -> Result<()> {
 
     // Graceful shutdown
     info!("Shutting down orchestration service");
-    runtime.shutdown().await?;
+    
+    // Use Arc::try_unwrap to get ownership, or clone if there are multiple references
+    match Arc::try_unwrap(runtime) {
+        Ok(runtime) => {
+            runtime.shutdown().await?;
+        }
+        Err(_) => {
+            // Multiple references exist, we can't shutdown cleanly
+            warn!("Multiple references to runtime exist, skipping shutdown");
+        }
+    }
+    
     info!("Toka Orchestration Service stopped");
 
     Ok(())
@@ -319,8 +329,13 @@ fn init_logging(log_level: &str) -> Result<()> {
 }
 
 fn load_orchestration_config(config_path: &str) -> Result<OrchestrationConfig> {
-    OrchestrationConfig::from_file(config_path)
-        .with_context(|| format!("Failed to load orchestration configuration from {}", config_path))
+    // Extract directory from the config path
+    let config_dir = std::path::Path::new(config_path)
+        .parent()
+        .unwrap_or_else(|| std::path::Path::new("."));
+    
+    OrchestrationConfig::from_directory(config_dir)
+        .with_context(|| format!("Failed to load orchestration configuration from directory {}", config_dir.display()))
 }
 
 fn parse_storage_config(storage_type: &str, db_path: &str) -> Result<StorageConfig> {

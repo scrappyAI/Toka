@@ -73,7 +73,7 @@ dotenv = "0.15"
 config = "0.14"
 utoipa = { version = "4.1", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "5.0", features = ["axum"] }
-clap = { version = "4.5", features = ["derive"] }
+clap = { version = "4.5", features = ["derive", "env"] }
 
 # Development dependencies
 tokio-test = "0.4"
