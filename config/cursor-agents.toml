@@ -14,6 +14,12 @@ cursor_websocket_enabled = true
 cursor_api_integration = true
 cursor_real_time_updates = true
 
+# Ownership management settings
+single_owner_mode = true
+ownership_validation = "strict"
+ownership_timeout = 300
+conflict_resolution = "terminate_conflicting"
+
 [cursor_integration]
 # Cursor-specific communication settings
 websocket_port = 9001
@@ -27,12 +33,22 @@ cursor_git_integration = true
 cursor_lsp_integration = true
 cursor_terminal_access = true
 
+# Ownership management
+owner_validation_enabled = true
+exclusive_access_mode = true
+resource_isolation = true
+
 [security]
 # Enhanced security for cursor environment
 sandbox_enabled = true
 capability_validation = "strict"
 cursor_sandbox_enabled = true
 file_access_restricted = true
+
+# Ownership security
+owner_id_validation = true
+multi_owner_prevention = true
+session_isolation = true
 
 [security.cursor_resource_limits]
 max_memory = "768MB"
@@ -52,6 +68,11 @@ persistence_interval = 15
 cursor_session_persistence = true
 cursor_context_persistence = true
 cursor_file_cache_enabled = true
+
+# Ownership storage settings
+owner_lock_enabled = true
+session_lock_timeout = 300
+database_exclusive_mode = true
 
 [llm]
 # LLM configuration optimized for cursor workflows
@@ -79,6 +100,11 @@ cursor_session_tracking = true
 cursor_performance_tracking = true
 cursor_usage_analytics = true
 
+# Ownership monitoring
+ownership_monitoring = true
+conflict_detection = true
+owner_activity_tracking = true
+
 [caching]
 # Cursor-optimized caching strategy
 context_cache_size = 2048
@@ -92,6 +118,11 @@ cursor_file_cache_size = 1024
 cursor_file_cache_ttl = 1800
 cursor_git_cache_size = 512
 cursor_git_cache_ttl = 3600
+
+# Ownership caching
+owner_cache_enabled = true
+owner_cache_ttl = 600
+session_cache_isolation = true
 
 # Cursor-specific agent definitions
 [[agents]]
@@ -112,6 +143,11 @@ file_operations = ["read", "write", "create", "delete"]
 git_operations = ["status", "diff", "commit", "push"]
 lsp_integration = ["hover", "definition", "references", "symbols"]
 terminal_access = ["execute", "monitor", "interact"]
+
+[agents.ownership]
+requires_exclusive_access = true
+conflict_resolution = "wait"
+max_wait_time = 30
 
 [[agents.objectives]]
 description = "Provide intelligent code assistance within cursor environment"
@@ -142,6 +178,11 @@ git_operations = ["status", "diff", "commit", "push", "pull", "merge", "rebase"]
 file_operations = ["read", "write"]
 terminal_access = ["execute", "monitor"]
 
+[agents.ownership]
+requires_exclusive_access = true
+conflict_resolution = "queue"
+max_wait_time = 60
+
 [[agents.objectives]]
 description = "Manage git operations and provide version control assistance"
 deliverable = "Streamlined git workflow and conflict resolution"
@@ -171,6 +212,11 @@ file_operations = ["read", "write", "create", "delete", "move", "copy"]
 directory_operations = ["create", "delete", "list", "search"]
 search_operations = ["text-search", "semantic-search", "file-search"]
 
+[agents.ownership]
+requires_exclusive_access = false
+conflict_resolution = "share"
+max_concurrent_access = 3
+
 [[agents.objectives]]
 description = "Manage file operations and provide intelligent file assistance"
 deliverable = "Efficient file management and search capabilities"
@@ -199,6 +245,11 @@ secondary = ["alerting", "reporting", "analysis"]
 monitoring = ["cpu", "memory", "disk", "network"]
 analysis = ["bottleneck-detection", "trend-analysis", "anomaly-detection"]
 optimization = ["suggestion-generation", "auto-optimization"]
+
+[agents.ownership]
+requires_exclusive_access = false
+conflict_resolution = "share"
+max_concurrent_access = 2
 
 [[agents.objectives]]
 description = "Monitor cursor agent performance and optimize resource usage"

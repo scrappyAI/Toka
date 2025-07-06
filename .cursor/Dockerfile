@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     lld \
     clang \
+    sqlite3 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -58,22 +59,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \
     tini \
     procps \
+    sqlite3 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
 # Create cursor agent runtime user
 RUN groupadd --gid 10001 toka \
     && useradd --uid 10001 --gid toka --shell /bin/bash --create-home toka \
-    && mkdir -p /app/bin /app/data /app/logs /app/config \
+    && mkdir -p /app/bin /app/data /app/logs /app/config /app/scripts \
+    && mkdir -p /app/data/locks /app/data/cache /app/data/sessions /app/data/context \
     && chown -R toka:toka /app
 
 # Copy cursor-optimized binaries
 COPY --from=cursor-builder --chown=toka:toka /build/target/release/toka-cli /app/bin/
 COPY --from=cursor-builder --chown=toka:toka /build/target/release/toka-config-cli /app/bin/
 
-# Copy cursor-specific configurations
+# Copy cursor-specific configurations and scripts
 COPY --chown=toka:toka config/cursor-agents.toml /app/config/
 COPY --chown=toka:toka .cursor/scripts/ /app/scripts/
+
+# Set execute permissions for scripts
+RUN chmod +x /app/scripts/*.sh
 
 # Set up cursor agent environment
 USER toka
@@ -93,6 +99,12 @@ ENV RUST_SECURE_ZERO_MEMORY=1
 ENV CURSOR_SANDBOX_ENABLED=true
 ENV CURSOR_CAPABILITY_VALIDATION=strict
 
+# Ownership management settings
+ENV CURSOR_SINGLE_OWNER_MODE=true
+ENV CURSOR_OWNERSHIP_VALIDATION=strict
+ENV CURSOR_OWNERSHIP_TIMEOUT=300
+ENV CURSOR_CONFLICT_RESOLUTION=terminate_conflicting
+
 # Cursor agent performance optimizations
 ENV CURSOR_AGENT_POOL_SIZE=12
 ENV CURSOR_AGENT_SPAWN_TIMEOUT=30
@@ -106,9 +118,9 @@ ENV CURSOR_WEBSOCKET_PORT=9001
 ENV CURSOR_API_TIMEOUT=30
 ENV CURSOR_MAX_CONCURRENT_REQUESTS=50
 
-# Health check optimized for cursor agents
+# Health check optimized for cursor agents with ownership validation
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8080/health/cursor || exit 1
+    CMD /app/scripts/cursor-health-check.sh --quick || exit 1
 
 # Expose cursor agent ports
 EXPOSE 8080 9000 9001 3000
@@ -116,5 +128,5 @@ EXPOSE 8080 9000 9001 3000
 # Use tini for proper signal handling in cursor environment
 ENTRYPOINT ["/usr/bin/tini", "--"]
 
-# Default command for cursor agent orchestration
-CMD ["/app/bin/toka-cli", "orchestrate", "--config", "/app/config/cursor-agents.toml", "--cursor-mode", "--daemon"]
+# Default command uses the initialization script for proper ownership management
+CMD ["/app/scripts/cursor-agent-init.sh"]

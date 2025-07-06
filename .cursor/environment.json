@@ -2,14 +2,7 @@
   "name": "Toka Cursor Agent Environment",
   "user": "toka",
   "install": "cargo build --release --locked && cargo audit",
-  "start": "/app/bin/toka-cli orchestrate --config /app/config/cursor-agents.toml --cursor-mode",
-  "container": {
-    "build": {
-      "dockerfile": "Dockerfile",
-      "context": ".."
-    },
-    "agentCanUpdateSnapshot": true
-  },
+  "start": "/app/bin/toka-cli orchestrate --config /app/config/cursor-agents.toml --cursor-mode --single-owner",
   "repositoryDependencies": [
     "github.com/ScrappyAI/toka"
   ],
@@ -19,7 +12,7 @@
       "port": 8080
     },
     {
-      "name": "Cursor Agent Management",
+      "name": "Cursor Agent Management", 
       "port": 9000
     },
     {
@@ -32,18 +25,16 @@
     }
   ],
   "terminals": [
-    [
-      {
-        "name": "Cursor Agent Orchestrator",
-        "command": "/app/bin/toka-cli orchestrate --config /app/config/cursor-agents.toml --cursor-mode --verbose",
-        "description": "Main cursor agent orchestration service with real-time logging"
-      },
-      {
-        "name": "Agent Status Monitor",
-        "command": "/app/bin/toka-cli monitor --cursor-agents --real-time",
-        "description": "Real-time monitoring of cursor background agents and their execution status"
-      }
-    ],
+    {
+      "name": "Cursor Agent Orchestrator",
+      "command": "/app/bin/toka-cli orchestrate --config /app/config/cursor-agents.toml --cursor-mode --single-owner --verbose",
+      "description": "Main cursor agent orchestration service with single-owner mode"
+    },
+    {
+      "name": "Agent Status Monitor",
+      "command": "/app/bin/toka-cli monitor --cursor-agents --real-time --owner-check",
+      "description": "Real-time monitoring of cursor background agents with ownership validation"
+    },
     {
       "name": "Cursor Agent Logs",
       "command": "tail -f /app/logs/cursor-agents.log",
@@ -51,13 +42,8 @@
     },
     {
       "name": "Performance Metrics",
-      "command": "/app/bin/toka-cli metrics --cursor-agents --export-prometheus",
-      "description": "Real-time performance metrics for cursor agent optimization and resource usage"
-    },
-    {
-      "name": "Agent Interactive Shell",
-      "command": "/app/bin/toka-cli shell --cursor-mode",
-      "description": "Interactive shell for managing cursor agents and executing ad-hoc commands"
+      "command": "/app/bin/toka-cli metrics --cursor-agents --export-prometheus --owner-safe",
+      "description": "Real-time performance metrics with ownership conflict prevention"
     }
   ]
 }
