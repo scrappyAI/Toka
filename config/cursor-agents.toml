@@ -1,0 +1,212 @@
+# Cursor Background Agent Configuration
+# Optimized for cursor's background agent containers and workflow
+
+[orchestration]
+# Cursor-optimized concurrent agent settings
+max_concurrent_agents = 12
+agent_spawn_timeout = 30
+workstream_timeout = 3600
+agent_pool_size = 15
+
+# Cursor-specific agent lifecycle settings
+cursor_mode = true
+cursor_websocket_enabled = true
+cursor_api_integration = true
+cursor_real_time_updates = true
+
+[cursor_integration]
+# Cursor-specific communication settings
+websocket_port = 9001
+api_timeout = 30
+max_concurrent_requests = 50
+heartbeat_interval = 15
+
+# Cursor agent capabilities
+cursor_file_operations = true
+cursor_git_integration = true
+cursor_lsp_integration = true
+cursor_terminal_access = true
+
+[security]
+# Enhanced security for cursor environment
+sandbox_enabled = true
+capability_validation = "strict"
+cursor_sandbox_enabled = true
+file_access_restricted = true
+
+[security.cursor_resource_limits]
+max_memory = "768MB"
+max_cpu = "0.75"
+timeout = "1800"
+max_file_operations = 100
+max_git_operations = 50
+
+[storage]
+# Cursor-optimized storage configuration
+backend = "sqlite"
+database_url = "sqlite:///app/data/cursor-agents.db"
+persistence_buffer_size = 512
+persistence_interval = 15
+
+# Cursor-specific storage settings
+cursor_session_persistence = true
+cursor_context_persistence = true
+cursor_file_cache_enabled = true
+
+[llm]
+# LLM configuration optimized for cursor workflows
+provider = "anthropic"
+model = "claude-3-5-sonnet-20241022"
+rate_limit = 60
+timeout = 30
+debug_mode = false
+
+# Cursor-specific LLM settings
+cursor_context_aware = true
+cursor_file_context_enabled = true
+cursor_git_context_enabled = true
+max_context_tokens = 8192
+
+[monitoring]
+# Enhanced monitoring for cursor agents
+metrics_enabled = true
+tracing_enabled = true
+log_level = "info"
+cursor_metrics_enabled = true
+
+# Cursor-specific monitoring
+cursor_session_tracking = true
+cursor_performance_tracking = true
+cursor_usage_analytics = true
+
+[caching]
+# Cursor-optimized caching strategy
+context_cache_size = 2048
+context_cache_ttl = 7200
+response_cache_enabled = true
+response_cache_size = 1536
+response_cache_ttl = 3600
+
+# Cursor-specific caching
+cursor_file_cache_size = 1024
+cursor_file_cache_ttl = 1800
+cursor_git_cache_size = 512
+cursor_git_cache_ttl = 3600
+
+# Cursor-specific agent definitions
+[[agents]]
+name = "cursor-code-assistant"
+version = "1.0.0"
+domain = "code-assistance"
+priority = "critical"
+workstream = "cursor-main"
+branch = "feature/cursor-integration"
+cursor_agent = true
+
+[agents.capabilities]
+primary = ["code-completion", "code-review", "refactoring", "debugging"]
+secondary = ["documentation", "testing", "optimization"]
+
+[agents.cursor_capabilities]
+file_operations = ["read", "write", "create", "delete"]
+git_operations = ["status", "diff", "commit", "push"]
+lsp_integration = ["hover", "definition", "references", "symbols"]
+terminal_access = ["execute", "monitor", "interact"]
+
+[[agents.objectives]]
+description = "Provide intelligent code assistance within cursor environment"
+deliverable = "Real-time code suggestions and improvements"
+validation = "Code quality metrics and user satisfaction"
+
+[[agents.tasks.default]]
+description = "Analyze code and provide contextual assistance"
+priority = "critical"
+dependencies = []
+cursor_task = true
+
+[[agents]]
+name = "cursor-git-assistant"
+version = "1.0.0"
+domain = "version-control"
+priority = "high"
+workstream = "cursor-main"
+branch = "feature/git-integration"
+cursor_agent = true
+
+[agents.capabilities]
+primary = ["git-operations", "branch-management", "merge-conflict-resolution"]
+secondary = ["code-review", "commit-analysis", "repository-insights"]
+
+[agents.cursor_capabilities]
+git_operations = ["status", "diff", "commit", "push", "pull", "merge", "rebase"]
+file_operations = ["read", "write"]
+terminal_access = ["execute", "monitor"]
+
+[[agents.objectives]]
+description = "Manage git operations and provide version control assistance"
+deliverable = "Streamlined git workflow and conflict resolution"
+validation = "Successful git operations and clean repository state"
+
+[[agents.tasks.default]]
+description = "Monitor git state and assist with version control"
+priority = "high"
+dependencies = []
+cursor_task = true
+
+[[agents]]
+name = "cursor-file-manager"
+version = "1.0.0"
+domain = "file-management"
+priority = "high"
+workstream = "cursor-main"
+branch = "feature/file-management"
+cursor_agent = true
+
+[agents.capabilities]
+primary = ["file-operations", "directory-management", "search", "indexing"]
+secondary = ["backup", "synchronization", "cleanup"]
+
+[agents.cursor_capabilities]
+file_operations = ["read", "write", "create", "delete", "move", "copy"]
+directory_operations = ["create", "delete", "list", "search"]
+search_operations = ["text-search", "semantic-search", "file-search"]
+
+[[agents.objectives]]
+description = "Manage file operations and provide intelligent file assistance"
+deliverable = "Efficient file management and search capabilities"
+validation = "File operations success rate and search accuracy"
+
+[[agents.tasks.default]]
+description = "Monitor file system and provide file management assistance"
+priority = "high"
+dependencies = []
+cursor_task = true
+
+[[agents]]
+name = "cursor-performance-monitor"
+version = "1.0.0"
+domain = "performance-monitoring"
+priority = "medium"
+workstream = "cursor-optimization"
+branch = "feature/performance-monitoring"
+cursor_agent = true
+
+[agents.capabilities]
+primary = ["performance-monitoring", "resource-tracking", "optimization-suggestions"]
+secondary = ["alerting", "reporting", "analysis"]
+
+[agents.cursor_capabilities]
+monitoring = ["cpu", "memory", "disk", "network"]
+analysis = ["bottleneck-detection", "trend-analysis", "anomaly-detection"]
+optimization = ["suggestion-generation", "auto-optimization"]
+
+[[agents.objectives]]
+description = "Monitor cursor agent performance and optimize resource usage"
+deliverable = "Performance insights and optimization recommendations"
+validation = "Performance improvements and resource efficiency"
+
+[[agents.tasks.default]]
+description = "Continuously monitor and optimize cursor agent performance"
+priority = "medium"
+dependencies = []
+cursor_task = true 
