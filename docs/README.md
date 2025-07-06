@@ -28,10 +28,11 @@ Welcome to the Toka documentation hub. This directory contains all project docum
 - **[github-cicd-fixes-report.md](./github-cicd-fixes-report.md)** - GitHub CI/CD fixes report
 
 ### Organized Subdirectories
-- **[protocols/](./protocols/)** - Protocol specifications and definitions
+- **[guides/](./guides/)** - Implementation guides and comprehensive documentation
 - **[reports/](./reports/)** - Various project reports and analyses
 - **[research/](./research/)** - Research documents and findings
 - **[proposals/](./proposals/)** - Project proposals and RFCs
+- **[protocols/](./protocols/)** - Protocol specifications and definitions
 - **[code_coverage_reports/](./code_coverage_reports/)** - Code coverage reports
 - **[data/](./data/)** - Data files and large metadata
 
@@ -67,17 +68,25 @@ docs/
 ├── *_spec_*.md                           # Specifications
 ├── *_architecture.md                     # Architecture documents
 ├── *.mdc                                 # Guides and workflows
+├── guides/                               # Implementation guides and comprehensive documentation
+├── reports/                              # Project reports and analyses
+├── research/                             # Research documents and findings
+├── proposals/                            # Project proposals and RFCs
 ├── protocols/                            # Protocol specifications
-├── reports/                              # Project reports
-├── research/                             # Research documents
-├── proposals/                            # Project proposals
 ├── code_coverage_reports/                # Coverage reports
 └── data/                                 # Data files and metadata
 ```
 
-## � Recent Changes
+## 📋 Recent Changes
 
-### File Organization (Latest)
+### Documentation Cleanup (2025-07-06)
+- **Reorganized root-level documentation**: Moved scattered implementation summaries and guides to proper subdirectories
+- **Created guides/ directory**: Organized implementation guides and comprehensive documentation  
+- **Updated reports/ directory**: Consolidated project reports and analyses
+- **Removed duplicate files**: Eliminated redundant performance observability documentation
+- **Updated cross-references**: Fixed broken links and improved navigation
+
+### File Organization (Previous)
 - Moved all documentation from project root to `docs/` directory
 - Created semantic subdirectories for better organization
 - Removed duplicate files and consolidated documentation
