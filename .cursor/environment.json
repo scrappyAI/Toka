@@ -1,4 +1,4 @@
 {
-  "name": "Rust Development Environment",
-  "user": "vscode"
+  "install": "rustup, cargo, rustc, rustfmt",
+  "agentCanUpdateSnapshot": true
 }
