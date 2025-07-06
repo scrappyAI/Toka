@@ -1,0 +1,102 @@
+name: GitHubIntegration
+version: 1.0.1
+description: Guidelines for secure and efficient GitHub integration including API
+  usage, CLI tooling, and automation best practices
+category: github
+priority: 85
+always_apply: false
+extends:
+- CoreBaseline
+- SecurityBase
+objectives:
+- Ensure secure GitHub API and CLI integration
+- Implement proper rate limiting and error handling
+- Maintain audit trails for all GitHub operations
+- Follow GitHub best practices for automation
+- Enable safe multi-repository operations
+guidelines:
+  authentication:
+  - Use GitHub Personal Access Tokens with minimal required scopes
+  - Implement automatic token rotation where possible
+  - Store tokens securely using environment variables or secure storage
+  - Never commit tokens or credentials to version control
+  - Implement token expiration and renewal workflows
+  - Use GitHub Apps for production integrations when appropriate
+  rate_limiting:
+  - Implement intelligent rate limiting respecting GitHub API limits
+  - Use conditional requests with ETags to minimize API usage
+  - Implement exponential backoff for rate limit and abuse detection
+  - Monitor rate limit consumption and alert on approaching limits
+  - Prioritize critical operations in rate-limited environments
+  - Cache API responses when appropriate to reduce API calls
+  api_usage:
+  - Use GitHub's REST API v4 (GraphQL) for complex queries when possible
+  - Implement proper pagination for list operations
+  - Handle GitHub API errors gracefully with appropriate retry logic
+  - Validate webhook signatures for security
+  - Use batch operations where supported to reduce API calls
+  - Implement proper error categorization (retryable vs permanent)
+  cli_integration:
+  - Use GitHub CLI (gh) for local development and automation
+  - Test CLI operations across different platforms and versions
+  - Implement proper authentication handling for CLI operations
+  - Provide fallback mechanisms when CLI operations fail
+  - Use CLI extensions appropriately for specialized operations
+  - Handle CLI output parsing robustly across different formats
+  security:
+  - Implement webhook signature verification for all webhook endpoints
+  - Use least-privilege access for GitHub permissions
+  - Audit GitHub API access patterns regularly
+  - Implement proper input validation for all GitHub data
+  - Log all GitHub operations with sufficient detail for audit
+  - Protect against common GitHub-specific attack vectors
+  automation:
+  - Design GitHub operations to be idempotent and safely retryable
+  - Implement dry-run modes for destructive operations
+  - Provide clear confirmation prompts for bulk operations
+  - Maintain audit logs of all automated GitHub operations
+  - Implement proper rollback mechanisms for failed operations
+  - Test automation scripts in isolated environments first
+  error_handling:
+  - Distinguish between retryable and permanent GitHub API errors
+  - Implement appropriate timeouts for all GitHub operations
+  - Provide clear error messages that help diagnose issues
+  - Log GitHub API responses for debugging purposes
+  - Handle GitHub service outages gracefully with queuing
+  - Implement circuit breaker patterns for repeated failures
+  monitoring:
+  - Monitor GitHub API usage metrics and success rates
+  - Track webhook delivery success and failure rates
+  - Alert on authentication failures or token expiration
+  - Monitor GitHub operation performance and latency
+  - Track rate limit consumption patterns
+  - Implement health checks for GitHub integration components
+commit_conventions:
+  github_specific:
+  - 'feat(github): add new GitHub API integration'
+  - 'fix(github): resolve GitHub CLI authentication issue'
+  - 'docs(github): update GitHub integration documentation'
+  - 'refactor(github): optimize GitHub API rate limiting'
+validation:
+  required_tools:
+  - github-cli (gh)
+  - curl or equivalent HTTP client
+  - jq for JSON processing
+  compatibility:
+    github_cli_version: '>=2.0.0'
+    github_api_version: v4 (GraphQL) and v3 (REST)
+    authentication_methods:
+    - token
+    - oauth
+    - github-app
+  tests:
+  - GitHub API authentication validation
+  - Rate limiting compliance testing
+  - Webhook signature verification
+  - CLI integration cross-platform testing
+  - Error handling and retry logic validation
+metadata:
+  created: '2025-07-06'
+  modified: '2025-07-06T02:24:54.757622+00:00'
+  schema_version: 1.0.0
+  checksum: 8e646517ccefd6e6

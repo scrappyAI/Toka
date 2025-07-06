@@ -1,0 +1,158 @@
+# Cursor Rule Schema v1.0.0
+# This is the canonical schema that ALL cursor rules MUST follow
+# Auto-generated on: 2025-01-08T10:30:00Z
+
+$schema: "https://json-schema.org/draft/2019-09/schema"
+$id: "https://github.com/toka-project/cursor-rule-schema"
+title: "Cursor Rule Schema"
+description: "Formal schema for Cursor IDE rules ensuring consistency across all implementations"
+version: "1.0.0"
+
+type: object
+required:
+  - name
+  - version
+  - description
+  - category
+  - priority
+  - always_apply
+  - extends
+  - objectives
+  - guidelines
+
+properties:
+  name:
+    type: string
+    pattern: "^[A-Za-z][A-Za-z0-9]*$"
+    description: "Rule name in PascalCase format"
+    examples: ["CoreBaseline", "SecurityBase", "TestingQuality"]
+  
+  version:
+    type: string
+    pattern: "^\\d+\\.\\d+\\.\\d+$"
+    description: "Semantic version (automatically managed)"
+    examples: ["1.0.0", "1.2.3", "2.0.0"]
+  
+  description:
+    type: string
+    minLength: 10
+    maxLength: 200
+    description: "Clear description of what this rule accomplishes"
+  
+  category:
+    type: string
+    enum: ["core", "security", "testing", "documentation", "process", "architecture", "project", "github", "ai-integration"]
+    description: "Rule category for organizational purposes"
+  
+  priority:
+    type: integer
+    minimum: 1
+    maximum: 100
+    description: "Priority level (1-100, higher numbers = higher priority)"
+  
+  always_apply:
+    type: boolean
+    description: "Whether this rule should always be applied regardless of context"
+  
+  extends:
+    type: array
+    items:
+      type: string
+      pattern: "^[A-Za-z][A-Za-z0-9]*$"
+    description: "List of parent rules this rule extends"
+    examples: [["CoreBaseline"], ["CoreBaseline", "SecurityBase"]]
+  
+  objectives:
+    type: array
+    items:
+      type: string
+      minLength: 5
+      maxLength: 100
+    minItems: 1
+    description: "Clear objectives this rule aims to achieve"
+  
+  guidelines:
+    type: object
+    description: "Organized guidelines grouped by topic"
+    patternProperties:
+      "^[a-z_]+$":
+        type: array
+        items:
+          type: string
+          minLength: 5
+          maxLength: 200
+        minItems: 1
+  
+  commit_conventions:
+    type: object
+    description: "Commit message conventions (optional)"
+    properties:
+      format:
+        type: string
+        description: "Commit message format template"
+      types:
+        type: array
+        items:
+          type: string
+        description: "Allowed commit types"
+      examples:
+        type: array
+        items:
+          type: string
+        description: "Example commit messages"
+  
+  versioning:
+    type: object
+    description: "Versioning scheme (optional)"
+    properties:
+      scheme:
+        type: string
+        enum: ["semantic", "calendar", "custom"]
+      patch:
+        type: string
+        description: "What constitutes a patch version"
+      minor:
+        type: string
+        description: "What constitutes a minor version"
+      major:
+        type: string
+        description: "What constitutes a major version"
+  
+  metadata:
+    type: object
+    description: "Auto-generated metadata (managed by system)"
+    properties:
+      created:
+        type: string
+        format: "date-time"
+        description: "When this rule was created"
+      modified:
+        type: string
+        format: "date-time"
+        description: "When this rule was last modified"
+      schema_version:
+        type: string
+        description: "Schema version this rule follows"
+      checksum:
+        type: string
+        description: "Content checksum for integrity"
+  
+  validation:
+    type: object
+    description: "Validation rules (optional)"
+    properties:
+      required_tools:
+        type: array
+        items:
+          type: string
+        description: "Tools required for this rule"
+      compatibility:
+        type: object
+        description: "Compatibility requirements"
+      tests:
+        type: array
+        items:
+          type: string
+        description: "Validation tests for this rule"
+
+additionalProperties: false 
