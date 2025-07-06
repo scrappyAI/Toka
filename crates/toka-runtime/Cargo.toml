@@ -12,6 +12,11 @@ categories = ["development-tools", "os"]
 [dependencies]
 # Kernel enforcement
 toka-kernel = { path = "../toka-kernel" }
+toka-types = { path = "../toka-types" }
+toka-bus-core = { path = "../toka-bus-core" }
+
+# Date/time handling
+chrono = { workspace = true, features = ["serde"] }
 
 # Core async runtime and utilities
 tokio = { version = "1.0", features = ["full"] }

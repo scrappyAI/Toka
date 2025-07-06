@@ -60,7 +60,7 @@ use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
 use toka_llm_gateway::LlmGateway;
-use toka_runtime::Runtime;
+use toka_runtime::RuntimeManager;
 use toka_types::{
     AgentSpec, EntityId, Message, Operation, TaskSpec,
     AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority, AgentCapabilities,
@@ -154,7 +154,7 @@ pub struct OrchestrationEngine {
     /// Orchestration configuration
     config: OrchestrationConfig,
     /// Toka runtime instance
-    runtime: Arc<Runtime>,
+    runtime: Arc<RuntimeManager>,
     /// LLM gateway for intelligent coordination
     llm_gateway: Option<Arc<LlmGateway>>,
     /// Dependency resolver
@@ -225,7 +225,7 @@ impl OrchestrationEngine {
     /// dependency resolution, progress monitoring, and workstream coordination.
     pub async fn new(
         config: OrchestrationConfig,
-        runtime: Arc<Runtime>,
+        runtime: Arc<RuntimeManager>,
     ) -> Result<Self> {
         info!("Initializing orchestration engine");
 

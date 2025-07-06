@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, info, instrument};
 
 use toka_types::{EntityId, Message, Operation};
-use toka_runtime::Runtime;
+use toka_runtime::RuntimeManager;
 
 use crate::{AgentContext, AgentMetrics};
 
@@ -64,7 +64,7 @@ pub struct ProgressReporter {
     /// Agent context
     context: AgentContext,
     /// Runtime connection for reporting
-    runtime: std::sync::Arc<Runtime>,
+    runtime: std::sync::Arc<RuntimeManager>,
     /// Last reported progress
     last_progress: f64,
     /// Last report timestamp
@@ -79,7 +79,7 @@ impl ProgressReporter {
     /// Create a new progress reporter
     pub fn new(
         context: AgentContext,
-        runtime: std::sync::Arc<Runtime>,
+        runtime: std::sync::Arc<RuntimeManager>,
     ) -> Self {
         Self {
             context,

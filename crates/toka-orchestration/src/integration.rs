@@ -11,7 +11,7 @@ use tracing::{info, warn, error};
 
 use toka_agent_runtime::{AgentProcessManager, process::ProcessResult};
 use toka_llm_gateway::LlmGateway;
-use toka_runtime::Runtime;
+use toka_runtime::RuntimeManager;
 use toka_types::EntityId;
 
 use crate::{OrchestrationEngine, AgentConfig};
@@ -25,14 +25,14 @@ pub struct RuntimeIntegration {
     /// LLM gateway
     llm_gateway: Arc<LlmGateway>,
     /// System runtime
-    runtime: Arc<Runtime>,
+    runtime: Arc<RuntimeManager>,
 }
 
 impl RuntimeIntegration {
     /// Create a new runtime integration
     pub fn new(
         orchestration: Arc<OrchestrationEngine>,
-        runtime: Arc<Runtime>,
+        runtime: Arc<RuntimeManager>,
         llm_gateway: Arc<LlmGateway>,
     ) -> Self {
         info!("Creating runtime integration");
@@ -94,7 +94,7 @@ pub trait OrchestrationRuntimeExt {
     /// Create runtime integration for the orchestration engine
     fn create_runtime_integration(
         self: Arc<Self>,
-        runtime: Arc<Runtime>,
+        runtime: Arc<RuntimeManager>,
         llm_gateway: Arc<LlmGateway>,
     ) -> RuntimeIntegration;
 }
@@ -102,7 +102,7 @@ pub trait OrchestrationRuntimeExt {
 impl OrchestrationRuntimeExt for OrchestrationEngine {
     fn create_runtime_integration(
         self: Arc<Self>,
-        runtime: Arc<Runtime>,
+        runtime: Arc<RuntimeManager>,
         llm_gateway: Arc<LlmGateway>,
     ) -> RuntimeIntegration {
         RuntimeIntegration::new(self, runtime, llm_gateway)

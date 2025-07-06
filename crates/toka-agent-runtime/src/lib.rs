@@ -81,7 +81,7 @@ use uuid::Uuid;
 use toka_bus_core::KernelEvent;
 use toka_llm_gateway::{LlmGateway, LlmRequest, LlmResponse};
 use toka_types::{AgentConfig, TaskConfig, SecurityConfig, ResourceLimits};
-use toka_runtime::Runtime;
+use toka_runtime::RuntimeManager;
 use toka_types::{EntityId, Message, Operation, TaskSpec};
 
 pub mod executor;

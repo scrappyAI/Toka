@@ -47,7 +47,9 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use toka_auth::JwtHs256Validator;
 use toka_llm_gateway::{Config as LlmConfig, LlmGateway};
 use toka_orchestration::{OrchestrationConfig, OrchestrationEngine};
-use toka_runtime::{Runtime, RuntimeConfig, StorageConfig};
+use toka_runtime::RuntimeManager;
+use toka_kernel;
+use toka_bus_core;
 
 //─────────────────────────────
 //  CLI structure
@@ -98,7 +100,7 @@ struct Cli {
 #[derive(Clone)]
 struct ServiceState {
     orchestration_engine: Arc<OrchestrationEngine>,
-    runtime: Arc<Runtime>,
+    runtime: Arc<RuntimeManager>,
     llm_gateway: Option<Arc<LlmGateway>>,
     config: OrchestrationConfig,
 }
@@ -148,14 +150,7 @@ async fn main() -> Result<()> {
 
     info!("Loaded configuration with {} agents", config.agents.len());
 
-    // Initialize storage
-    let storage_config = parse_storage_config(&cli.storage, &cli.db_path)?;
-    let runtime_config = RuntimeConfig {
-        bus_capacity: 1024,
-        storage: storage_config,
-        spawn_kernel: false,
-        persistence_buffer_size: 256,
-    };
+    // Note: Storage configuration is now handled internally by RuntimeManager
 
     // Initialize authentication
     let jwt_secret = cli.jwt_secret
@@ -165,7 +160,11 @@ async fn main() -> Result<()> {
     let auth = Arc::new(JwtHs256Validator::new(jwt_secret));
 
     // Initialize runtime
-    let runtime = Arc::new(Runtime::new(runtime_config, auth).await?);
+    let world_state = toka_kernel::WorldState::default();
+    let event_bus = Arc::new(toka_bus_core::InMemoryBus::new(1024));
+    let kernel = toka_kernel::Kernel::new(world_state, auth, event_bus);
+    let runtime_kernel = toka_runtime::RuntimeKernel::new(kernel);
+    let runtime = Arc::new(RuntimeManager::new(runtime_kernel).await?);
     info!("Toka runtime initialized");
 
     // Initialize LLM gateway
@@ -238,17 +237,7 @@ async fn main() -> Result<()> {
 
     // Graceful shutdown
     info!("Shutting down orchestration service");
-    
-    // Use Arc::try_unwrap to get ownership, or clone if there are multiple references
-    match Arc::try_unwrap(runtime) {
-        Ok(runtime) => {
-            runtime.shutdown().await?;
-        }
-        Err(_) => {
-            // Multiple references exist, we can't shutdown cleanly
-            warn!("Multiple references to runtime exist, skipping shutdown");
-        }
-    }
+    // Note: RuntimeManager cleanup is handled automatically
     
     info!("Toka Orchestration Service stopped");
 
@@ -338,14 +327,7 @@ fn load_orchestration_config(config_path: &str) -> Result<OrchestrationConfig> {
         .with_context(|| format!("Failed to load orchestration configuration from directory {}", config_dir.display()))
 }
 
-fn parse_storage_config(storage_type: &str, db_path: &str) -> Result<StorageConfig> {
-    match storage_type {
-        "memory" => Ok(StorageConfig::Memory),
-        "sled" => Ok(StorageConfig::Sled { path: db_path.to_string() }),
-        "sqlite" => Ok(StorageConfig::Sqlite { path: db_path.to_string() }),
-        _ => Err(anyhow::anyhow!("Unsupported storage type: {}", storage_type)),
-    }
-}
+
 
 async fn shutdown_signal() {
     let ctrl_c = async {

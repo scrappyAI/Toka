@@ -14,7 +14,7 @@ use tracing::{debug, error, info, instrument, warn};
 
 use toka_llm_gateway::LlmGateway;
 use toka_types::{AgentConfig, TaskConfig};
-use toka_runtime::Runtime;
+use toka_runtime::RuntimeManager;
 use toka_types::EntityId;
 
 use crate::{
@@ -29,7 +29,7 @@ pub struct AgentExecutor {
     /// Agent context with configuration and state
     context: Arc<RwLock<AgentContext>>,
     /// Runtime connection for kernel operations
-    runtime: Arc<Runtime>,
+    runtime: Arc<RuntimeManager>,
     /// LLM gateway for intelligent task execution
     llm_gateway: Arc<LlmGateway>,
     /// Task executor for LLM-integrated execution
@@ -48,7 +48,7 @@ impl AgentExecutor {
     pub async fn new(
         config: AgentConfig,
         agent_id: EntityId,
-        runtime: Arc<Runtime>,
+        runtime: Arc<RuntimeManager>,
         llm_gateway: Arc<LlmGateway>,
     ) -> Result<Self> {
         info!("Creating agent executor for: {}", config.metadata.name);

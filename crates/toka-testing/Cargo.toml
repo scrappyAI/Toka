@@ -14,6 +14,8 @@ path = "src/main.rs"
 [dependencies]
 # Core Toka components
 toka-runtime = { path = "../toka-runtime" }
+toka-kernel = { path = "../toka-kernel" }
+toka-bus-core = { path = "../toka-bus-core" }
 toka-auth = { path = "../toka-auth" }
 toka-types = { path = "../toka-types" }
 

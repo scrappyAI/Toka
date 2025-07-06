@@ -4,6 +4,13 @@ version = "0.2.1"
 edition = "2021"
 
 [dependencies]
+# Core Toka components
+toka-kernel = { path = "../toka-kernel" }
+toka-runtime = { path = "../toka-runtime" }
+# TODO: toka-core-tools and toka-vector-registry need Cargo.toml files
+# toka-core-tools = { path = "../toka-core-tools", optional = true }
+# toka-vector-registry = { path = "../toka-vector-registry", optional = true }
+
 anyhow = "1"
 async-trait = "0.1"
 # Needed by the core registry & most tools – now non-optional to silence lints

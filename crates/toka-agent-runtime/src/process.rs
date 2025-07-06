@@ -16,7 +16,7 @@ use tracing::{debug, error, info, instrument, warn};
 
 use toka_llm_gateway::LlmGateway;
 use toka_types::AgentConfig;
-use toka_runtime::Runtime;
+use toka_runtime::RuntimeManager;
 use toka_types::EntityId;
 
 use crate::{
@@ -29,7 +29,7 @@ pub struct AgentProcessManager {
     /// Map of running agent processes
     agents: Arc<DashMap<EntityId, AgentProcess>>,
     /// System runtime
-    runtime: Arc<Runtime>,
+    runtime: Arc<RuntimeManager>,
     /// LLM gateway for agent execution
     llm_gateway: Arc<LlmGateway>,
     /// Runtime statistics
@@ -70,7 +70,7 @@ pub struct ProcessResult {
 impl AgentProcessManager {
     /// Create a new agent process manager
     pub fn new(
-        runtime: Arc<Runtime>,
+        runtime: Arc<RuntimeManager>,
         llm_gateway: Arc<LlmGateway>,
     ) -> Self {
         info!("Creating agent process manager");

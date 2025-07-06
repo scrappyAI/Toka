@@ -78,62 +78,68 @@ pub use toka_kernel::{
     ExecutionStats, KernelError, Capability, CapabilitySet, FileAccess, NetworkAccess,
 };
 
-pub use toka_core_tools::{
-    ToolRegistry, ToolDefinition, Tool, ToolMetadata, ExecutionRequest, ExecutionResult,
-    ExecutionMetadata, ToolRegistryBuilder,
-};
+// TODO: Uncomment when toka-core-tools has a Cargo.toml file
+// pub use toka_core_tools::{
+//     ToolRegistry, ToolDefinition, Tool, ToolMetadata, ExecutionRequest, ExecutionResult,
+//     ExecutionMetadata, ToolRegistryBuilder,
+// };
 
 pub use toka_runtime::{
-    RuntimeManager, CodeType, RuntimeBuilder, ExecutionEngine, EngineMetadata,
+    RuntimeManager, CodeType, RuntimeBuilder,
     RuntimeMetadata, RuntimeResourceUsage, Artifact,
 };
 
-pub use toka_vector_registry::{
-    VectorRegistry, ToolQuery, ToolDiscoveryResult, ToolRegistration, UsageStatistics,
-};
+// TODO: Uncomment when toka-vector-registry has a Cargo.toml file
+// pub use toka_vector_registry::{
+//     VectorRegistry, ToolQuery, ToolDiscoveryResult, ToolRegistration, UsageStatistics,
+// };
 
-/// Unified tool system that integrates all components
-pub struct ToolSystem {
-    kernel: Arc<ToolKernel>,
-    tool_registry: Arc<ToolRegistry>,
-    runtime_manager: Arc<RuntimeManager>,
-    vector_registry: Arc<VectorRegistry>,
-}
+// TODO: Uncomment when toka-core-tools and toka-vector-registry are available
+// /// Unified tool system that integrates all components
+// pub struct ToolSystem {
+//     kernel: Arc<ToolKernel>,
+//     tool_registry: Arc<ToolRegistry>,
+//     runtime_manager: Arc<RuntimeManager>,
+//     vector_registry: Arc<VectorRegistry>,
+// }
 
-/// Builder for creating a complete tool system
-pub struct ToolSystemBuilder {
-    include_core_tools: bool,
-    include_runtime_engines: bool,
-    include_vector_discovery: bool,
-    security_preset: SecurityPreset,
-}
+// TODO: Uncomment when dependencies are available
+// /// Builder for creating a complete tool system
+// pub struct ToolSystemBuilder {
+//     include_core_tools: bool,
+//     include_runtime_engines: bool,
+//     include_vector_discovery: bool,
+//     security_preset: SecurityPreset,
+// }
+// 
+// /// Security presets for different environments
+// #[derive(Debug, Clone)]
+// pub enum SecurityPreset {
+//     Development,
+//     Testing,
+//     Production,
+//     Custom(ToolKernel),
+// }
+// 
+// /// Unified execution request that can handle both direct tool calls and discovery
+// #[derive(Debug, Clone)]
+// pub struct UnifiedExecutionRequest {
+//     /// Tool identifier or natural language query
+//     pub tool_or_query: String,
+//     /// Session identifier
+//     pub session_id: String,
+//     /// Execution parameters
+//     pub parameters: JsonValue,
+//     /// Security level
+//     pub security_level: SecurityLevel,
+//     /// Whether to use discovery if tool_id is not found
+//     pub allow_discovery: bool,
+//     /// Discovery similarity threshold
+//     pub discovery_threshold: f32,
+// }
 
-/// Security presets for different environments
-#[derive(Debug, Clone)]
-pub enum SecurityPreset {
-    Development,
-    Testing,
-    Production,
-    Custom(ToolKernel),
-}
-
-/// Unified execution request that can handle both direct tool calls and discovery
-#[derive(Debug, Clone)]
-pub struct UnifiedExecutionRequest {
-    /// Tool identifier or natural language query
-    pub tool_or_query: String,
-    /// Session identifier
-    pub session_id: String,
-    /// Execution parameters
-    pub parameters: JsonValue,
-    /// Security level
-    pub security_level: SecurityLevel,
-    /// Whether to use discovery if tool_id is not found
-    pub allow_discovery: bool,
-    /// Discovery similarity threshold
-    pub discovery_threshold: f32,
-}
-
+// TODO: The following code is commented out until toka-core-tools and toka-vector-registry have Cargo.toml files
+/*
 impl ToolSystem {
     /// Create a new tool system builder
     pub fn builder() -> ToolSystemBuilder {
