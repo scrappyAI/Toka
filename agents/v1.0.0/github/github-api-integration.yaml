@@ -4,9 +4,9 @@ metadata:
   created: '2025-07-06'
   workstream: GitHub API Integration & Management
   branch: feature/github-api-integration
-  modified: '2025-07-06T02:24:54.422334+00:00'
+  modified: '2025-07-06T02:54:03.893513+00:00'
   schema_version: 1.0.0
-  checksum: 181fcc74edce5681
+  checksum: 1ad331cbae5b7543
 spec:
   name: GitHub API Integration Agent
   domain: github-integration

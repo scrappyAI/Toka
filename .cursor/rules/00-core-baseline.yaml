@@ -1,5 +1,5 @@
 name: CoreBaseline
-version: 1.0.0
+version: 1.0.1
 description: Foundational guidelines applicable across all Rust projects in the workspace
 category: core
 priority: 100
@@ -60,6 +60,6 @@ versioning:
   major: Breaking changes, architectural shifts
 metadata:
   created: '2025-07-06'
-  modified: '2025-07-06T02:23:54.696055+00:00'
+  modified: '2025-07-06T02:54:03.598012+00:00'
   schema_version: 1.0.0
-  checksum: 20338897cad8fe77
+  checksum: b6ed487ecd9631f3
