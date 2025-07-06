@@ -1,120 +1,116 @@
 # Toka Documentation
 
-Welcome to the Toka documentation hub. This directory contains all project documentation organized by category for easy navigation.
+> **Last Updated:** 2025-07-06
 
-## 📚 Documentation Structure
+Welcome to the Toka documentation. This directory contains all project documentation organized by category.
 
-### Core Documentation
-- **[DEVELOPMENT_ENVIRONMENT.md](./DEVELOPMENT_ENVIRONMENT.md)** - Comprehensive development environment setup
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guidelines for contributing to the project
-- **[CRATES.md](./CRATES.md)** - Overview of all crates in the workspace
+## 📋 Quick Navigation
 
-### Project Summaries & Reports
-- **[CLEANUP_SUMMARY.md](./CLEANUP_SUMMARY.md)** - Project cleanup and organization summary
-- **[CONFIG_CLI_IMPLEMENTATION_SUMMARY.md](./CONFIG_CLI_IMPLEMENTATION_SUMMARY.md)** - Configuration CLI implementation details
-- **[REFACTOR_SUMMARY.md](./REFACTOR_SUMMARY.md)** - Major refactoring changes and improvements
-- **[SECURITY_HARDENING_SUMMARY.md](./SECURITY_HARDENING_SUMMARY.md)** - Security improvements and hardening measures
-- **[MEMORY_LEAK_ANALYSIS.md](./MEMORY_LEAK_ANALYSIS.md)** - Memory leak analysis and fixes
+- [**Getting Started**](#getting-started) - New user guides and setup
+- [**Architecture**](#architecture) - System design and specifications  
+- [**Development**](#development) - Development guides and processes
+- [**Operations**](#operations) - Deployment and monitoring
+- [**Research**](#research) - Technical research and proposals
+- [**Reports**](#reports) - Analysis and status reports
 
-### Specifications & Architecture
-- **[44_toka_kernel_spec_v0.2.md](./44_toka_kernel_spec_v0.2.md)** - Toka kernel specification v0.2
-- **[40_capability_tokens_spec_v0.2.md](./40_capability_tokens_spec_v0.2.md)** - Capability tokens specification v0.2
-- **[41_capability_tokens_architecture.md](./41_capability_tokens_architecture.md)** - Capability tokens architecture
+## 🚀 Getting Started
 
-### Development Guides
-- **[30_doc-generation.mdc](./30_doc-generation.mdc)** - Documentation generation guide
-- **[31_doc-maintenance.mdc](./31_doc-maintenance.mdc)** - Documentation maintenance guide
-- **[code_coverage_guide.mdc](./code_coverage_guide.mdc)** - Code coverage guide
-- **[github-cicd-fixes-report.md](./github-cicd-fixes-report.md)** - GitHub CI/CD fixes report
+| Document | Description |
+|----------|-------------|
+| [QUICK_START_TESTING.md](../QUICK_START_TESTING.md) | Quick setup guide for testing |
+| [TOKA_TESTING_SETUP_GUIDE.md](../TOKA_TESTING_SETUP_GUIDE.md) | Comprehensive testing setup |
+| [DEVELOPMENT_ENVIRONMENT.md](DEVELOPMENT_ENVIRONMENT.md) | Development environment setup |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributing guidelines |
 
-### Organized Subdirectories
-- **[guides/](./guides/)** - Implementation guides and comprehensive documentation
-- **[reports/](./reports/)** - Various project reports and analyses
-- **[research/](./research/)** - Research documents and findings
-- **[proposals/](./proposals/)** - Project proposals and RFCs
-- **[protocols/](./protocols/)** - Protocol specifications and definitions
-- **[code_coverage_reports/](./code_coverage_reports/)** - Code coverage reports
-- **[data/](./data/)** - Data files and large metadata
+## 🏗️ Architecture
 
-## 🔍 Quick Navigation
+| Document | Description |
+|----------|-------------|
+| [CRATES.md](CRATES.md) | Crate architecture overview |
+| [40_capability_tokens_spec_v0.2.md](40_capability_tokens_spec_v0.2.md) | Capability tokens specification |
+| [41_capability_tokens_architecture.md](41_capability_tokens_architecture.md) | Capability tokens architecture |
+| [44_toka_kernel_spec_v0.2.md](44_toka_kernel_spec_v0.2.md) | Toka kernel specification |
+| [protocols/](protocols/) | Protocol specifications |
 
-### For New Contributors
-1. Start with [CONTRIBUTING.md](./CONTRIBUTING.md)
-2. Set up your environment using [DEVELOPMENT_ENVIRONMENT.md](./DEVELOPMENT_ENVIRONMENT.md)
-3. Review the [CRATES.md](./CRATES.md) for workspace overview
+## 💻 Development
 
-### For Developers
-- **Environment Setup**: [DEVELOPMENT_ENVIRONMENT.md](./DEVELOPMENT_ENVIRONMENT.md)
-- **Architecture**: Check specifications in the main directory
-- **Testing**: [code_coverage_guide.mdc](./code_coverage_guide.mdc)
-- **Security**: [SECURITY_HARDENING_SUMMARY.md](./SECURITY_HARDENING_SUMMARY.md)
+| Document | Description |
+|----------|-------------|
+| [guides/](guides/) | Development guides |
+| [30_doc-generation.mdc](30_doc-generation.mdc) | Documentation generation |
+| [31_doc-maintenance.mdc](31_doc-maintenance.mdc) | Documentation maintenance |
+| [code_coverage_guide.mdc](code_coverage_guide.mdc) | Code coverage guide |
 
-### For Maintainers
-- **Project Status**: Various summary reports
-- **Documentation**: [30_doc-generation.mdc](./30_doc-generation.mdc) and [31_doc-maintenance.mdc](./31_doc-maintenance.mdc)
-- **CI/CD**: [github-cicd-fixes-report.md](./github-cicd-fixes-report.md)
+## 🔧 Operations
 
-## 🏗️ Project Structure
+| Document | Description |
+|----------|-------------|
+| [RAFT_MONITORING_README.md](../RAFT_MONITORING_README.md) | Raft monitoring system |
+| [RAFT_MONITORING_DEPLOYMENT_SUMMARY.md](../RAFT_MONITORING_DEPLOYMENT_SUMMARY.md) | Deployment summary |
+| [SECURITY_HARDENING_SUMMARY.md](SECURITY_HARDENING_SUMMARY.md) | Security hardening |
+| [MEMORY_LEAK_ANALYSIS.md](MEMORY_LEAK_ANALYSIS.md) | Memory leak analysis |
 
-This documentation follows the principle of organizing files by their semantic purpose:
+## 🔬 Research
 
-```
-docs/
-├── README.md                              # This file - documentation index
-├── DEVELOPMENT_ENVIRONMENT.md             # Development setup
-├── CONTRIBUTING.md                        # Contribution guidelines
-├── CRATES.md                             # Crates overview
-├── *_SUMMARY.md                          # Project summaries
-├── *_spec_*.md                           # Specifications
-├── *_architecture.md                     # Architecture documents
-├── *.mdc                                 # Guides and workflows
-├── guides/                               # Implementation guides and comprehensive documentation
-├── reports/                              # Project reports and analyses
-├── research/                             # Research documents and findings
-├── proposals/                            # Project proposals and RFCs
-├── protocols/                            # Protocol specifications
-├── code_coverage_reports/                # Coverage reports
-└── data/                                 # Data files and metadata
-```
+| Document | Description |
+|----------|-------------|
+| [research/](research/) | Technical research papers |
+| [proposals/](proposals/) | Enhancement proposals |
+| [data/](data/) | Research data and analysis |
 
-## 📋 Recent Changes
+## 📊 Reports
 
-### Documentation Cleanup (2025-07-06)
-- **Reorganized root-level documentation**: Moved scattered implementation summaries and guides to proper subdirectories
-- **Created guides/ directory**: Organized implementation guides and comprehensive documentation  
-- **Updated reports/ directory**: Consolidated project reports and analyses
-- **Removed duplicate files**: Eliminated redundant performance observability documentation
-- **Updated cross-references**: Fixed broken links and improved navigation
+| Document | Description |
+|----------|-------------|
+| [reports/](reports/) | Analysis and status reports |
+| [code_coverage_reports/](code_coverage_reports/) | Code coverage reports |
+| [CLEANUP_SUMMARY.md](CLEANUP_SUMMARY.md) | Cleanup activities |
+| [REFACTOR_SUMMARY.md](REFACTOR_SUMMARY.md) | Refactoring activities |
+| [PROJECT_ORGANIZATION_SUMMARY.md](PROJECT_ORGANIZATION_SUMMARY.md) | Project organization |
 
-### File Organization (Previous)
-- Moved all documentation from project root to `docs/` directory
-- Created semantic subdirectories for better organization
-- Removed duplicate files and consolidated documentation
-- Created visual dependency graph for `toka-auth` crate
-- Organized large data files in `docs/data/`
+## 🏷️ Documentation Standards
 
-### Key Improvements
-- **Better Navigation**: Clear categorization of documentation
-- **Reduced Clutter**: Clean project root with only essential files
-- **Enhanced Discoverability**: Logical grouping of related documents
-- **Visual Dependencies**: Added dependency graphs for better understanding
+### Date Enforcement
 
-## 🎯 Contributing to Documentation
+All documentation follows strict date accuracy requirements:
+- Use `2025-07-06` for current date placeholders
+- Use `2025-07-06` for release/commit dates
+- Historical dates require `<!-- DATE:EXEMPT source="reference" -->` exemption
+- Run `scripts/validate_dates.py` to check compliance
 
-When adding new documentation:
+### Format Standards
 
-1. **Place files in appropriate subdirectories** based on their purpose
-2. **Update this README** if adding new categories or important documents
-3. **Follow naming conventions** for consistency
-4. **Cross-reference related documents** for better navigation
-5. **Keep summaries current** when making significant changes
+- Use clear, descriptive headings
+- Include table of contents for long documents
+- Use consistent date format: `YYYY-MM-DD`
+- Include status indicators: **Draft**, **Stable**, **Deprecated**
+- Link to related documents
 
-## 🔧 Tools and Resources
+### Maintenance
 
-- **Mermaid Diagrams**: Used for visual representations (dependency graphs, flowcharts)
-- **Markdown**: Standard format for all documentation
-- **MDC Files**: Markdown with custom extensions for specific workflows
+- Documents are reviewed monthly for accuracy
+- Outdated information is marked for update or removal
+- Version numbers track major content changes
+- Use semantic versioning for specifications
+
+## 🔍 Finding Information
+
+Use the following strategies to find what you need:
+
+1. **Check this index** - organized by category
+2. **Search by file name** - descriptive naming convention
+3. **Use grep** - most documents are well-tagged
+4. **Check proposals/** - for planned features
+5. **Check reports/** - for historical analysis
+
+## 🤝 Contributing to Documentation
+
+1. Follow the [CONTRIBUTING.md](CONTRIBUTING.md) guidelines
+2. Use the date enforcement tools (`scripts/validate_dates.py`)
+3. Update this index when adding new documents
+4. Maintain consistent formatting and structure
+5. Link to related documents
 
 ---
 
-For questions about documentation structure or content, refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) guidelines or open an issue in the project repository.
+*This documentation structure is maintained as part of the Toka project's commitment to clear, accurate, and well-organized information.*

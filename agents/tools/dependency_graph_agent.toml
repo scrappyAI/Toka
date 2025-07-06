@@ -1,0 +1,118 @@
+[agent]
+name = "dependency-graph-analyzer"
+version = "1.0.0"
+description = "Analyzes and visualizes dependency graphs for Rust workspace and agent compositions"
+domain = "code-analysis"
+priority = "high"
+created = "2025-07-06"
+
+[agent.capabilities]
+primary = [
+    "rust-workspace-analysis",
+    "dependency-graph-visualization", 
+    "agent-composition-analysis",
+    "architecture-visualization",
+    "crate-categorization"
+]
+
+secondary = [
+    "performance-profiling",
+    "circular-dependency-detection",
+    "dependency-security-analysis"
+]
+
+[agent.interface]
+type = "command-line"
+executable = "dependency_graph_visualizer.py"
+working_directory = "."
+python_requirements = ["graphviz", "toml", "pyyaml", "aiofiles"]
+
+[agent.commands]
+analyze = {
+    description = "Analyze workspace dependencies",
+    args = ["--workspace", "${WORKSPACE_PATH}"],
+    output_format = "json+graphs"
+}
+
+visualize = {
+    description = "Generate dependency visualization graphs",
+    args = ["--workspace", "${WORKSPACE_PATH}", "--output-dir", "${OUTPUT_DIR}", "--all"],
+    output_format = "png+svg+report"
+}
+
+individual = {
+    description = "Generate individual crate dependency graphs",
+    args = ["--workspace", "${WORKSPACE_PATH}", "--individual"],
+    output_format = "png+svg"
+}
+
+agents = {
+    description = "Generate agent composition graph",
+    args = ["--workspace", "${WORKSPACE_PATH}", "--agents"],
+    output_format = "png+svg"
+}
+
+layered = {
+    description = "Generate layered architecture visualization",
+    args = ["--workspace", "${WORKSPACE_PATH}", "--layered"],
+    output_format = "png+svg"
+}
+
+[agent.objectives]
+primary = [
+    { description = "Provide clear dependency visualizations for architectural decisions" },
+    { description = "Identify circular dependencies and architectural weaknesses" },
+    { description = "Generate automated dependency reports for code reviews" },
+    { description = "Support refactoring decisions with dependency analysis" }
+]
+
+secondary = [
+    { description = "Monitor dependency graph evolution over time" },
+    { description = "Detect unused or redundant dependencies" },
+    { description = "Support security analysis of dependency chains" }
+]
+
+[agent.dependencies]
+system = ["python3", "graphviz", "git"]
+workspace = ["Cargo.toml", "config/agents.toml"]
+optional = ["docker", "cargo-deny"]
+
+[agent.outputs]
+graphs = {
+    system_dependency_graph = "Complete system dependency visualization",
+    individual_crate_graphs = "Per-crate dependency graphs",
+    agent_composition_graph = "Agent relationship visualization",
+    layered_architecture = "Layered architecture diagram"
+}
+
+reports = {
+    dependency_analysis_report = "Comprehensive dependency analysis in markdown",
+    circular_dependencies = "List of circular dependencies detected",
+    security_analysis = "Security implications of dependency graph"
+}
+
+[agent.scheduling]
+trigger_on = ["workspace-change", "cargo-update", "agent-config-change"]
+schedule = "weekly"
+priority = "medium"
+
+[agent.integration]
+toka_bus = true
+capability_tokens = ["workspace:read", "filesystem:write", "process:spawn"]
+metrics = ["analysis-duration", "graph-generation-time", "dependencies-count"]
+
+[agent.security]
+sandbox = true
+network_access = false
+filesystem_access = "workspace-only"
+resource_limits = {
+    memory = "512MB",
+    cpu = "2 cores",
+    disk = "100MB"
+}
+
+[agent.metadata]
+tags = ["analysis", "visualization", "architecture", "dependencies"]
+category = "development-tools"
+maturity = "stable"
+maintenance_status = "active"
