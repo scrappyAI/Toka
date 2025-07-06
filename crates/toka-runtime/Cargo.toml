@@ -34,12 +34,12 @@ sha2 = "0.10"
 # Logging
 tracing = "0.1"
 
-# WebAssembly execution (optional)
-wasmtime = { version = "20.0", optional = true }
-wasmtime-wasi = { version = "20.0", optional = true }
+# WebAssembly execution (optional) - DISABLED FOR BLOAT REDUCTION
+# wasmtime = { version = "20.0", optional = true }
+# wasmtime-wasi = { version = "20.0", optional = true }
 
-# Python execution (optional)
-pyo3 = { version = "0.21", features = ["auto-initialize"], optional = true }
+# Python execution (optional) - REMOVED FOR BLOAT REDUCTION
+# pyo3 = { version = "0.21", features = ["auto-initialize"], optional = true }
 
 # Process execution
 tokio-process = "0.2"
@@ -52,9 +52,9 @@ tempfile = "3.0"
 tokio-test = "0.4"
 
 [features]
-default = ["python", "wasm", "codegen"]
-python = ["pyo3"]
-wasm = ["wasmtime", "wasmtime-wasi"]
+default = ["codegen"]  # Removed "wasm" and "python" for bloat reduction
+# python = ["pyo3"]  # Disabled Python support
+# wasm = ["wasmtime", "wasmtime-wasi"]  # Disabled WASM support
 codegen = ["tera"]
-all-engines = ["python", "wasm", "codegen"]
+# all-engines = ["wasm", "codegen"]  # Disabled "python" and "wasm"
 

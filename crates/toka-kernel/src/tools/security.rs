@@ -138,7 +138,7 @@ impl SecurityContext {
         // Basic validation - more specific validations are done per-operation
         if context.started_at.elapsed() > context.resource_limits.max_execution_time {
             self.record_violation(context, ViolationType::ResourceLimitExceeded,
-                "Execution time limit exceeded").await;
+                "Execution time limit exceeded".to_string()).await;
             return Err(KernelError::ExecutionTimeout {
                 duration: context.started_at.elapsed()
             });

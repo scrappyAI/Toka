@@ -21,7 +21,7 @@ toka-types = { path = "../toka-types" }
 
 # Storage components
 toka-store-memory = { path = "../toka-store-memory" }
-toka-store-sled = { path = "../toka-store-sled" }
+# toka-store-sled = { path = "../toka-store-sled" }  # REMOVED: bloat reduction
 toka-store-sqlite = { path = "../toka-store-sqlite" }
 
 # CLI framework

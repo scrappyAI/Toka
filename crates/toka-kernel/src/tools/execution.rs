@@ -10,14 +10,18 @@ use tokio::sync::{RwLock, oneshot};
 use tokio::time::timeout;
 use anyhow::Result;
 
-use super::{ExecutionContext, ExecutionStats, KernelError};
+use crate::tools::{
+    ExecutionContext, KernelError, ExecutionStats, 
+    ResourceLimits, SecurityLevel, capabilities::CapabilitySet
+};
 
 /// Execution monitor for tracking tool operations
+#[derive(Clone)]
 pub struct ExecutionMonitor {
     /// Active executions being monitored
-    active_executions: RwLock<HashMap<String, ExecutionTracker>>,
+    active_executions: Arc<RwLock<HashMap<String, ExecutionTracker>>>,
     /// Execution statistics
-    statistics: RwLock<ExecutionStatistics>,
+    statistics: Arc<RwLock<ExecutionStatistics>>,
 }
 
 /// Individual execution tracker
@@ -55,8 +59,8 @@ impl ExecutionMonitor {
     /// Create new execution monitor
     pub async fn new() -> Result<Self> {
         Ok(Self {
-            active_executions: RwLock::new(HashMap::new()),
-            statistics: RwLock::new(ExecutionStatistics::default()),
+            active_executions: Arc::new(RwLock::new(HashMap::new())),
+            statistics: Arc::new(RwLock::new(ExecutionStatistics::default())),
         })
     }
     
@@ -138,7 +142,7 @@ impl ExecutionMonitor {
     /// Start monitoring resource usage for an execution
     async fn start_resource_monitoring(&self, tool_id: &str) -> tokio::task::JoinHandle<()> {
         let tool_id = tool_id.to_string();
-        let executions = self.active_executions.clone();
+        let executions = Arc::clone(&self.active_executions);
         
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(Duration::from_secs(1));

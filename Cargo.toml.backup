@@ -7,11 +7,12 @@ members = [
     "crates/toka-bus-core", 
     "crates/toka-kernel",
     
-    # Storage layer - core abstractions and drivers (REDUCED)
+    # Storage layer - core abstractions and drivers
     "crates/toka-store-core",
     "crates/toka-store-memory",
+    "crates/toka-store-sled",
     "crates/toka-store-sqlite",
-    # REMOVED: toka-store-sled, toka-store-semantic (bloat reduction)
+    "crates/toka-store-semantic",
     
     # Runtime layer - fuzzy/async coordination
     "crates/toka-runtime",
@@ -19,9 +20,9 @@ members = [
     # Tools and utilities
     "crates/toka-tools",
 
-    # Applications / demos (REDUCED)
+    # Applications / demos
     "crates/toka-cli",
-    # REMOVED: toka-config-cli (redundant utility)
+    "crates/toka-config-cli",
     "crates/toka-testing",
     
     # LLM integration
@@ -34,17 +35,19 @@ members = [
     # Agent execution runtime
     "crates/toka-agent-runtime",
     
-    # REMOVED: Raft consensus (not needed for MVP)
-    # "crates/raft-core",
-    # "crates/raft-storage",
+    # Raft consensus algorithm implementation
+    "crates/raft-core",
+    "crates/raft-storage",
     
-    # Security enhancements (REDUCED)
+    # Security enhancements
     "crates/security/toka-capability-core",
     "crates/security/toka-capability-jwt-hs256",
     "crates/security/toka-key-rotation",
     "crates/security/toka-rate-limiter",
     "crates/security/toka-capability-delegation",
-    # REMOVED: toka-cvm, toka-revocation, toka-performance (over-engineered)
+    "crates/security/toka-cvm",
+    "crates/security/toka-revocation",
+    "crates/toka-performance",
 ]
 
 [workspace.dependencies]

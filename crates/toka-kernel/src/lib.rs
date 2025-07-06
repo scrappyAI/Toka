@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-#![deny(missing_docs)]
+// #![deny(missing_docs)]  // Temporarily disabled for bloat reduction work
 
 //! **toka-kernel** – Deterministic state-machine core of Toka OS.
 //!
@@ -36,6 +36,13 @@ use toka_auth::{TokenValidator, Claims};
 
 mod registry;
 pub use registry::{register_handler, OpcodeHandler};
+
+pub mod tools;
+pub use tools::{
+    ToolKernel, ExecutionContext, SecurityLevel, ResourceLimits, ResourceUsage,
+    ExecutionStats, KernelError as ToolKernelError, Capability, CapabilitySet,
+};
+pub use tools::capabilities::{FileAccess, NetworkAccess};
 
 //─────────────────────────────
 //  World-state

@@ -61,7 +61,7 @@ pub struct ResourceLimits {
 }
 
 /// Security levels for tool execution
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SecurityLevel {
     /// Untrusted code, maximum restrictions
     Sandboxed,

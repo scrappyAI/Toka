@@ -16,7 +16,7 @@ toka-kernel = { path = "../../crates/toka-kernel" }
 toka-runtime = { path = "../../crates/toka-runtime" }
 toka-store-core = { path = "../../crates/toka-store-core" }
 toka-store-memory = { path = "../../crates/toka-store-memory" }
-toka-store-sled = { path = "../../crates/toka-store-sled" }
+# toka-store-sled = { path = "../../crates/toka-store-sled" }  # REMOVED: bloat reduction
 toka-store-sqlite = { path = "../../crates/toka-store-sqlite" }
 
 # Async runtime and utilities
