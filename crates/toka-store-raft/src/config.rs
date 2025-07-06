@@ -338,6 +338,13 @@ impl RaftClusterConfig {
             heartbeat_interval: self.heartbeat_interval,
             election_timeout_min: self.election_timeout.0,
             election_timeout_max: self.election_timeout.1,
+            max_entries_per_request: self.max_entries_per_request,
+            enable_pre_vote: true,
+            max_log_size: self.max_log_size as usize,
+            compaction_threshold: 1000, // Default threshold
+            request_timeout: self.consensus_timeout,
+            enable_leadership_transfer: false,
+            enable_batch_optimization: true,
         }
     }
     

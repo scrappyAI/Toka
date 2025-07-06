@@ -12,7 +12,8 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, warn};
 
-use raft_core::{LogEntry, StateMachine, RaftResult, RaftError};
+use raft_core::{LogEntry, RaftResult, RaftError};
+use raft_core::node::StateMachine;
 use toka_store_core::{StorageBackend, EventHeader, EventId, CausalDigest};
 use toka_bus_core::{EventBus, KernelEvent};
 
@@ -130,22 +131,17 @@ impl TokaStateMachine {
         // Update our tracking
         {
             let mut events = self.committed_events.write().await;
-            events.insert(header.event_id, header.clone());
+            events.insert(header.id, header.clone());
         }
         
-        // Publish event to the bus
-        let event = KernelEvent::EventCommitted {
-            event_id: header.event_id,
-        };
+        // TODO: Publish event to the bus once appropriate KernelEvent variant is available
+        // For now, we'll just log the event
+        debug!("Event processed for state machine: {}", header.id);
         
-        if let Err(e) = self.event_bus.publish(&event) {
-            warn!("Failed to publish event to bus: {}", e);
-        }
-        
-        info!("Node {} committed event {}", self.node_id, header.event_id);
+        info!("Node {} committed event {}", self.node_id, header.id);
         
         Ok(TokaOperationResult::EventCommitted {
-            event_id: header.event_id,
+            event_id: header.id,
         })
     }
     
@@ -269,15 +265,15 @@ impl StateMachine for TokaStateMachine {
         
         // Deserialize the operation
         let operation = self.deserialize_operation(&entry.data)
-            .map_err(|e| RaftError::other(format!("Failed to deserialize operation: {}", e)))?;
+            .map_err(|e| RaftError::internal(format!("Failed to deserialize operation: {}", e)))?;
         
         // Apply the operation
         let result = self.apply_toka_operation(operation).await
-            .map_err(|e| RaftError::other(format!("Failed to apply operation: {}", e)))?;
+            .map_err(|e| RaftError::internal(format!("Failed to apply operation: {}", e)))?;
         
         // Serialize the result
         let result_bytes = bincode::serialize(&result)
-            .map_err(|e| RaftError::other(format!("Failed to serialize result: {}", e)))?;
+            .map_err(|e| RaftError::internal(format!("Failed to serialize result: {}", e)))?;
         
         debug!("Successfully applied log entry {} on node {}", entry.index, self.node_id);
         
@@ -298,7 +294,7 @@ impl StateMachine for TokaStateMachine {
         };
         
         let snapshot_bytes = bincode::serialize(&snapshot)
-            .map_err(|e| RaftError::other(format!("Failed to serialize snapshot: {}", e)))?;
+            .map_err(|e| RaftError::internal(format!("Failed to serialize snapshot: {}", e)))?;
         
         // Update metrics
         {
@@ -316,23 +312,26 @@ impl StateMachine for TokaStateMachine {
         
         // Deserialize snapshot
         let snapshot_data: SnapshotData = bincode::deserialize(snapshot)
-            .map_err(|e| RaftError::other(format!("Failed to deserialize snapshot: {}", e)))?;
+            .map_err(|e| RaftError::internal(format!("Failed to deserialize snapshot: {}", e)))?;
         
         // Restore state
+        let events_count = snapshot_data.committed_events.len();
+        let last_applied = snapshot_data.last_applied;
+        
         {
             let mut events = self.committed_events.write().await;
             *events = snapshot_data.committed_events;
         }
         
         {
-            let mut last_applied = self.last_applied.write().await;
-            *last_applied = snapshot_data.last_applied;
+            let mut last_applied_guard = self.last_applied.write().await;
+            *last_applied_guard = last_applied;
         }
         
         info!("Restored from snapshot on node {}: {} events, last applied: {}", 
                self.node_id, 
-               snapshot_data.committed_events.len(), 
-               snapshot_data.last_applied);
+               events_count, 
+               last_applied);
         
         Ok(())
     }
@@ -355,12 +354,12 @@ mod tests {
     use std::sync::Arc;
     use toka_store_core::EventHeader;
     use toka_bus_core::InMemoryBus;
-    use toka_store_memory::MemoryStorage;
+    use toka_store_memory::MemoryBackend;
     use uuid::Uuid;
     
     #[tokio::test]
     async fn test_state_machine_creation() {
-        let storage = Arc::new(MemoryStorage::new());
+        let storage = Arc::new(MemoryBackend::new());
         let event_bus = Arc::new(InMemoryBus::new(100));
         let state_machine = TokaStateMachine::new(storage, event_bus, 1);
         
@@ -370,16 +369,18 @@ mod tests {
     
     #[tokio::test]
     async fn test_commit_event_operation() {
-        let storage = Arc::new(MemoryStorage::new());
+        let storage = Arc::new(MemoryBackend::new());
         let event_bus = Arc::new(InMemoryBus::new(100));
         let state_machine = TokaStateMachine::new(storage, event_bus, 1);
         
         let event_id = Uuid::new_v4();
         let header = EventHeader {
-            event_id,
-            intent_id: Uuid::new_v4(),
+            id: event_id,
+            parents: smallvec::SmallVec::new(),
             timestamp: chrono::Utc::now(),
-            causal_digest: [0u8; 32],
+            digest: [0u8; 32],
+            intent: Uuid::new_v4(),
+            kind: "test".to_string(),
         };
         
         let operation = TokaOperation::CommitEvent {
@@ -403,17 +404,19 @@ mod tests {
     
     #[tokio::test]
     async fn test_snapshot_operations() {
-        let storage = Arc::new(MemoryStorage::new());
+        let storage = Arc::new(MemoryBackend::new());
         let event_bus = Arc::new(InMemoryBus::new(100));
         let mut state_machine = TokaStateMachine::new(storage, event_bus, 1);
         
         // Add some events first
         let event_id = Uuid::new_v4();
         let header = EventHeader {
-            event_id,
-            intent_id: Uuid::new_v4(),
+            id: event_id,
+            parents: smallvec::SmallVec::new(),
             timestamp: chrono::Utc::now(),
-            causal_digest: [0u8; 32],
+            digest: [0u8; 32],
+            intent: Uuid::new_v4(),
+            kind: "test".to_string(),
         };
         
         let operation = TokaOperation::CommitEvent {

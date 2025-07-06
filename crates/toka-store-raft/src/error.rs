@@ -194,12 +194,7 @@ impl RaftStorageError {
     }
 }
 
-impl From<tokio::sync::mpsc::error::SendError<()>> for RaftStorageError {
-    fn from(_: tokio::sync::mpsc::error::SendError<()>) -> Self {
-        Self::ChannelSend
-    }
-}
-
+// Generic implementation for all SendError types
 impl<T> From<tokio::sync::mpsc::error::SendError<T>> for RaftStorageError {
     fn from(_: tokio::sync::mpsc::error::SendError<T>) -> Self {
         Self::ChannelSend

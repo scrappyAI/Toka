@@ -11,6 +11,7 @@ description = "Raft consensus-backed storage implementation for Toka OS"
 # Core Toka dependencies
 toka-types = { path = "../toka-types" }
 toka-store-core = { path = "../toka-store-core" }
+toka-store-memory = { path = "../toka-store-memory" }
 toka-bus-core = { path = "../toka-bus-core" }
 
 # Raft dependencies

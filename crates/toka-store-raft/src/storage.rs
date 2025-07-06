@@ -12,9 +12,11 @@ use tokio::sync::{mpsc, RwLock, oneshot};
 use tokio::time::timeout;
 use tracing::{debug, error, info, warn};
 
-use raft_core::{LogEntry, RaftNode, RaftConfig, Term, ClientRequest, ClientResponse};
+use raft_core::{LogEntry, RaftNode, RaftConfig, Term};
+use raft_core::message::{ClientRequest, ClientResponse};
 use raft_storage::{FileStorage, MemoryStorage, Storage as RaftStorageBackend};
 use toka_store_core::{StorageBackend, EventHeader, EventId, CausalDigest};
+use toka_store_memory::MemoryBackend;
 use toka_bus_core::EventBus;
 
 use crate::{
@@ -89,7 +91,7 @@ impl RaftStorage {
         // Create underlying storage backend
         let storage_backend = if config.storage_path.exists() {
             Arc::new(FileStorage::new(config.storage_path.clone()).await
-                .map_err(|e| RaftStorageError::StorageBackend(e))?) as Arc<dyn RaftStorageBackend>
+                .map_err(|e| RaftStorageError::StorageBackend(e.into()))?) as Arc<dyn RaftStorageBackend>
         } else {
             Arc::new(MemoryStorage::new()) as Arc<dyn RaftStorageBackend>
         };
@@ -98,7 +100,7 @@ impl RaftStorage {
         let state_machine = Arc::new(RwLock::new(TokaStateMachine::new(
             // For now, we'll use a placeholder storage backend
             // In a real implementation, this would be the actual storage backend
-            Arc::new(MemoryStorage::new()) as Arc<dyn StorageBackend>,
+            Arc::new(MemoryBackend::new()),
             event_bus.clone(),
             config.node_id,
         )));
@@ -138,8 +140,10 @@ impl RaftStorage {
         
         // Create channels for Raft node communication
         let (message_sender, message_receiver) = mpsc::unbounded_channel();
-        let (client_sender, client_receiver) = mpsc::unbounded_channel();
-        let (shutdown_sender, shutdown_receiver) = tokio::sync::broadcast::channel(1);
+        let (client_request_sender, client_request_receiver) = mpsc::unbounded_channel();
+        let (client_response_sender, _client_response_receiver) = mpsc::unbounded_channel();
+        let (shutdown_tx, shutdown_receiver) = tokio::sync::broadcast::channel(1);
+        let (shutdown_sender, _shutdown_receiver) = tokio::sync::oneshot::channel();
         
         // Create Raft node
         let raft_node = Arc::new(RaftNode::new(
@@ -147,8 +151,8 @@ impl RaftStorage {
             state_machine.clone(),
             message_sender,
             message_receiver,
-            client_receiver,
-            client_sender,
+            client_request_receiver,
+            client_response_sender,
             shutdown_receiver,
         ).map_err(|e| RaftStorageError::RaftConsensus(e))?);
         
@@ -229,6 +233,7 @@ impl RaftStorage {
                 let log_entry = LogEntry::new_command(
                     // Current term would be obtained from the Raft node
                     0, // Placeholder term
+                    0, // Placeholder index
                     operation_bytes,
                 );
                 
@@ -241,7 +246,7 @@ impl RaftStorage {
                 let result = match &request.operation {
                     TokaOperation::CommitEvent { header, .. } => {
                         Ok(TokaOperationResult::EventCommitted {
-                            event_id: header.event_id,
+                            event_id: header.id,
                         })
                     }
                     TokaOperation::CompactLog { .. } => {
@@ -403,7 +408,7 @@ impl RaftStorage {
 #[async_trait]
 impl StorageBackend for RaftStorage {
     async fn commit(&self, header: &EventHeader, payload: &[u8]) -> anyhow::Result<()> {
-        debug!("Committing event {} to Raft cluster", header.event_id);
+        debug!("Committing event {} to Raft cluster", header.id);
         
         let operation = TokaOperation::CommitEvent {
             header: header.clone(),
