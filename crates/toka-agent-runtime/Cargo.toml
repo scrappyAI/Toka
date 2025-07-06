@@ -1,49 +1,33 @@
 [package]
 name = "toka-agent-runtime"
-version.workspace = true
-authors.workspace = true
-edition.workspace = true
+version = "0.1.0"
+edition = "2021"
 license.workspace = true
 repository.workspace = true
 description = "Agent execution runtime for Toka OS - interprets and executes agent configurations with LLM integration"
 
 [dependencies]
-# Core Toka dependencies
-toka-types = { path = "../toka-types" }
-toka-kernel = { path = "../toka-kernel" }
-toka-runtime = { path = "../toka-runtime" }
-# toka-orchestration = { path = "../toka-orchestration" } # Removed to break circular dependency
-toka-llm-gateway = { path = "../toka-llm-gateway" }
-toka-bus-core = { path = "../toka-bus-core" }
-
-# Async runtime
-tokio = { workspace = true, features = ["full"] }
-futures = { workspace = true }
-async-trait = { workspace = true }
-
-# Serialization
-serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
-
-# Error handling
-anyhow = { workspace = true }
-thiserror = { workspace = true }
-
-# Logging and tracing
-tracing = { workspace = true }
-
-# Time handling
-chrono = { workspace = true, features = ["serde"] }
-
-# UUID generation
-uuid = { workspace = true, features = ["v4", "serde"] }
-
-# Collections
+anyhow = "1"
+async-trait = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
 dashmap = "5.5"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
+tracing = "0.1"
+uuid = { version = "1", features = ["v4"] }
+
+# Toka dependencies
+toka-bus-core = { path = "../toka-bus-core" }
+toka-llm-gateway = { path = "../toka-llm-gateway" }
+toka-runtime = { path = "../toka-runtime" }
+toka-types = { path = "../toka-types" }
+toka-tools = { path = "../toka-tools", features = ["external-tools"] }
 
 [dev-dependencies]
-tokio-test = { workspace = true }
-tempfile = "3.8"
+tempfile = "3"
+tokio-test = "0.4"
 toka-auth = { path = "../toka-auth" }
 
 [features]

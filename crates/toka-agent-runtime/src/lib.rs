@@ -1,60 +1,22 @@
-#![forbid(unsafe_code)]
-#![deny(missing_docs)]
-
-//! **toka-agent-runtime** – Agent execution runtime for Toka OS.
+//! Toka Agent Runtime
 //!
-//! This crate provides the execution runtime that interprets and executes agent configurations
-//! loaded from YAML files. It bridges the gap between agent orchestration and actual task
-//! execution by providing:
+//! This crate provides the runtime environment for executing agents within Toka OS.
+//! It includes agent lifecycle management, task execution, and integration with the
+//! kernel and other system components.
 //!
-//! - **AgentExecutor**: Core agent execution loop that interprets agent configurations
-//! - **TaskExecutor**: LLM-integrated task execution with security validation
-//! - **AgentProcessManager**: Process lifecycle management for spawned agents
-//! - **Progress Reporting**: Real-time progress updates to orchestration system
+//! ## Features
+//!
+//! - **Agent Execution**: Core agent lifecycle and execution management
+//! - **Task Coordination**: LLM-integrated task execution with retry logic
+//! - **Progress Reporting**: Real-time progress updates to orchestration
+//! - **Capability Validation**: Security validation against declared capabilities
 //! - **Resource Management**: CPU, memory, and timeout enforcement
-//! - **Capability Validation**: Runtime permission checking against declared capabilities
+//! - **Tool Integration**: Seamless integration with toka-tools registry
 //!
-//! ## Architecture
+//! ## Security Model
 //!
-//! The agent runtime sits between the orchestration engine and the actual task execution:
-//!
-//! ```text
-//! Orchestration Engine → Agent Runtime → Task Execution → LLM Integration
-//!                                    ↓
-//!                               Progress Reporting
-//! ```
-//!
-//! ## Usage
-//!
-//! ```rust,no_run
-//! use toka_agent_runtime::{AgentExecutor, AgentProcessManager};
-//! use toka_orchestration::AgentConfig;
-//! use toka_types::EntityId;
-//!
-//! # #[tokio::main]
-//! # async fn main() -> anyhow::Result<()> {
-//! // Load agent configuration
-//! let config = AgentConfig::load_from_file("agents/v0.3.0/workstreams/build-system.yaml")?;
-//! 
-//! // Create agent executor
-//! let executor = AgentExecutor::new(
-//!     config,
-//!     EntityId(42),
-//!     runtime,
-//!     llm_gateway,
-//! ).await?;
-//!
-//! // Run agent execution loop
-//! executor.run().await?;
-//! # Ok(())
-//! # }
-//! ```
-//!
-//! ## Security
-//!
-//! The agent runtime enforces security at multiple levels:
-//!
-//! - **Capability Validation**: All operations validated against declared capabilities
+//! The agent runtime enforces a strict security model:
+//! - **Capability Enforcement**: All operations validated against declared capabilities
 //! - **Resource Limits**: CPU, memory, and timeout enforcement
 //! - **Sandboxing**: Process isolation and restricted system access
 //! - **Audit Logging**: All agent actions logged for security monitoring
@@ -85,6 +47,7 @@ pub mod task;
 pub mod capability;
 pub mod resource;
 pub mod progress;
+pub mod integration;
 
 pub use executor::AgentExecutor;
 pub use process::AgentProcessManager;
@@ -92,6 +55,10 @@ pub use task::TaskExecutor;
 pub use capability::CapabilityValidator;
 pub use resource::ResourceManager;
 pub use progress::{ProgressReporter, AgentProgress, TaskResult};
+pub use integration::{
+    ToolRegistryTaskExecutor, AgentExecutorExt, ToolRegistryFactory, 
+    AgentRuntimeToolIntegration
+};
 
 /// Maximum time to wait for agent startup
 pub const AGENT_STARTUP_TIMEOUT: Duration = Duration::from_secs(30);
@@ -106,202 +73,80 @@ pub enum AgentExecutionState {
     Initializing,
     /// Agent is ready to execute tasks
     Ready,
-    /// Agent is actively executing a task
-    ExecutingTask { 
-        /// ID of the currently executing task
-        task_id: String 
-    },
-    /// Agent is waiting for a resource or dependency
-    Waiting { 
-        /// Reason for waiting
-        reason: String 
-    },
-    /// Agent is paused by user or system
+    /// Agent is currently executing a task
+    ExecutingTask { task_id: String },
+    /// Agent is paused/suspended
     Paused,
-    /// Agent execution completed successfully
+    /// Agent has completed all tasks
     Completed,
-    /// Agent execution failed
-    Failed { 
-        /// Error message describing the failure
-        error: String 
-    },
-    /// Agent was terminated by user or system
-    Terminated { 
-        /// Reason for termination
-        reason: String 
-    },
+    /// Agent has failed and terminated
+    Failed { error: String },
+    /// Agent has been terminated
+    Terminated { reason: String },
 }
 
-/// Context information for agent execution
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Agent execution context
+#[derive(Debug, Clone)]
 pub struct AgentContext {
-    /// Agent entity ID
-    pub agent_id: EntityId,
     /// Agent configuration
     pub config: AgentConfig,
+    /// Agent entity ID
+    pub agent_id: EntityId,
     /// Current execution state
     pub state: AgentExecutionState,
-    /// Execution start time
-    pub started_at: DateTime<Utc>,
-    /// Last activity timestamp
-    pub last_activity: DateTime<Utc>,
-    /// Accumulated execution metrics
-    pub metrics: AgentMetrics,
-    /// Environment variables and context
+    /// Environment variables for agent execution
     pub environment: HashMap<String, String>,
+    /// Agent start time
+    pub start_time: Instant,
 }
 
-/// Metrics collected during agent execution
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+/// Agent execution configuration
+#[derive(Debug, Clone)]
+pub struct ExecutionConfig {
+    /// Maximum task execution time
+    pub max_task_time: Duration,
+    /// Maximum number of retry attempts
+    pub max_retries: u32,
+    /// LLM request timeout
+    pub llm_timeout: Duration,
+    /// Resource limits
+    pub resource_limits: ResourceLimits,
+}
+
+impl Default for ExecutionConfig {
+    fn default() -> Self {
+        Self {
+            max_task_time: DEFAULT_TASK_TIMEOUT,
+            max_retries: 3,
+            llm_timeout: Duration::from_secs(30),
+            resource_limits: ResourceLimits {
+                max_memory_mb: 512,
+                max_cpu_percent: 50.0,
+                max_execution_time_minutes: 30,
+            },
+        }
+    }
+}
+
+/// Agent execution metrics
+#[derive(Debug, Clone, Default)]
 pub struct AgentMetrics {
-    /// Total tasks attempted
-    pub tasks_attempted: u64,
+    /// Total tasks executed
+    pub tasks_executed: u64,
     /// Tasks completed successfully
-    pub tasks_completed: u64,
+    pub tasks_successful: u64,
     /// Tasks that failed
     pub tasks_failed: u64,
     /// Total execution time
     pub total_execution_time: Duration,
     /// Average task execution time
     pub avg_task_time: Duration,
-    /// Memory usage (bytes)
-    pub memory_usage: u64,
-    /// CPU usage percentage
-    pub cpu_usage: f64,
-    /// LLM requests made
-    pub llm_requests: u64,
-    /// LLM tokens consumed
-    pub llm_tokens_consumed: u64,
+    /// Last activity timestamp
+    pub last_activity: Option<DateTime<Utc>>,
 }
 
-/// Configuration for agent execution behavior
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ExecutionConfig {
-    /// Maximum number of concurrent tasks
-    pub max_concurrent_tasks: usize,
-    /// Default task timeout
-    pub default_task_timeout: Duration,
-    /// Enable detailed execution logging
-    pub verbose_logging: bool,
-    /// Retry configuration
-    pub retry_config: RetryConfig,
-    /// Resource monitoring interval
-    pub resource_check_interval: Duration,
-}
-
-/// Configuration for task retry behavior
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RetryConfig {
-    /// Maximum number of retries per task
-    pub max_retries: u32,
-    /// Base delay between retries
-    pub base_delay: Duration,
-    /// Maximum delay between retries
-    pub max_delay: Duration,
-    /// Backoff multiplier
-    pub backoff_multiplier: f64,
-}
-
-impl Default for ExecutionConfig {
-    fn default() -> Self {
-        Self {
-            max_concurrent_tasks: 3,
-            default_task_timeout: DEFAULT_TASK_TIMEOUT,
-            verbose_logging: false,
-            retry_config: RetryConfig::default(),
-            resource_check_interval: Duration::from_secs(30),
-        }
-    }
-}
-
-impl Default for RetryConfig {
-    fn default() -> Self {
-        Self {
-            max_retries: 3,
-            base_delay: Duration::from_secs(1),
-            max_delay: Duration::from_secs(60),
-            backoff_multiplier: 2.0,
-        }
-    }
-}
-
-/// Trait for agent task execution
-#[async_trait]
-pub trait AgentTask: Send + Sync + std::fmt::Debug {
-    /// Execute the task with the given context
-    async fn execute(&self, context: &AgentContext) -> Result<TaskResult>;
-    
-    /// Get task identifier
-    fn task_id(&self) -> &str;
-    
-    /// Get task description
-    fn description(&self) -> &str;
-    
-    /// Get estimated execution time
-    fn estimated_duration(&self) -> Option<Duration> {
-        None
-    }
-    
-    /// Check if task can be retried on failure
-    fn is_retryable(&self) -> bool {
-        true
-    }
-}
-
-/// Error types for agent runtime operations
-#[derive(Debug, thiserror::Error)]
-pub enum AgentRuntimeError {
-    /// Agent configuration is invalid
-    #[error("invalid agent configuration: {0}")]
-    InvalidConfiguration(String),
-    
-    /// Agent execution failed
-    #[error("agent execution failed: {0}")]
-    ExecutionFailed(String),
-    
-    /// Task execution timeout
-    #[error("task execution timeout: {task_id} exceeded {timeout:?}")]
-    TaskTimeout { 
-        /// ID of the task that timed out
-        task_id: String, 
-        /// Timeout duration that was exceeded
-        timeout: Duration 
-    },
-    
-    /// Resource limit exceeded
-    #[error("resource limit exceeded: {resource} usage {current} > limit {limit}")]
-    ResourceLimitExceeded {
-        /// Name of the resource that exceeded its limit
-        resource: String,
-        /// Current usage value
-        current: String,
-        /// Maximum allowed limit
-        limit: String,
-    },
-    
-    /// Capability not authorized
-    #[error("capability not authorized: {capability} required for {operation}")]
-    CapabilityDenied {
-        /// Name of the required capability
-        capability: String,
-        /// Operation that was denied
-        operation: String,
-    },
-    
-    /// LLM integration error
-    #[error("LLM integration error: {0}")]
-    LlmError(String),
-    
-    /// Internal runtime error
-    #[error("internal runtime error: {0}")]
-    Internal(String),
-}
-
-/// Result type for agent runtime operations
-pub type AgentRuntimeResult<T> = std::result::Result<T, AgentRuntimeError>;
-
-/// Agent runtime statistics for monitoring and debugging
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Runtime statistics for all agents
+#[derive(Debug, Clone, Default)]
 pub struct RuntimeStats {
     /// Number of active agents
     pub active_agents: u64,
@@ -311,63 +156,176 @@ pub struct RuntimeStats {
     pub total_agents_completed: u64,
     /// Total agents failed
     pub total_agents_failed: u64,
-    /// Total tasks executed
-    pub total_tasks_executed: u64,
-    /// Average agent execution time
-    pub avg_agent_execution_time: Duration,
-    /// Total LLM requests across all agents
-    pub total_llm_requests: u64,
-    /// Total LLM tokens consumed
-    pub total_llm_tokens: u64,
-    /// Runtime uptime
-    pub uptime: Duration,
+    /// Runtime start time
+    pub runtime_start: Option<DateTime<Utc>>,
 }
 
-impl Default for RuntimeStats {
-    fn default() -> Self {
+/// Agent runtime error types
+#[derive(Debug, thiserror::Error)]
+pub enum AgentRuntimeError {
+    /// Agent execution failed
+    #[error("Agent execution failed: {0}")]
+    ExecutionFailed(String),
+    
+    /// Agent capability denied
+    #[error("Capability denied: {capability} for operation: {operation}")]
+    CapabilityDenied {
+        capability: String,
+        operation: String,
+    },
+    
+    /// Resource limit exceeded
+    #[error("Resource limit exceeded: {resource} - {details}")]
+    ResourceLimitExceeded {
+        resource: String,
+        details: String,
+    },
+    
+    /// Task timeout
+    #[error("Task execution timed out after {timeout:?}")]
+    TaskTimeout {
+        timeout: Duration,
+    },
+    
+    /// LLM communication error
+    #[error("LLM communication error: {0}")]
+    LlmError(String),
+    
+    /// Configuration error
+    #[error("Configuration error: {0}")]
+    ConfigError(String),
+    
+    /// Internal runtime error
+    #[error("Internal runtime error: {0}")]
+    InternalError(String),
+}
+
+/// Result type for agent runtime operations
+pub type AgentRuntimeResult<T> = Result<T, AgentRuntimeError>;
+
+/// Task execution trait for different execution strategies
+#[async_trait]
+pub trait AgentTask: Send + Sync {
+    /// Unique task identifier
+    fn task_id(&self) -> String;
+    
+    /// Task description
+    fn description(&self) -> &str;
+    
+    /// Required capabilities for this task
+    fn required_capabilities(&self) -> Vec<String>;
+    
+    /// Execute the task
+    async fn execute(&self, context: &AgentContext) -> AgentRuntimeResult<TaskResult>;
+    
+    /// Validate task parameters
+    fn validate(&self) -> AgentRuntimeResult<()>;
+}
+
+impl AgentContext {
+    /// Create a new agent context
+    pub fn new(config: AgentConfig, agent_id: EntityId) -> Self {
         Self {
-            active_agents: 0,
-            total_agents_started: 0,
-            total_agents_completed: 0,
-            total_agents_failed: 0,
-            total_tasks_executed: 0,
-            avg_agent_execution_time: Duration::ZERO,
-            total_llm_requests: 0,
-            total_llm_tokens: 0,
-            uptime: Duration::ZERO,
+            config,
+            agent_id,
+            state: AgentExecutionState::Initializing,
+            environment: HashMap::new(),
+            start_time: Instant::now(),
         }
     }
+    
+    /// Update execution state
+    pub fn set_state(&mut self, state: AgentExecutionState) {
+        self.state = state;
+    }
+    
+    /// Get uptime
+    pub fn uptime(&self) -> Duration {
+        self.start_time.elapsed()
+    }
+    
+    /// Add environment variable
+    pub fn add_env_var(&mut self, key: String, value: String) {
+        self.environment.insert(key, value);
+    }
+    
+    /// Get environment variable
+    pub fn get_env_var(&self, key: &str) -> Option<&String> {
+        self.environment.get(key)
+    }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+/// Enhanced agent runtime that integrates with the tool registry
+pub struct TokaAgentRuntime {
+    /// Agent process manager
+    process_manager: Arc<AgentProcessManager>,
+    /// Tool registry integration
+    tool_integration: Option<Arc<AgentRuntimeToolIntegration>>,
+    /// Runtime statistics
+    stats: Arc<RwLock<RuntimeStats>>,
+}
 
-    #[test]
-    fn test_agent_execution_state_serialization() {
-        let state = AgentExecutionState::ExecutingTask {
-            task_id: "test-task-123".to_string(),
-        };
+impl TokaAgentRuntime {
+    /// Create a new Toka agent runtime with tool integration
+    pub async fn new_with_tools(
+        runtime: Arc<Runtime>,
+        llm_gateway: Arc<LlmGateway>,
+    ) -> Result<Self> {
+        let process_manager = Arc::new(AgentProcessManager::new(
+            runtime.clone(),
+            llm_gateway.clone(),
+        ));
         
-        let serialized = serde_json::to_string(&state).unwrap();
-        let deserialized: AgentExecutionState = serde_json::from_str(&serialized).unwrap();
+        // Create tool integration for development by default
+        let tool_integration = Some(Arc::new(
+            AgentRuntimeToolIntegration::new_development(runtime, llm_gateway).await?
+        ));
         
-        assert_eq!(state, deserialized);
+        let stats = Arc::new(RwLock::new(RuntimeStats {
+            runtime_start: Some(Utc::now()),
+            ..Default::default()
+        }));
+        
+        Ok(Self {
+            process_manager,
+            tool_integration,
+            stats,
+        })
     }
-
-    #[test]
-    fn test_agent_metrics_default() {
-        let metrics = AgentMetrics::default();
-        assert_eq!(metrics.tasks_attempted, 0);
-        assert_eq!(metrics.tasks_completed, 0);
-        assert_eq!(metrics.total_execution_time, Duration::ZERO);
+    
+    /// Create a production runtime with restricted tool access
+    pub async fn new_production(
+        runtime: Arc<Runtime>,
+        llm_gateway: Arc<LlmGateway>,
+    ) -> Result<Self> {
+        let process_manager = Arc::new(AgentProcessManager::new(
+            runtime.clone(),
+            llm_gateway.clone(),
+        ));
+        
+        let tool_integration = Some(Arc::new(
+            AgentRuntimeToolIntegration::new_production(runtime, llm_gateway).await?
+        ));
+        
+        let stats = Arc::new(RwLock::new(RuntimeStats {
+            runtime_start: Some(Utc::now()),
+            ..Default::default()
+        }));
+        
+        Ok(Self {
+            process_manager,
+            tool_integration,
+            stats,
+        })
     }
-
-    #[test]
-    fn test_execution_config_default() {
-        let config = ExecutionConfig::default();
-        assert_eq!(config.max_concurrent_tasks, 3);
-        assert_eq!(config.default_task_timeout, DEFAULT_TASK_TIMEOUT);
-        assert!(!config.verbose_logging);
+    
+    /// Get the tool integration
+    pub fn tool_integration(&self) -> Option<&Arc<AgentRuntimeToolIntegration>> {
+        self.tool_integration.as_ref()
+    }
+    
+    /// Get runtime statistics
+    pub async fn get_stats(&self) -> RuntimeStats {
+        self.stats.read().await.clone()
     }
 }

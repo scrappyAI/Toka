@@ -19,6 +19,7 @@
 //! | Feature        | Tool / Capability | Extra Deps |
 //! |----------------|-------------------|------------|
 //! | `echo` *(default via `minimal`)* | Simple *echo* tool used in tutorials | – |
+//! | `external-tools` | External tool wrappers for Python/shell scripts | `tokio/process` |
 //! | `minimal`      | Alias that enables only the lightweight demo tools | – |
 //! | _future_       | More heavy-weight tools will land behind dedicated flags | varies |
 //!
@@ -26,6 +27,12 @@
 //! ```toml
 //! [dependencies]
 //! toka-tools = { version = "0.1", default-features = false, features = ["echo"] }
+//! ```
+//!
+//! Enable external tool support:
+//! ```toml
+//! [dependencies]
+//! toka-tools = { version = "0.1", features = ["external-tools"] }
 //! ```
 //!
 //! ## Quick Example
@@ -50,6 +57,53 @@
 //! }
 //! ```
 //!
+//! ## External Tool Integration
+//!
+//! Toka Tools provides wrappers for integrating external executables with the tool registry:
+//!
+//! ```rust
+//! # #[cfg(feature = "external-tools")]
+//! # {
+//! use std::path::PathBuf;
+//! use toka_tools::wrappers::{PythonTool, ShellTool};
+//!
+//! // Wrap a Python script
+//! let python_tool = PythonTool::new(
+//!     PathBuf::from("scripts/validate_dates.py"),
+//!     "date-validator",
+//!     "Validates dates in workspace files",
+//!     vec!["date-validation".to_string()],
+//! )?;
+//!
+//! // Wrap a shell script
+//! let shell_tool = ShellTool::new(
+//!     PathBuf::from("scripts/build-validator.sh"),
+//!     "build-validator",
+//!     "Validates build system configuration",
+//!     vec!["build-validation".to_string()],
+//! )?;
+//!
+//! // Register with the tool registry
+//! registry.register_tool(Arc::new(python_tool)).await?;
+//! registry.register_tool(Arc::new(shell_tool)).await?;
+//! # }
+//! ```
+//!
+//! ## Auto-Discovery
+//!
+//! Automatically discover and register tools from the workspace:
+//!
+//! ```rust
+//! # #[cfg(feature = "external-tools")]
+//! # {
+//! use toka_tools::registry::ToolRegistryExt;
+//!
+//! // Auto-discover and register all tools in standard locations
+//! let count = registry.auto_register_tools().await?;
+//! println!("Auto-registered {} tools", count);
+//! # }
+//! ```
+//!
 //! ---
 //! This crate forbids `unsafe` and keeps its public API intentionally small
 //! so that downstream workspaces can vendor or fork individual tools without
@@ -63,8 +117,17 @@
 //! simply depend on `toka-tools` instead of the removed legacy crate.
 
 pub mod core;
-
 pub mod tools;
+pub mod registry;
+
+// External tool wrappers (behind feature flag)
+#[cfg(feature = "external-tools")]
+pub mod wrappers;
 
 // Re-export the important types so downstream code can simply `use toka_tools::{Tool, ToolRegistry}`
 pub use crate::core::{Tool, ToolMetadata, ToolParams, ToolRegistry, ToolResult};
+pub use crate::registry::{ToolDiscoveryConfig, ToolRegistryExt};
+
+// Re-export wrappers when the feature is enabled
+#[cfg(feature = "external-tools")]
+pub use crate::wrappers::{ExternalTool, PythonTool, ShellTool};

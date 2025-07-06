@@ -31,7 +31,7 @@ reqwest = { version = "0.11", optional = true, default-features = false, feature
 
 [dev-dependencies]
 # Async test runtime and utilities
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "fs", "io-util"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "fs", "io-util", "process"] }
 anyhow = "1"
 rand = "0.8"
 serde_cbor = "0.11"
@@ -39,15 +39,25 @@ tempfile = "3.10"
 proptest = "1.4"
 tokio-test = { workspace = true }
 futures = { workspace = true }
+# Dependencies for examples
+tracing-subscriber = "0.3"
 
 [features]
 # Phase-0: clean slate – only the `echo` demo tool.
 echo = []
 minimal = ["echo"]
+
+# External tool integration features
+external-tools = ["tokio/process"]
+
 # additional features ported from toolkit-core
 schema_cache = ["once_cell", "dashmap"]
 allow_remote_refs = []
 wasm_loader = ["wasmtime"]
 http_transport = ["reqwest"]
 
-default = ["minimal"]
+default = ["minimal", "external-tools"]
+
+[[example]]
+name = "agent_tool_integration"
+required-features = ["external-tools"]
