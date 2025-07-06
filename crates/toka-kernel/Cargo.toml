@@ -1,6 +1,6 @@
 [package]
 name = "toka-kernel"
-version = "0.1.0"
+version = "0.2.1"
 edition = "2021"
 description = "Kernel-level enforcement and security for Toka tool execution"
 documentation = "https://docs.rs/toka-kernel"
@@ -10,6 +10,11 @@ keywords = ["kernel", "security", "tools", "enforcement"]
 categories = ["os", "development-tools"]
 
 [dependencies]
+# Core Toka components
+toka-types = { path = "../toka-types" }
+toka-bus-core = { path = "../toka-bus-core" }
+toka-auth = { path = "../toka-auth" }
+
 # Core async runtime and utilities
 tokio = { version = "1.0", features = ["full"] }
 anyhow = "1.0"
@@ -26,9 +31,13 @@ tracing-subscriber = { version = "0.3", optional = true }
 # Security and cryptography
 sha2 = "0.10"
 uuid = { version = "1.0", features = ["v4"] }
+chrono = { workspace = true, features = ["serde"] }
 
 # System monitoring (optional, for advanced resource tracking)
 sysinfo = { version = "0.30", optional = true }
+
+# Global static storage
+once_cell = { workspace = true }
 
 [dev-dependencies]
 tokio-test = "0.4"
@@ -37,7 +46,7 @@ tempfile = "3.0"
 [features]
 default = ["monitoring"]
 monitoring = ["sysinfo", "tracing-subscriber"]
-testing = ["tokio-test"]
+testing = []
 
 [[bin]]
 name = "toka-kernel-monitor"

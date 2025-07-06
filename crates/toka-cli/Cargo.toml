@@ -13,9 +13,14 @@ path = "src/main.rs"
 
 [dependencies]
 # Core Toka components
-toka-runtime = { path = "../toka-runtime", features = ["memory-storage", "sled-storage", "sqlite-storage"] }
+toka-runtime = { path = "../toka-runtime" }
 toka-auth = { path = "../toka-auth" }
 toka-types = { path = "../toka-types" }
+
+# Storage components
+toka-store-memory = { path = "../toka-store-memory" }
+toka-store-sled = { path = "../toka-store-sled" }
+toka-store-sqlite = { path = "../toka-store-sqlite" }
 
 # CLI framework
 clap = { workspace = true }

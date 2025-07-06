@@ -1,6 +1,7 @@
 # Development environment for Toka agents with comprehensive debugging tools
 FROM rust:1.86-slim AS development
 
+
 # Install comprehensive system dependencies and development tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Core build tools

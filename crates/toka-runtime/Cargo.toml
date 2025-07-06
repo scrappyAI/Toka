@@ -1,6 +1,6 @@
 [package]
 name = "toka-runtime"
-version = "0.1.0"
+version = "0.2.1"
 edition = "2021"
 description = "Dynamic code execution runtime with kernel enforcement"
 documentation = "https://docs.rs/toka-runtime"
@@ -53,14 +53,3 @@ wasm = ["wasmtime", "wasmtime-wasi"]
 codegen = ["tera"]
 all-engines = ["python", "wasm", "codegen"]
 
-[[example]]
-name = "python_execution"
-required-features = ["python"]
-
-[[example]]
-name = "wasm_execution"
-required-features = ["wasm"]
-
-[[example]]
-name = "code_generation"
-required-features = ["codegen"]

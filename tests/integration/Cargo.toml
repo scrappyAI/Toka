@@ -13,7 +13,7 @@ toka-types = { path = "../../crates/toka-types" }
 toka-auth = { path = "../../crates/toka-auth" }
 toka-bus-core = { path = "../../crates/toka-bus-core" }
 toka-kernel = { path = "../../crates/toka-kernel" }
-toka-runtime = { path = "../../crates/toka-runtime", features = ["memory-storage", "sled-storage", "sqlite-storage"] }
+toka-runtime = { path = "../../crates/toka-runtime" }
 toka-store-core = { path = "../../crates/toka-store-core" }
 toka-store-memory = { path = "../../crates/toka-store-memory" }
 toka-store-sled = { path = "../../crates/toka-store-sled" }
