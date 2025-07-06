@@ -71,89 +71,111 @@ response_cache_ttl = 3600
 
 # Agent definitions
 [[agents]]
-name = "code-analyst"
+name = "toka-system-monitor"
 version = "1.0.0"
-domain = "code-analysis"
-priority = "high"
-workstream = "main"
-branch = "feature/code-analysis"
-
-[agents.capabilities]
-primary = ["code-review", "static-analysis", "security-scan"]
-secondary = ["documentation", "refactoring-suggestions"]
-
-[[agents.objectives]]
-description = "Analyze code quality and security"
-deliverable = "Code analysis report"
-validation = "Report completeness and accuracy"
-
-[[agents.tasks.default]]
-description = "Perform static code analysis"
-priority = "high"
-dependencies = []
-
-[[agents]]
-name = "test-orchestrator"
-version = "1.0.0"
-domain = "testing"
+domain = "system-monitoring"
 priority = "critical"
-workstream = "main"
-branch = "feature/test-automation"
+workstream = "infrastructure"
+branch = "main"
 
 [agents.capabilities]
-primary = ["test-execution", "test-generation", "coverage-analysis"]
-secondary = ["performance-testing", "integration-testing"]
+primary = ["system-monitoring", "resource-tracking", "health-checks"]
+secondary = ["performance-optimization", "alert-management"]
 
 [[agents.objectives]]
-description = "Orchestrate comprehensive testing"
-deliverable = "Test execution report"
-validation = "All tests pass with adequate coverage"
+description = "Monitor Toka system health and performance"
+deliverable = "System health dashboard and alerts"
+validation = "System metrics within acceptable thresholds"
 
 [[agents.tasks.default]]
-description = "Execute test suite"
+description = "Monitor system resources and health"
 priority = "critical"
 dependencies = []
 
 [[agents]]
-name = "security-auditor"
+name = "toka-configuration-manager"
 version = "1.0.0"
-domain = "security"
+domain = "configuration-management"
 priority = "high"
-workstream = "security"
-branch = "feature/security-audit"
+workstream = "infrastructure"
+branch = "main"
 
 [agents.capabilities]
-primary = ["vulnerability-scan", "dependency-audit", "security-policy-check"]
-secondary = ["penetration-testing", "compliance-check"]
+primary = ["config-validation", "config-updates", "environment-management"]
+secondary = ["configuration-backup", "rollback-management"]
 
 [[agents.objectives]]
-description = "Perform security audit"
-deliverable = "Security audit report"
-validation = "No critical vulnerabilities found"
+description = "Manage and validate Toka system configuration"
+deliverable = "Configuration validation reports and updates"
+validation = "Configuration consistency and validity"
 
 [[agents.tasks.default]]
-description = "Scan for security vulnerabilities"
+description = "Validate and manage system configuration"
 priority = "high"
 dependencies = []
 
 [[agents]]
-name = "performance-optimizer"
+name = "toka-orchestration-coordinator"
 version = "1.0.0"
-domain = "performance"
-priority = "medium"
-workstream = "optimization"
-branch = "feature/performance-optimization"
+domain = "orchestration-coordination"
+priority = "critical"
+workstream = "coordination"
+branch = "main"
 
 [agents.capabilities]
-primary = ["performance-profiling", "bottleneck-analysis", "optimization-suggestions"]
-secondary = ["memory-analysis", "cpu-profiling"]
+primary = ["agent-coordination", "workstream-management", "dependency-resolution"]
+secondary = ["resource-allocation", "conflict-resolution"]
 
 [[agents.objectives]]
-description = "Optimize system performance"
-deliverable = "Performance optimization report"
-validation = "Performance metrics improved"
+description = "Coordinate agent orchestration and workstreams"
+deliverable = "Orchestration coordination reports"
+validation = "Successful agent coordination and workstream completion"
 
 [[agents.tasks.default]]
-description = "Profile and optimize performance"
-priority = "medium"
-dependencies = [] 
+description = "Coordinate agent spawning and workstream execution"
+priority = "critical"
+dependencies = []
+
+[[agents]]
+name = "toka-self-improvement-agent"
+version = "1.0.0"
+domain = "self-improvement"
+priority = "high"
+workstream = "self-orchestration"
+branch = "main"
+
+[agents.capabilities]
+primary = ["self-analysis", "optimization-planning", "improvement-execution"]
+secondary = ["performance-monitoring", "capability-enhancement"]
+
+[[agents.objectives]]
+description = "Continuously improve Toka system capabilities"
+deliverable = "Self-improvement recommendations and implementations"
+validation = "Measurable system improvements achieved"
+
+[[agents.tasks.default]]
+description = "Analyze system performance and implement improvements"
+priority = "high"
+dependencies = ["toka-system-monitor"]
+
+[[agents]]
+name = "toka-meta-orchestrator"
+version = "1.0.0"
+domain = "meta-orchestration"
+priority = "high"
+workstream = "self-orchestration"
+branch = "main"
+
+[agents.capabilities]
+primary = ["orchestration-optimization", "agent-lifecycle-management", "system-evolution"]
+secondary = ["orchestration-analytics", "agent-performance-tuning"]
+
+[[agents.objectives]]
+description = "Orchestrate the orchestration system itself"
+deliverable = "Meta-orchestration reports and optimizations"
+validation = "Improved orchestration efficiency and capability"
+
+[[agents.tasks.default]]
+description = "Optimize and evolve the orchestration system"
+priority = "high"
+dependencies = ["toka-orchestration-coordinator", "toka-configuration-manager"] 

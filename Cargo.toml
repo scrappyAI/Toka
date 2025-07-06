@@ -29,6 +29,7 @@ members = [
     
     # Agent orchestration
     "crates/toka-orchestration",
+    "crates/toka-orchestration-service",
     
     # Agent execution runtime
     "crates/toka-agent-runtime",

@@ -122,4 +122,57 @@ coverage-ci:
 
 # Turnkey CI target – one command mirrors what GitHub Actions run
 ci: fmt lint workspace-check workspace-test-all-features coverage-ci
-	@echo "✅ CI checks complete – workspace healthy!" 
+	@echo "✅ CI checks complete – workspace healthy!"
+
+# -------------------------------------------------
+# Toka Orchestration System
+# -------------------------------------------------
+.PHONY: orchestration orchestration-build orchestration-start orchestration-stop orchestration-status orchestration-check orchestration-dev orchestration-cursor orchestration-docker
+
+# Build the orchestration service
+orchestration-build:
+	@echo "🔨 Building Toka orchestration service..."
+	@cargo build --release --bin toka-orchestration
+
+# Start the orchestration system
+orchestration-start:
+	@echo "🚀 Starting Toka orchestration system..."
+	@./scripts/start-orchestration.sh
+
+# Start orchestration in development mode
+orchestration-dev:
+	@echo "🚀 Starting Toka orchestration in development mode..."
+	@./scripts/start-orchestration.sh --dev --log-level debug
+
+# Start orchestration in Cursor mode
+orchestration-cursor:
+	@echo "🚀 Starting Toka orchestration in Cursor mode..."
+	@./scripts/start-orchestration.sh --cursor-mode
+
+# Check orchestration configuration and environment
+orchestration-check:
+	@echo "🔍 Checking orchestration configuration..."
+	@./scripts/start-orchestration.sh --check-only
+
+# Get orchestration status (if running)
+orchestration-status:
+	@echo "📊 Checking orchestration status..."
+	@curl -s http://localhost:8080/health | jq '.' || echo "❌ Orchestration service not running or not responding"
+
+# Stop orchestration service (if running via Docker)
+orchestration-stop:
+	@echo "🛑 Stopping orchestration service..."
+	@docker-compose down || echo "No Docker containers to stop"
+
+# Start orchestration with Docker
+orchestration-docker:
+	@echo "🐳 Starting orchestration with Docker..."
+	@docker-compose up -d
+	@echo "✅ Orchestration service started with Docker"
+	@echo "Health check: http://localhost:8080/health"
+	@echo "Status: http://localhost:8080/status"
+
+# Complete orchestration setup (build + environment check)
+orchestration: orchestration-build orchestration-check
+	@echo "✅ Toka orchestration system ready!"
+	@echo "Run 'make orchestration-start' to start the service" 

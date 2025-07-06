@@ -1,0 +1,50 @@
+[package]
+name = "toka-orchestration-service"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Main orchestration service for Toka OS - coordinates agent spawning and lifecycle management."
+
+[[bin]]
+name = "toka-orchestration"
+path = "src/main.rs"
+
+[dependencies]
+# Core Toka components
+toka-orchestration = { path = "../toka-orchestration" }
+toka-runtime = { path = "../toka-runtime", features = ["memory-storage", "sled-storage", "sqlite-storage"] }
+toka-llm-gateway = { path = "../toka-llm-gateway" }
+toka-auth = { path = "../toka-auth" }
+toka-types = { path = "../toka-types" }
+
+# Async runtime and utilities
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }
+anyhow = { workspace = true }
+futures = { workspace = true }
+
+# Configuration and environment
+config = { workspace = true }
+dotenv = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# CLI framework
+clap = { workspace = true }
+
+# Logging and tracing
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+
+# Utilities
+uuid = { workspace = true, features = ["v4"] }
+chrono = { workspace = true, features = ["serde"] }
+
+# HTTP server for health checks and API
+axum = { workspace = true, features = ["macros"] }
+tower = { workspace = true }
+tower-http = { workspace = true, features = ["trace"] }
+
+# Additional utilities
+once_cell = { workspace = true } 

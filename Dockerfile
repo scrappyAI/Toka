@@ -37,7 +37,8 @@ USER app
 RUN cargo auditable build --release --locked \
     && cargo audit \
     && strip target/release/toka-cli \
-    && strip target/release/toka-config-cli
+    && strip target/release/toka-config-cli \
+    && strip target/release/toka-orchestration
 
 # Stage 2: Runtime environment
 FROM debian:bookworm-slim AS runtime
@@ -60,6 +61,7 @@ RUN groupadd --gid 10001 toka \
 # Copy compiled binaries from builder
 COPY --from=builder --chown=toka:toka /build/target/release/toka-cli /app/bin/
 COPY --from=builder --chown=toka:toka /build/target/release/toka-config-cli /app/bin/
+COPY --from=builder --chown=toka:toka /build/target/release/toka-orchestration /app/bin/
 
 # Set up runtime environment
 USER toka
@@ -95,4 +97,4 @@ EXPOSE 8080 9000
 ENTRYPOINT ["/usr/bin/tini", "--"]
 
 # Default command starts the agent orchestration system
-CMD ["/app/bin/toka-cli", "orchestrate", "--config", "/app/config/agents.toml"] 
+CMD ["/app/bin/toka-orchestration", "--config", "/app/config/agents.toml"] 
