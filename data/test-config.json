@@ -1,0 +1,14 @@
+{
+  "agents": {
+    "FileAgent": {
+      "enabled": true
+    },
+    "MonitorAgent": {
+      "enabled": true
+    }
+  },
+  "settings": {
+    "log_level": "debug",
+    "storage": "sqlite"
+  }
+}

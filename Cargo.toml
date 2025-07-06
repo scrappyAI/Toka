@@ -23,6 +23,7 @@ members = [
     # Applications / demos
     "crates/toka-cli",
     "crates/toka-config-cli",
+    "crates/toka-testing",
     
     # LLM integration
     "crates/toka-llm-gateway",

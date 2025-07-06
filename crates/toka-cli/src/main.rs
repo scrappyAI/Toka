@@ -56,12 +56,18 @@ enum Commands {
         /// Task description
         #[arg(long)]
         description: String,
+        /// JWT authentication token (use generate-token command to create)
+        #[arg(long)]
+        token: Option<String>,
     },
     /// Spawn a new agent
     SpawnAgent {
         /// Agent name
         #[arg(long)]
         name: String,
+        /// JWT authentication token (use generate-token command to create)
+        #[arg(long)]
+        token: Option<String>,
     },
     /// Query the current world state
     QueryState,
@@ -117,11 +123,11 @@ async fn main() -> Result<()> {
 
     // Execute the command
     match cli.command {
-        Commands::ScheduleTask { agent, description } => {
-            handle_schedule_task(&runtime, agent, description).await?;
+        Commands::ScheduleTask { agent, description, token } => {
+            handle_schedule_task(&runtime, agent, description, token).await?;
         }
-        Commands::SpawnAgent { name } => {
-            handle_spawn_agent(&runtime, name).await?;
+        Commands::SpawnAgent { name, token } => {
+            handle_spawn_agent(&runtime, name, token).await?;
         }
         Commands::QueryState => {
             handle_query_state(&runtime).await?;
@@ -145,14 +151,26 @@ async fn main() -> Result<()> {
 //  Command handlers
 //─────────────────────────────
 
-async fn handle_schedule_task(runtime: &Runtime, agent_id: u128, description: String) -> Result<()> {
+async fn handle_schedule_task(runtime: &Runtime, agent_id: u128, description: String, token: Option<String>) -> Result<()> {
     let agent = EntityId(agent_id);
     let task = TaskSpec { description: description.clone() };
 
-    // For demo purposes, use a simple token. In production, this would be provided by the user.
+    let capability = match token {
+        Some(token) => token,
+        None => {
+            eprintln!("❌ No authentication token provided!");
+            eprintln!("💡 Generate a token first: toka generate-token");
+            eprintln!("💡 Then use: toka schedule-task --agent {} --description \"{}\" --token <TOKEN>", agent_id, description);
+            return Err(anyhow::anyhow!("Authentication token required"));
+        }
+    };
+
+    // Use system entity (EntityId(0)) as origin to match token subject "0"
+    let origin = EntityId(0);
+
     let message = Message {
-        origin: agent,
-        capability: "demo-token".to_string(),
+        origin,
+        capability,
         op: Operation::ScheduleAgentTask { agent, task },
     };
 
@@ -165,13 +183,23 @@ async fn handle_schedule_task(runtime: &Runtime, agent_id: u128, description: St
     Ok(())
 }
 
-async fn handle_spawn_agent(runtime: &Runtime, name: String) -> Result<()> {
+async fn handle_spawn_agent(runtime: &Runtime, name: String, token: Option<String>) -> Result<()> {
     let parent = EntityId(0); // Use entity 0 as the system parent
     let spec = AgentSpec { name: name.clone() };
 
+    let capability = match token {
+        Some(token) => token,
+        None => {
+            eprintln!("❌ No authentication token provided!");
+            eprintln!("💡 Generate a token first: toka generate-token");
+            eprintln!("💡 Then use: toka spawn-agent --name \"{}\" --token <TOKEN>", name);
+            return Err(anyhow::anyhow!("Authentication token required"));
+        }
+    };
+
     let message = Message {
         origin: parent,
-        capability: "demo-token".to_string(),
+        capability,
         op: Operation::SpawnSubAgent { parent, spec },
     };
 

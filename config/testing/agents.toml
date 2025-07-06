@@ -1,0 +1,111 @@
+# Toka Testing Agent Configuration
+# Minimal configuration for testing basic functionality
+
+[orchestration]
+max_concurrent_agents = 2
+agent_spawn_timeout = 30
+workstream_timeout = 1800
+agent_pool_size = 3
+
+[security]
+sandbox_enabled = true
+capability_validation = "strict"
+
+[security.resource_limits]
+max_memory = "256MB"
+max_cpu = "0.5"
+timeout = "900"
+
+[storage]
+backend = "sqlite"
+database_url = "sqlite:///app/data/agents.db"
+persistence_buffer_size = 128
+persistence_interval = 30
+
+[llm]
+provider = "anthropic"
+model = "claude-3-5-sonnet-20241022"
+rate_limit = 50
+timeout = 30
+debug_mode = false
+
+[monitoring]
+metrics_enabled = true
+tracing_enabled = true
+log_level = "info"
+
+[caching]
+context_cache_size = 1024
+context_cache_ttl = 3600
+response_cache_enabled = true
+response_cache_size = 512
+response_cache_ttl = 1800
+
+# Test Agent 1: File Operations
+[[agents]]
+name = "file-ops-agent"
+version = "1.0.0"
+domain = "file-operations"
+priority = "high"
+workstream = "testing"
+branch = "main"
+
+[agents.capabilities]
+primary = ["filesystem-read", "filesystem-write", "text-processing"]
+secondary = ["file-manipulation", "content-analysis"]
+
+[[agents.objectives]]
+description = "Test file reading and writing operations"
+deliverable = "Processed file with analysis results"
+validation = "Output file contains expected content"
+
+[[agents.tasks.default]]
+description = "Read input file, process content, and write summary"
+priority = "high"
+dependencies = []
+
+# Test Agent 2: System Monitoring
+[[agents]]
+name = "system-monitor-agent"
+version = "1.0.0"
+domain = "system-monitoring"
+priority = "high"
+workstream = "testing"
+branch = "main"
+
+[agents.capabilities]
+primary = ["system-monitoring", "command-execution", "report-generation"]
+secondary = ["resource-tracking", "status-reporting"]
+
+[[agents.objectives]]
+description = "Monitor system status and generate reports"
+deliverable = "System status report"
+validation = "Report contains system metrics"
+
+[[agents.tasks.default]]
+description = "Check system status and create monitoring report"
+priority = "high"
+dependencies = []
+
+# Test Agent 3: API Research
+[[agents]]
+name = "api-research-agent"
+version = "1.0.0"
+domain = "api-research"
+priority = "high"
+workstream = "testing"
+branch = "main"
+
+[agents.capabilities]
+primary = ["http-requests", "data-processing", "json-parsing"]
+secondary = ["api-integration", "data-analysis"]
+
+[[agents.objectives]]
+description = "Fetch data from public API and analyze results"
+deliverable = "API data analysis report"
+validation = "Report contains fetched and processed data"
+
+[[agents.tasks.default]]
+description = "Fetch data from JSONPlaceholder API and generate analysis"
+priority = "high"
+dependencies = []
