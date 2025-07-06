@@ -2,7 +2,7 @@
   "name": "Toka Agent Development Environment",
   "user": "vscode",
   "build": {
-    "dockerfile": ".cursor/Dockerfile.dev",
+    "dockerfile": "Dockerfile.dev",
     "context": "."
   },
   "agentCanUpdateSnapshot": true,
