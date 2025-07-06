@@ -130,7 +130,7 @@ All enhancements maintain backward compatibility with existing v0.2.1 APIs while
 **Deliverables:**
 - ✅ **Automatic JWT key rotation** - Comprehensive 24h rotation with versioning (1,632 lines)
 - ✅ **Rate limiting middleware** - Token bucket with 18 passing tests (2,461 lines)
-- ✅ **Capability delegation primitives** - Hierarchical delegation with 21/24 tests passing (2,125+ lines)
+- ✅ **Capability delegation primitives** - Hierarchical delegation with 24/24 tests passing (2,125+ lines)
 - ✅ **Enhanced audit trail system** - Real-time security monitoring integrated throughout
 
 ### Workstream 6: Performance & Observability Foundation
