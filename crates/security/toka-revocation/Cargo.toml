@@ -1,6 +1,6 @@
 [package]
 name = "toka-revocation"
-version = "0.2.0-alpha"
+version = "0.2.1"
 edition = "2021"
 license = "Apache-2.0"
 description = "Revocation primitives (RFC 7009) for capability tokens in the Toka platform."

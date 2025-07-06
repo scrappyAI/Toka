@@ -1,6 +1,6 @@
 [package]
 name = "toka-capability-core"
-version = "0.2.0-alpha"
+version = "0.2.1"
 edition = "2021"
 license = "Apache-2.0"
 description = "Core, no-std capability token primitives – Claims struct and capability traits shared by all implementation crates."

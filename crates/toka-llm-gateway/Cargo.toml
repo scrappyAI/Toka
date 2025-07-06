@@ -1,6 +1,6 @@
 [package]
 name = "toka-llm-gateway"
-version = "0.3.0"
+version = "0.2.1"
 edition = "2021"
 description = "Secure LLM provider gateway with memory-safe configuration"
 license = "MIT OR Apache-2.0"

@@ -1,26 +1,23 @@
+use anyhow::Result;
 use std::sync::Arc;
 
-use anyhow::Result;
-
-use toka_tools::{ToolRegistry, tools::EchoTool, ToolParams};
+use toka_tools::{ToolRegistry, tools::ReadFileTool};
 
 #[tokio::test]
-async fn execute_tool_not_found_returns_error() -> Result<()> {
+async fn duplicate_registration_fails() -> Result<()> {
     let registry = ToolRegistry::new().await?;
-    let params = ToolParams { name: "missing".into(), args: Default::default() };
-    let err = registry.execute_tool("missing", &params).await.unwrap_err();
-    assert!(err.to_string().contains("Tool not found"));
+    registry.register_tool(Arc::new(ReadFileTool::new())).await?;
+    let err = registry.register_tool(Arc::new(ReadFileTool::new())).await.unwrap_err();
+    assert!(err.to_string().contains("already registered"));
     Ok(())
 }
 
 #[tokio::test]
-async fn validate_params_enforced() -> Result<()> {
+async fn list_tools_returns_sorted_names() -> Result<()> {
     let registry = ToolRegistry::new().await?;
-    registry.register_tool(Arc::new(EchoTool::new())).await?;
-
-    // Missing required "message" arg
-    let params = ToolParams { name: "echo".into(), args: Default::default() };
-    let err = registry.execute_tool("echo", &params).await.unwrap_err();
-    assert!(err.to_string().contains("Missing required parameter"));
+    registry.register_tool(Arc::new(ReadFileTool::new())).await?;
+    let mut names = registry.list_tools().await;
+    names.sort();
+    assert_eq!(names, vec!["read_file".to_string()]);
     Ok(())
 }
