@@ -1,0 +1,67 @@
+[package]
+name = "toka-store-raft"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Raft consensus-backed storage implementation for Toka OS"
+
+[dependencies]
+# Core Toka dependencies
+toka-types = { path = "../toka-types" }
+toka-store-core = { path = "../toka-store-core" }
+toka-bus-core = { path = "../toka-bus-core" }
+
+# Raft dependencies
+raft-core = { path = "../raft-core" }
+raft-storage = { path = "../raft-storage" }
+
+# Async and concurrency
+tokio = { workspace = true, features = ["full"] }
+async-trait = { workspace = true }
+futures = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = { workspace = true }
+rmp-serde = { workspace = true }
+
+# Error handling and logging
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+# Time and utilities
+chrono = { workspace = true }
+uuid = { workspace = true }
+rand = { workspace = true }
+
+# Collections and data structures
+dashmap = { workspace = true }
+indexmap = { workspace = true }
+
+# Networking
+tokio-util = { workspace = true, features = ["codec"] }
+bytes = { workspace = true }
+socket2 = { workspace = true, features = ["all"] }
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+tempfile = "3.8"
+proptest = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[features]
+default = []
+# Enable TLS support for secure cluster communication
+tls = ["tokio-rustls", "rustls-pemfile"]
+
+[dependencies.tokio-rustls]
+workspace = true
+optional = true
+
+[dependencies.rustls-pemfile]
+workspace = true
+optional = true 
