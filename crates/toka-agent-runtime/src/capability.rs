@@ -8,7 +8,7 @@ use std::collections::HashSet;
 use anyhow::Result;
 use tracing::{debug, warn};
 
-use toka_orchestration::SecurityConfig;
+use toka_types::SecurityConfig;
 use crate::AgentRuntimeError;
 
 /// Validates agent actions against declared capabilities
@@ -276,7 +276,7 @@ pub enum FileSystemOperation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use toka_orchestration::ResourceLimits;
+    use toka_types::ResourceLimits;
 
     fn create_test_security_config() -> SecurityConfig {
         SecurityConfig {

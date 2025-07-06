@@ -15,7 +15,7 @@ use tokio::task::JoinHandle;
 use tracing::{debug, error, info, instrument, warn};
 
 use toka_llm_gateway::LlmGateway;
-use toka_orchestration::{AgentConfig, OrchestrationEngine};
+use toka_types::AgentConfig;
 use toka_runtime::Runtime;
 use toka_types::EntityId;
 
@@ -28,8 +28,6 @@ use crate::{
 pub struct AgentProcessManager {
     /// Map of running agent processes
     agents: Arc<DashMap<EntityId, AgentProcess>>,
-    /// Orchestration engine reference
-    orchestration: Arc<OrchestrationEngine>,
     /// System runtime
     runtime: Arc<Runtime>,
     /// LLM gateway for agent execution
@@ -73,7 +71,6 @@ pub struct ProcessResult {
 impl AgentProcessManager {
     /// Create a new agent process manager
     pub fn new(
-        orchestration: Arc<OrchestrationEngine>,
         runtime: Arc<Runtime>,
         llm_gateway: Arc<LlmGateway>,
     ) -> Self {
@@ -81,7 +78,6 @@ impl AgentProcessManager {
 
         Self {
             agents: Arc::new(DashMap::new()),
-            orchestration,
             runtime,
             llm_gateway,
             stats: Arc::new(RwLock::new(RuntimeStats::default())),
@@ -454,7 +450,7 @@ pub struct AgentProcessInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use toka_orchestration::{
+    use toka_types::{
         AgentMetadata, AgentSpecConfig, AgentPriority, AgentCapabilities,
         AgentTasks, AgentDependencies, ReportingConfig, SecurityConfig, ResourceLimits
     };

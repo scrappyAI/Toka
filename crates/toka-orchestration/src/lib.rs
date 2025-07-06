@@ -61,7 +61,12 @@ use uuid::Uuid;
 
 use toka_llm_gateway::LlmGateway;
 use toka_runtime::Runtime;
-use toka_types::{AgentSpec, EntityId, Message, Operation, TaskSpec};
+use toka_types::{
+    AgentSpec, EntityId, Message, Operation, TaskSpec,
+    AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority, AgentCapabilities,
+    AgentObjective, AgentTasks, TaskConfig, TaskPriority, AgentDependencies,
+    ReportingConfig, ReportingFrequency, SecurityConfig, ResourceLimits
+};
 use toka_bus_core::KernelEvent;
 
 pub mod config;
@@ -87,169 +92,9 @@ pub const AGENT_SPAWN_TIMEOUT: Duration = Duration::from_secs(30);
 /// Maximum time to wait for workstream completion
 pub const WORKSTREAM_TIMEOUT: Duration = Duration::from_secs(3600); // 1 hour
 
-/// Agent configuration loaded from YAML files.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct AgentConfig {
-    /// Agent metadata
-    pub metadata: AgentMetadata,
-    /// Agent specification
-    pub spec: AgentSpecConfig,
-    /// Agent capabilities
-    pub capabilities: AgentCapabilities,
-    /// Agent objectives and deliverables
-    pub objectives: Vec<AgentObjective>,
-    /// Default tasks for the agent
-    pub tasks: AgentTasks,
-    /// Agent dependencies
-    pub dependencies: AgentDependencies,
-    /// Reporting configuration
-    pub reporting: ReportingConfig,
-    /// Security configuration
-    pub security: SecurityConfig,
-}
+// AgentConfig and related types are now imported from toka-types
 
-/// Agent metadata from configuration files.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct AgentMetadata {
-    /// Agent name (used as identifier)
-    pub name: String,
-    /// Configuration version
-    pub version: String,
-    /// Creation date
-    pub created: String,
-    /// Associated workstream
-    pub workstream: String,
-    /// Git branch for this agent's work
-    pub branch: String,
-}
-
-/// Agent specification configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct AgentSpecConfig {
-    /// Human-readable agent name
-    pub name: String,
-    /// Agent domain
-    pub domain: String,
-    /// Agent priority level
-    pub priority: AgentPriority,
-}
-
-/// Agent priority levels.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum AgentPriority {
-    /// Critical path agents - must complete first
-    Critical,
-    /// High priority agents - important for progress
-    High,
-    /// Medium priority agents - standard priority
-    Medium,
-    /// Low priority agents - can be delayed
-    Low,
-}
-
-/// Agent capabilities configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct AgentCapabilities {
-    /// Primary capabilities
-    pub primary: Vec<String>,
-    /// Secondary capabilities
-    pub secondary: Vec<String>,
-}
-
-/// Agent objective definition.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct AgentObjective {
-    /// Objective description
-    pub description: String,
-    /// Expected deliverable
-    pub deliverable: String,
-    /// Validation criteria
-    pub validation: String,
-}
-
-/// Agent tasks configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct AgentTasks {
-    /// Default tasks to assign to agent
-    pub default: Vec<TaskConfig>,
-}
-
-/// Task configuration from agent specs.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct TaskConfig {
-    /// Task description
-    pub description: String,
-    /// Task priority
-    pub priority: TaskPriority,
-}
-
-/// Task priority levels.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum TaskPriority {
-    /// High priority task
-    High,
-    /// Medium priority task
-    Medium,
-    /// Low priority task
-    Low,
-}
-
-/// Agent dependencies configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct AgentDependencies {
-    /// Required dependencies (must complete before this agent starts)
-    pub required: HashMap<String, String>,
-    /// Optional dependencies (nice to have, but not blocking)
-    pub optional: HashMap<String, String>,
-}
-
-/// Reporting configuration for agents.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct ReportingConfig {
-    /// Reporting frequency
-    pub frequency: ReportingFrequency,
-    /// Reporting channels
-    pub channels: Vec<String>,
-    /// Metrics to track
-    pub metrics: HashMap<String, String>,
-}
-
-/// Reporting frequency options.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ReportingFrequency {
-    /// Report daily
-    Daily,
-    /// Report weekly
-    Weekly,
-    /// Report on milestone completion
-    #[serde(rename = "on-milestone")]
-    OnMilestone,
-}
-
-/// Security configuration for agents.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct SecurityConfig {
-    /// Whether agent runs in sandbox
-    pub sandbox: bool,
-    /// Required capabilities for agent
-    pub capabilities_required: Vec<String>,
-    /// Resource limits for agent
-    pub resource_limits: ResourceLimits,
-}
-
-/// Resource limits for agents.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct ResourceLimits {
-    /// Maximum memory usage (e.g., "100MB")
-    pub max_memory: String,
-    /// Maximum CPU usage (e.g., "50%")
-    pub max_cpu: String,
-    /// Timeout for agent operations (e.g., "1h")
-    pub timeout: String,
-}
+// All agent configuration types are now imported from toka-types
 
 /// Current state of an agent in the orchestration system.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

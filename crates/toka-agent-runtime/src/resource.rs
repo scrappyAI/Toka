@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 use anyhow::Result;
 use tracing::{debug, warn, error};
 
-use toka_orchestration::ResourceLimits;
+use toka_types::ResourceLimits;
 use crate::{AgentRuntimeError, AgentRuntimeResult};
 
 /// Manages and enforces resource limits for agent execution

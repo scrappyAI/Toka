@@ -303,7 +303,7 @@ impl TaskResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use toka_orchestration::{AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority};
+    use toka_types::{AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority};
     
     fn create_test_context() -> AgentContext {
         let config = AgentConfig {

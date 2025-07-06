@@ -13,7 +13,7 @@ use tokio::sync::RwLock;
 use tracing::{debug, error, info, instrument, warn};
 
 use toka_llm_gateway::LlmGateway;
-use toka_orchestration::{AgentConfig, TaskConfig};
+use toka_types::{AgentConfig, TaskConfig};
 use toka_runtime::Runtime;
 use toka_types::EntityId;
 
@@ -374,7 +374,7 @@ impl AgentExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use toka_orchestration::{
+    use toka_types::{
         AgentMetadata, AgentSpecConfig, AgentPriority, AgentCapabilities, 
         AgentTasks, AgentDependencies, ReportingConfig, SecurityConfig, ResourceLimits
     };

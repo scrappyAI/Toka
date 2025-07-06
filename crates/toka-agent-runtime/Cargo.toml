@@ -12,7 +12,7 @@ description = "Agent execution runtime for Toka OS - interprets and executes age
 toka-types = { path = "../toka-types" }
 toka-kernel = { path = "../toka-kernel" }
 toka-runtime = { path = "../toka-runtime" }
-toka-orchestration = { path = "../toka-orchestration" }
+# toka-orchestration = { path = "../toka-orchestration" } # Removed to break circular dependency
 toka-llm-gateway = { path = "../toka-llm-gateway" }
 toka-bus-core = { path = "../toka-bus-core" }
 

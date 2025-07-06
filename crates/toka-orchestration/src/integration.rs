@@ -38,7 +38,6 @@ impl RuntimeIntegration {
         info!("Creating runtime integration");
 
         let process_manager = Arc::new(AgentProcessManager::new(
-            orchestration.clone(),
             runtime.clone(),
             llm_gateway.clone(),
         ));

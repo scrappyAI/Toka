@@ -13,7 +13,7 @@ use tracing::{debug, error, info, instrument, warn};
 use uuid::Uuid;
 
 use toka_llm_gateway::{LlmGateway, LlmRequest, LlmResponse};
-use toka_orchestration::{TaskConfig, TaskPriority, SecurityConfig};
+use toka_types::{TaskConfig, TaskPriority, SecurityConfig};
 
 use crate::{
     AgentContext, AgentTask, TaskResult, CapabilityValidator, ResourceManager,
@@ -459,7 +459,7 @@ impl AgentTask for LlmTask {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use toka_orchestration::{AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority, ResourceLimits};
+    use toka_types::{AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority, ResourceLimits};
 
     fn create_test_security_config() -> SecurityConfig {
         SecurityConfig {

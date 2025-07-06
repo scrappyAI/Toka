@@ -75,7 +75,7 @@ use uuid::Uuid;
 
 use toka_bus_core::KernelEvent;
 use toka_llm_gateway::{LlmGateway, LlmRequest, LlmResponse};
-use toka_orchestration::{AgentConfig, TaskConfig, SecurityConfig, ResourceLimits};
+use toka_types::{AgentConfig, TaskConfig, SecurityConfig, ResourceLimits};
 use toka_runtime::Runtime;
 use toka_types::{EntityId, Message, Operation, TaskSpec};
 
