@@ -86,13 +86,14 @@ impl UnifiedToolRegistry {
         security_level: SecurityLevel,
     ) -> Result<()> {
         // Create appropriate wrapper based on tool type
+        let capabilities_clone = tool_spec.capabilities.clone();
         let tool: Arc<dyn Tool> = match tool_spec.tool_type {
             ToolType::Python => {
                 let python_tool = PythonTool::new_with_security(
                     tool_spec.path,
                     &tool_spec.name,
                     &tool_spec.description,
-                    tool_spec.capabilities,
+                    tool_spec.capabilities.clone(),
                     security_level,
                 ).await?;
                 Arc::new(python_tool)
@@ -102,7 +103,7 @@ impl UnifiedToolRegistry {
                     tool_spec.path,
                     &tool_spec.name,
                     &tool_spec.description,
-                    tool_spec.capabilities,
+                    tool_spec.capabilities.clone(),
                     security_level,
                 ).await?;
                 Arc::new(shell_tool)
@@ -112,7 +113,7 @@ impl UnifiedToolRegistry {
                     tool_spec.path,
                     &tool_spec.name,
                     &tool_spec.description,
-                    tool_spec.capabilities,
+                    tool_spec.capabilities.clone(),
                     security_level,
                 ).await?;
                 Arc::new(external_tool)
@@ -126,7 +127,7 @@ impl UnifiedToolRegistry {
         // Store security classification
         let classification = ToolSecurityClassification {
             security_level,
-            capabilities: tool_spec.capabilities,
+            capabilities: capabilities_clone,
             resource_limits: security_level.default_resource_limits(),
             sandbox_config: security_level.default_sandbox_config(),
         };
@@ -236,14 +237,7 @@ pub struct ToolExecutionMetrics {
     pub timestamp: std::time::SystemTime,
 }
 
-/// Tool security classification
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolSecurityClassification {
-    pub security_level: SecurityLevel,
-    pub capabilities: Vec<String>,
-    pub resource_limits: ResourceLimits,
-    pub sandbox_config: SandboxConfig,
-}
+
 
 #[cfg(test)]
 mod tests {

@@ -63,7 +63,7 @@ impl SecurityLevel {
                 readonly_paths: vec![PathBuf::from(".")],
                 writable_paths: vec![PathBuf::from("target/analysis")],
                 forbidden_paths: vec![PathBuf::from("/etc"), PathBuf::from("/sys")],
-                allowed_syscalls: vec!["read", "write", "open", "close", "stat", "exit"],
+                allowed_syscalls: vec!["read".to_string(), "write".to_string(), "open".to_string(), "close".to_string(), "stat".to_string(), "exit".to_string()],
                 env_whitelist: vec!["PATH".to_string(), "HOME".to_string()],
                 disable_ptrace: true,
                 disable_core_dumps: true,
@@ -94,6 +94,19 @@ impl SecurityLevel {
     }
 }
 
+/// Tool security classification
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolSecurityClassification {
+    /// Security level
+    pub security_level: SecurityLevel,
+    /// Tool capabilities
+    pub capabilities: Vec<String>,
+    /// Resource limits
+    pub resource_limits: ResourceLimits,
+    /// Sandbox configuration
+    pub sandbox_config: SandboxConfig,
+}
+
 /// Resource limits for tool execution
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceLimits {
@@ -111,6 +124,12 @@ pub struct ResourceLimits {
     pub max_disk_mb: u64,
 }
 
+impl Default for ResourceLimits {
+    fn default() -> Self {
+        SecurityLevel::Basic.default_resource_limits()
+    }
+}
+
 /// Sandbox configuration for external tools
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SandboxConfig {
@@ -125,13 +144,19 @@ pub struct SandboxConfig {
     /// Forbidden filesystem paths
     pub forbidden_paths: Vec<PathBuf>,
     /// Allowed system calls (empty means all allowed)
-    pub allowed_syscalls: Vec<&'static str>,
+    pub allowed_syscalls: Vec<String>,
     /// Environment variables whitelist
     pub env_whitelist: Vec<String>,
     /// Disable ptrace
     pub disable_ptrace: bool,
     /// Disable core dumps
     pub disable_core_dumps: bool,
+}
+
+impl Default for SandboxConfig {
+    fn default() -> Self {
+        SecurityLevel::Basic.default_sandbox_config()
+    }
 }
 
 /// General security configuration
