@@ -730,6 +730,995 @@ class ControlFlowVisualizer:
         else:
             return 'red'
 
+    def generate_mermaid_flowchart(self, function_name: str, output_path: str = None) -> str:
+        """Generate Mermaid flowchart for a function - LLM and documentation friendly"""
+        if function_name not in self.analyzer.function_flows:
+            logger.error(f"Function '{function_name}' not found")
+            return ""
+        
+        func_flow = self.analyzer.function_flows[function_name]
+        
+        # Build Mermaid flowchart
+        mermaid = ["flowchart TD"]
+        
+        # Add nodes with proper IDs and labels
+        node_mapping = {}
+        for i, (node_id, node) in enumerate(func_flow.nodes.items()):
+            clean_id = f"N{i}"
+            node_mapping[node_id] = clean_id
+            
+            # Escape special characters for Mermaid
+            label = node.label.replace('"', "'").replace('\n', '<br/>')
+            if len(label) > 60:
+                label = label[:57] + "..."
+            
+            # Choose shape based on node type
+            if node.node_type == FlowNodeType.ENTRY:
+                mermaid.append(f'    {clean_id}(["🚀 {label}"])')
+            elif node.node_type == FlowNodeType.EXIT:
+                mermaid.append(f'    {clean_id}(["🏁 {label}"])')
+            elif node.node_type == FlowNodeType.CONDITION:
+                mermaid.append(f'    {clean_id}{{{"{label}"}}}')
+            elif node.node_type == FlowNodeType.LOOP:
+                mermaid.append(f'    {clean_id}[/"🔄 {label}"\\]')
+            elif node.node_type == FlowNodeType.ASYNC_POINT:
+                mermaid.append(f'    {clean_id}(("⚡ {label}"))')
+            elif node.node_type == FlowNodeType.ERROR_HANDLER:
+                mermaid.append(f'    {clean_id}[["❌ {label}"]]')
+            else:
+                mermaid.append(f'    {clean_id}["{label}"]')
+        
+        # Add edges with styling
+        for edge in func_flow.edges:
+            source_id = node_mapping.get(edge.source, edge.source)
+            target_id = node_mapping.get(edge.target, edge.target)
+            
+            edge_label = edge.label or ""
+            if edge.condition:
+                edge_label = f"{edge_label} [{edge.condition}]" if edge_label else f"[{edge.condition}]"
+            
+            if edge.edge_type == "async":
+                mermaid.append(f'    {source_id} -.->|"{edge_label}"| {target_id}')
+            elif edge.edge_type == "error":
+                mermaid.append(f'    {source_id} ==>|"{edge_label}"| {target_id}')
+            else:
+                if edge_label:
+                    mermaid.append(f'    {source_id} -->|"{edge_label}"| {target_id}')
+                else:
+                    mermaid.append(f'    {source_id} --> {target_id}')
+        
+        # Add styling
+        mermaid.extend([
+            "",
+            "    %% Styling",
+            "    classDef entryNode fill:#4CAF50,stroke:#2E7D32,color:#fff",
+            "    classDef exitNode fill:#F44336,stroke:#C62828,color:#fff", 
+            "    classDef conditionNode fill:#FFF59D,stroke:#F57F17",
+            "    classDef loopNode fill:#FFECB3,stroke:#E65100",
+            "    classDef asyncNode fill:#E1BEE7,stroke:#7B1FA2",
+            "    classDef errorNode fill:#FFCDD2,stroke:#C62828"
+        ])
+        
+        mermaid_content = "\n".join(mermaid)
+        
+        # Add complexity information as comment
+        metrics = func_flow.complexity_metrics
+        mermaid_content += f"\n\n%% Complexity Metrics:\n"
+        mermaid_content += f"%% Cyclomatic Complexity: {metrics.get('cyclomatic_complexity', 0)}\n"
+        mermaid_content += f"%% Async Complexity: {metrics.get('async_complexity', 0)}\n"
+        mermaid_content += f"%% Error Handling Complexity: {metrics.get('error_handling_complexity', 0)}\n"
+        
+        # Save to file if path provided
+        if output_path:
+            mermaid_file = f"{output_path}.mmd"
+            with open(mermaid_file, 'w') as f:
+                f.write(mermaid_content)
+            logger.info(f"Mermaid flowchart saved to {mermaid_file}")
+        
+        return mermaid_content
+
+    def export_function_json(self, function_name: str, output_path: str = None) -> dict:
+        """Export function control flow as structured JSON for LLM consumption"""
+        if function_name not in self.analyzer.function_flows:
+            logger.error(f"Function '{function_name}' not found")
+            return {}
+        
+        func_flow = self.analyzer.function_flows[function_name]
+        
+        # Convert to JSON-serializable format
+        export_data = {
+            "function_name": func_flow.name,
+            "file_path": func_flow.file_path,
+            "location": {
+                "start_line": func_flow.start_line,
+                "end_line": func_flow.end_line
+            },
+            "properties": {
+                "is_async": func_flow.async_function,
+                "return_type": func_flow.return_type
+            },
+            "complexity_metrics": func_flow.complexity_metrics,
+            "nodes": [],
+            "edges": [],
+            "patterns": {
+                "error_paths": func_flow.error_paths,
+                "async_spawn_points": func_flow.async_spawn_points,
+                "state_transitions": [{"from": t[0], "to": t[1]} for t in func_flow.state_transitions]
+            },
+            "analysis_summary": self._generate_function_summary(func_flow)
+        }
+        
+        # Add nodes
+        for node_id, node in func_flow.nodes.items():
+            node_data = {
+                "id": node_id,
+                "type": node.node_type.value,
+                "label": node.label,
+                "source_line": node.source_line,
+                "source_file": node.source_file,
+                "execution_pattern": node.execution_pattern.value if node.execution_pattern else None,
+                "metadata": node.metadata
+            }
+            export_data["nodes"].append(node_data)
+        
+        # Add edges
+        for edge in func_flow.edges:
+            edge_data = {
+                "source": edge.source,
+                "target": edge.target,
+                "label": edge.label,
+                "condition": edge.condition,
+                "edge_type": edge.edge_type,
+                "probability": edge.probability
+            }
+            export_data["edges"].append(edge_data)
+        
+        # Save to file if path provided
+        if output_path:
+            json_file = f"{output_path}.json"
+            with open(json_file, 'w') as f:
+                import json
+                json.dump(export_data, f, indent=2)
+            logger.info(f"Function JSON export saved to {json_file}")
+        
+        return export_data
+
+    def generate_textual_summary(self, function_name: str, output_path: str = None) -> str:
+        """Generate human and LLM readable textual summary of control flow"""
+        if function_name not in self.analyzer.function_flows:
+            logger.error(f"Function '{function_name}' not found")
+            return ""
+        
+        func_flow = self.analyzer.function_flows[function_name]
+        
+        summary_lines = [
+            f"# Control Flow Analysis: {func_flow.name}",
+            "",
+            f"**Location:** {func_flow.file_path}:{func_flow.start_line}-{func_flow.end_line}",
+            f"**Type:** {'Async Function' if func_flow.async_function else 'Sync Function'}",
+            f"**Return Type:** {func_flow.return_type or 'Unknown'}",
+            "",
+            "## Complexity Metrics",
+            f"- Cyclomatic Complexity: {func_flow.complexity_metrics.get('cyclomatic_complexity', 0)}",
+            f"- Async Complexity: {func_flow.complexity_metrics.get('async_complexity', 0)}",
+            f"- Error Handling Complexity: {func_flow.complexity_metrics.get('error_handling_complexity', 0)}",
+            "",
+            "## Control Flow Structure",
+            f"- Total Nodes: {len(func_flow.nodes)}",
+            f"- Total Edges: {len(func_flow.edges)}",
+            ""
+        ]
+        
+        # Node type distribution
+        node_types = defaultdict(int)
+        for node in func_flow.nodes.values():
+            node_types[node.node_type.value] += 1
+        
+        summary_lines.append("### Node Distribution")
+        for node_type, count in sorted(node_types.items()):
+            summary_lines.append(f"- {node_type.replace('_', ' ').title()}: {count}")
+        summary_lines.append("")
+        
+        # Control flow patterns
+        if func_flow.async_spawn_points:
+            summary_lines.extend([
+                "### Async Patterns",
+                f"- Spawn Points: {len(func_flow.async_spawn_points)}",
+                f"- Spawn Locations: {', '.join(func_flow.async_spawn_points)}",
+                ""
+            ])
+        
+        if func_flow.error_paths:
+            summary_lines.extend([
+                "### Error Handling",
+                f"- Error Paths: {len(func_flow.error_paths)}",
+                f"- Error Handlers: {', '.join(func_flow.error_paths)}",
+                ""
+            ])
+        
+        if func_flow.state_transitions:
+            summary_lines.extend([
+                "### State Transitions",
+                f"- Transition Count: {len(func_flow.state_transitions)}",
+            ])
+            for from_state, to_state in func_flow.state_transitions:
+                summary_lines.append(f"- {from_state} → {to_state}")
+            summary_lines.append("")
+        
+        # Flow analysis
+        summary_lines.extend([
+            "## Flow Analysis",
+            self._generate_function_summary(func_flow),
+            "",
+            "## Architecture Notes",
+            self._generate_architecture_insights(func_flow)
+        ])
+        
+        summary_content = "\n".join(summary_lines)
+        
+        # Save to file if path provided
+        if output_path:
+            summary_file = f"{output_path}_summary.md"
+            with open(summary_file, 'w') as f:
+                f.write(summary_content)
+            logger.info(f"Textual summary saved to {summary_file}")
+        
+        return summary_content
+
+    def _generate_function_summary(self, func_flow: FunctionFlow) -> str:
+        """Generate a concise summary of function's control flow characteristics"""
+        characteristics = []
+        
+        # Complexity assessment
+        cyclomatic = func_flow.complexity_metrics.get('cyclomatic_complexity', 0)
+        if cyclomatic > 10:
+            characteristics.append("high complexity")
+        elif cyclomatic > 5:
+            characteristics.append("moderate complexity")
+        else:
+            characteristics.append("low complexity")
+        
+        # Async patterns
+        if func_flow.async_function:
+            async_complexity = func_flow.complexity_metrics.get('async_complexity', 0)
+            if async_complexity > 3:
+                characteristics.append("complex async coordination")
+            elif async_complexity > 0:
+                characteristics.append("async operations")
+        
+        # Error handling
+        error_complexity = func_flow.complexity_metrics.get('error_handling_complexity', 0)
+        if error_complexity > 3:
+            characteristics.append("comprehensive error handling")
+        elif error_complexity > 0:
+            characteristics.append("error handling")
+        
+        # Control structures
+        node_types = [node.node_type for node in func_flow.nodes.values()]
+        if FlowNodeType.LOOP in node_types:
+            characteristics.append("iterative logic")
+        if FlowNodeType.CONDITION in node_types:
+            characteristics.append("conditional logic")
+        if FlowNodeType.STATE_TRANSITION in node_types:
+            characteristics.append("state management")
+        
+        return f"This function exhibits {', '.join(characteristics)}."
+
+    def _generate_architecture_insights(self, func_flow: FunctionFlow) -> str:
+        """Generate architectural insights for LLM understanding"""
+        insights = []
+        
+        # Function role assessment
+        if func_flow.name.startswith(('init', 'new', 'create')):
+            insights.append("• **Constructor/Initializer**: Sets up initial state and configuration")
+        elif func_flow.name.startswith(('process', 'handle', 'execute')):
+            insights.append("• **Processor/Handler**: Core business logic execution")
+        elif func_flow.name.startswith(('validate', 'check', 'verify')):
+            insights.append("• **Validator**: Input validation and verification logic")
+        elif func_flow.name.startswith(('send', 'publish', 'emit')):
+            insights.append("• **Publisher**: Event/message distribution")
+        elif func_flow.name.startswith(('receive', 'listen', 'on_')):
+            insights.append("• **Subscriber/Listener**: Event/message consumption")
+        
+        # Architectural patterns
+        if func_flow.async_spawn_points:
+            insights.append("• **Concurrency Pattern**: Spawns async tasks for parallel execution")
+        
+        if len(func_flow.error_paths) > 2:
+            insights.append("• **Error Resilience**: Multiple error handling strategies")
+        
+        if func_flow.state_transitions:
+            insights.append("• **State Machine**: Manages state transitions and lifecycle")
+        
+        cyclomatic = func_flow.complexity_metrics.get('cyclomatic_complexity', 0)
+        if cyclomatic > 15:
+            insights.append("• **Complexity Warning**: High complexity may indicate need for refactoring")
+        
+        return "\n".join(insights) if insights else "• **Simple Function**: Straightforward control flow"
+
+    def export_system_json(self, output_path: str = "system_control_flow") -> dict:
+        """Export system-wide control flow as structured JSON"""
+        export_data = {
+            "system_overview": {
+                "total_functions": len(self.analyzer.function_flows),
+                "total_components": len(self.analyzer.system_flow.component_interactions),
+                "async_patterns": len(self.analyzer.system_flow.async_coordination_patterns),
+                "error_chains": len(self.analyzer.system_flow.error_propagation_chains)
+            },
+            "component_interactions": dict(self.analyzer.system_flow.component_interactions),
+            "async_coordination_patterns": self.analyzer.system_flow.async_coordination_patterns,
+            "error_propagation_chains": self.analyzer.system_flow.error_propagation_chains,
+            "state_machine_flows": self.analyzer.system_flow.state_machine_flows,
+            "orchestration_sequences": self.analyzer.system_flow.orchestration_sequences,
+            "complexity_distribution": self._generate_complexity_distribution(),
+            "architectural_insights": self._generate_system_insights()
+        }
+        
+        # Save to file
+        json_file = f"{output_path}.json"
+        with open(json_file, 'w') as f:
+            import json
+            json.dump(export_data, f, indent=2)
+        logger.info(f"System JSON export saved to {json_file}")
+        
+        return export_data
+
+    def _generate_complexity_distribution(self) -> dict:
+        """Generate complexity distribution across the system"""
+        complexities = []
+        for func_flow in self.analyzer.function_flows.values():
+            complexities.append(func_flow.complexity_metrics.get('cyclomatic_complexity', 0))
+        
+        if not complexities:
+            return {}
+        
+        return {
+            "mean": sum(complexities) / len(complexities),
+            "max": max(complexities),
+            "min": min(complexities),
+            "high_complexity_functions": [
+                func.name for func in self.analyzer.function_flows.values()
+                if func.complexity_metrics.get('cyclomatic_complexity', 0) > 10
+            ]
+        }
+
+    def _generate_system_insights(self) -> list:
+        """Generate system-level architectural insights"""
+        insights = []
+        
+        # Component interaction analysis
+        interactions = self.analyzer.system_flow.component_interactions
+        if len(interactions) > 5:
+            insights.append("Complex multi-component architecture with extensive inter-component communication")
+        
+        # Async pattern analysis
+        async_patterns = self.analyzer.system_flow.async_coordination_patterns
+        if len(async_patterns) > 10:
+            insights.append("Heavy async coordination suggesting event-driven or reactive architecture")
+        
+        # Error handling analysis
+        error_chains = self.analyzer.system_flow.error_propagation_chains
+        if len(error_chains) > 5:
+            insights.append("Comprehensive error propagation indicating robust error handling strategy")
+        
+        return insights
+
+    def generate_interactive_html(self, function_name: str, output_path: str = None) -> str:
+        """Generate interactive HTML visualization using Cytoscape.js"""
+        if function_name not in self.analyzer.function_flows:
+            logger.error(f"Function '{function_name}' not found")
+            return ""
+        
+        func_flow = self.analyzer.function_flows[function_name]
+        
+        # Convert graph data to Cytoscape.js format
+        cytoscape_data = {
+            "nodes": [],
+            "edges": []
+        }
+        
+        # Add nodes
+        for node_id, node in func_flow.nodes.items():
+            cytoscape_data["nodes"].append({
+                "data": {
+                    "id": node_id,
+                    "label": node.label,
+                    "type": node.node_type.value,
+                    "source_line": node.source_line or 0,
+                    "source_file": node.source_file or "",
+                    "execution_pattern": node.execution_pattern.value if node.execution_pattern else "sequential"
+                }
+            })
+        
+        # Add edges
+        for edge in func_flow.edges:
+            cytoscape_data["edges"].append({
+                "data": {
+                    "id": f"{edge.source}-{edge.target}",
+                    "source": edge.source,
+                    "target": edge.target,
+                    "label": edge.label or "",
+                    "condition": edge.condition or "",
+                    "edge_type": edge.edge_type,
+                    "probability": edge.probability or 1.0
+                }
+            })
+        
+        # Generate HTML template
+        html_content = self._generate_html_template(function_name, cytoscape_data, func_flow)
+        
+        # Save to file if path provided
+        if output_path:
+            html_file = f"{output_path}_interactive.html"
+            with open(html_file, 'w') as f:
+                f.write(html_content)
+            logger.info(f"Interactive HTML visualization saved to {html_file}")
+        
+        return html_content
+
+    def _generate_html_template(self, function_name: str, cytoscape_data: dict, func_flow: FunctionFlow) -> str:
+        """Generate the complete HTML template for interactive visualization"""
+        
+        # Convert cytoscape_data to JSON string for embedding
+        import json
+        graph_data_json = json.dumps(cytoscape_data, indent=2)
+        metrics = func_flow.complexity_metrics
+        
+        html_template = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Flow: {function_name}</title>
+    <script src="https://unpkg.com/cytoscape@3.23.0/dist/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }}
+        
+        .header {{
+            background: #2c3e50;
+            color: white;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        
+        .function-title {{
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+        }}
+        
+        .function-meta {{
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }}
+        
+        .container {{
+            display: flex;
+            height: calc(100vh - 80px);
+        }}
+        
+        .sidebar {{
+            width: 300px;
+            background: white;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            padding: 1rem;
+        }}
+        
+        .graph-container {{
+            flex: 1;
+            position: relative;
+        }}
+        
+        #cy {{
+            width: 100%;
+            height: 100%;
+            background: white;
+        }}
+        
+        .controls {{
+            background: white;
+            padding: 1rem;
+            border-bottom: 1px solid #ddd;
+        }}
+        
+        .control-group {{
+            margin-bottom: 1rem;
+        }}
+        
+        .control-group label {{
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            color: #2c3e50;
+        }}
+        
+        .control-group button {{
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }}
+        
+        .control-group button:hover {{
+            background: #2980b9;
+        }}
+        
+        .control-group button.active {{
+            background: #e74c3c;
+        }}
+        
+        .metrics {{
+            background: #ecf0f1;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }}
+        
+        .metrics h3 {{
+            margin: 0 0 0.5rem 0;
+            color: #2c3e50;
+        }}
+        
+        .metric-item {{
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+        }}
+        
+        .node-info {{
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: none;
+        }}
+        
+        .node-info h4 {{
+            margin: 0 0 0.5rem 0;
+            color: #2c3e50;
+        }}
+        
+        .legend {{
+            margin-top: 1rem;
+        }}
+        
+        .legend h3 {{
+            margin: 0 0 0.5rem 0;
+            color: #2c3e50;
+        }}
+        
+        .legend-item {{
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }}
+        
+        .legend-color {{
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="function-title">{function_name}</div>
+        <div class="function-meta">
+            {func_flow.file_path}:{func_flow.start_line}-{func_flow.end_line} | 
+            {'Async' if func_flow.async_function else 'Sync'} Function
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="sidebar">
+            <div class="metrics">
+                <h3>Complexity Metrics</h3>
+                <div class="metric-item">
+                    <span>Cyclomatic:</span>
+                    <strong>{metrics.get('cyclomatic_complexity', 0)}</strong>
+                </div>
+                <div class="metric-item">
+                    <span>Async:</span>
+                    <strong>{metrics.get('async_complexity', 0)}</strong>
+                </div>
+                <div class="metric-item">
+                    <span>Error Handling:</span>
+                    <strong>{metrics.get('error_handling_complexity', 0)}</strong>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>Layout</label>
+                    <button onclick="setLayout('dagre')">Hierarchical</button>
+                    <button onclick="setLayout('breadthfirst')">Breadth First</button>
+                    <button onclick="setLayout('circle')">Circle</button>
+                </div>
+                
+                <div class="control-group">
+                    <label>Filter</label>
+                    <button onclick="filterNodes('all')" class="active">All</button>
+                    <button onclick="filterNodes('entry')">Entry/Exit</button>
+                    <button onclick="filterNodes('condition')">Conditions</button>
+                    <button onclick="filterNodes('async')">Async</button>
+                    <button onclick="filterNodes('error')">Errors</button>
+                </div>
+                
+                <div class="control-group">
+                    <label>View</label>
+                    <button onclick="cy.fit()">Fit to View</button>
+                    <button onclick="cy.zoom(1); cy.center();">Reset Zoom</button>
+                </div>
+            </div>
+            
+            <div class="legend">
+                <h3>Node Types</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4CAF50;"></div>
+                    <span>Entry Point</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #F44336;"></div>
+                    <span>Exit Point</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FFF59D;"></div>
+                    <span>Condition</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FFECB3;"></div>
+                    <span>Loop</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #E1BEE7;"></div>
+                    <span>Async Point</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FFCDD2;"></div>
+                    <span>Error Handler</span>
+                </div>
+            </div>
+            
+            <div class="node-info" id="nodeInfo">
+                <h4>Node Information</h4>
+                <div id="nodeDetails"></div>
+            </div>
+        </div>
+        
+        <div class="graph-container">
+            <div id="cy"></div>
+        </div>
+    </div>
+
+    <script>
+        // Graph data
+        const graphData = {graph_data_json};
+        
+        // Initialize Cytoscape
+        const cy = cytoscape({{
+            container: document.getElementById('cy'),
+            elements: graphData.nodes.concat(graphData.edges),
+            
+            style: [
+                {{
+                    selector: 'node',
+                    style: {{
+                        'content': 'data(label)',
+                        'text-wrap': 'wrap',
+                        'text-max-width': '120px',
+                        'font-size': '10px',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'background-color': function(ele) {{
+                            const nodeType = ele.data('type');
+                            const colors = {{
+                                'entry': '#4CAF50',
+                                'exit': '#F44336',
+                                'statement': '#E3F2FD',
+                                'condition': '#FFF59D',
+                                'loop': '#FFECB3',
+                                'async_point': '#E1BEE7',
+                                'await_point': '#CE93D8',
+                                'spawn_point': '#BA68C8',
+                                'error_handler': '#FFCDD2',
+                                'state_transition': '#C8E6C9',
+                                'function_call': '#BBDEFB',
+                                'return_point': '#FFE0B2'
+                            }};
+                            return colors[nodeType] || '#E0E0E0';
+                        }},
+                        'border-width': 2,
+                        'border-color': '#34495e',
+                        'width': function(ele) {{
+                            return Math.max(60, ele.data('label').length * 6);
+                        }},
+                        'height': 40,
+                        'shape': function(ele) {{
+                            const nodeType = ele.data('type');
+                            if (nodeType === 'condition') return 'diamond';
+                            if (nodeType === 'entry' || nodeType === 'exit') return 'round-rectangle';
+                            return 'rectangle';
+                        }}
+                    }}
+                }},
+                {{
+                    selector: 'edge',
+                    style: {{
+                        'width': function(ele) {{
+                            const edgeType = ele.data('edge_type');
+                            return edgeType === 'error' ? 3 : 2;
+                        }},
+                        'line-color': function(ele) {{
+                            const edgeType = ele.data('edge_type');
+                            const colors = {{
+                                'control': '#34495e',
+                                'async': '#9b59b6',
+                                'error': '#e74c3c',
+                                'data': '#3498db'
+                            }};
+                            return colors[edgeType] || '#34495e';
+                        }},
+                        'line-style': function(ele) {{
+                            return ele.data('edge_type') === 'async' ? 'dashed' : 'solid';
+                        }},
+                        'target-arrow-color': function(ele) {{
+                            const edgeType = ele.data('edge_type');
+                            const colors = {{
+                                'control': '#34495e',
+                                'async': '#9b59b6',
+                                'error': '#e74c3c',
+                                'data': '#3498db'
+                            }};
+                            return colors[edgeType] || '#34495e';
+                        }},
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier',
+                        'content': function(ele) {{
+                            const label = ele.data('label');
+                            const condition = ele.data('condition');
+                            if (label && condition) return label + ' [' + condition + ']';
+                            return label || condition || '';
+                        }},
+                        'font-size': '8px',
+                        'text-rotation': 'autorotate',
+                        'text-margin-y': -8
+                    }}
+                }},
+                {{
+                    selector: 'node:selected',
+                    style: {{
+                        'border-width': 4,
+                        'border-color': '#e74c3c'
+                    }}
+                }},
+                {{
+                    selector: '.highlighted',
+                    style: {{
+                        'background-color': '#f39c12',
+                        'border-color': '#e67e22'
+                    }}
+                }},
+                {{
+                    selector: '.filtered',
+                    style: {{
+                        'opacity': 0.3
+                    }}
+                }}
+            ],
+            
+            layout: {{
+                name: 'dagre',
+                rankDir: 'TB',
+                padding: 30,
+                spacingFactor: 1.5
+            }}
+        }});
+        
+        // Event handlers
+        cy.on('tap', 'node', function(evt) {{
+            const node = evt.target;
+            showNodeInfo(node);
+        }});
+        
+        // Functions
+        function setLayout(layoutName) {{
+            const layouts = {{
+                'dagre': {{ name: 'dagre', rankDir: 'TB', padding: 30 }},
+                'breadthfirst': {{ name: 'breadthfirst', directed: true, padding: 30 }},
+                'circle': {{ name: 'circle', padding: 30 }}
+            }};
+            
+            cy.layout(layouts[layoutName]).run();
+        }}
+        
+        function filterNodes(filterType) {{
+            // Remove active class from all buttons
+            document.querySelectorAll('.control-group button').forEach(btn => {{
+                btn.classList.remove('active');
+            }});
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            // Reset all nodes
+            cy.nodes().removeClass('filtered');
+            
+            if (filterType !== 'all') {{
+                cy.nodes().forEach(node => {{
+                    const nodeType = node.data('type');
+                    let shouldShow = false;
+                    
+                    switch(filterType) {{
+                        case 'entry':
+                            shouldShow = nodeType === 'entry' || nodeType === 'exit';
+                            break;
+                        case 'condition':
+                            shouldShow = nodeType === 'condition';
+                            break;
+                        case 'async':
+                            shouldShow = nodeType.includes('async') || nodeType.includes('await') || nodeType.includes('spawn');
+                            break;
+                        case 'error':
+                            shouldShow = nodeType === 'error_handler';
+                            break;
+                    }}
+                    
+                    if (!shouldShow) {{
+                        node.addClass('filtered');
+                    }}
+                }});
+            }}
+        }}
+        
+        function showNodeInfo(node) {{
+            const nodeInfo = document.getElementById('nodeInfo');
+            const nodeDetails = document.getElementById('nodeDetails');
+            
+            const data = node.data();
+            const details = `
+                <p><strong>Type:</strong> ${{data.type.replace('_', ' ')}}</p>
+                <p><strong>Label:</strong> ${{data.label}}</p>
+                <p><strong>Source Line:</strong> ${{data.source_line || 'N/A'}}</p>
+                <p><strong>Execution Pattern:</strong> ${{data.execution_pattern || 'sequential'}}</p>
+            `;
+            
+            nodeDetails.innerHTML = details;
+            nodeInfo.style.display = 'block';
+        }}
+        
+        // Initial layout
+        cy.ready(function() {{
+            cy.fit();
+        }});
+    </script>
+</body>
+</html>'''
+        
+        return html_template
+
+    def generate_system_interactive_html(self, output_path: str = "system_control_flow") -> str:
+        """Generate interactive HTML for system-wide control flow"""
+        # Convert system flow to Cytoscape format
+        cytoscape_data = {
+            "nodes": [],
+            "edges": []
+        }
+        
+        # Add component nodes
+        for component in self.analyzer.system_flow.component_interactions.keys():
+            cytoscape_data["nodes"].append({
+                "data": {
+                    "id": component,
+                    "label": component,
+                    "type": "component"
+                }
+            })
+        
+        # Add interaction edges
+        for source, targets in self.analyzer.system_flow.component_interactions.items():
+            for target in targets:
+                cytoscape_data["edges"].append({
+                    "data": {
+                        "id": f"{source}-{target}",
+                        "source": source,
+                        "target": target,
+                        "edge_type": "interaction"
+                    }
+                })
+        
+        # Generate simplified HTML for system view
+        html_content = self._generate_system_html_template(cytoscape_data)
+        
+        # Save to file
+        html_file = f"{output_path}_interactive.html"
+        with open(html_file, 'w') as f:
+            f.write(html_content)
+        logger.info(f"Interactive system HTML visualization saved to {html_file}")
+        
+        return html_content
+
+    def _generate_system_html_template(self, cytoscape_data: dict) -> str:
+        """Generate HTML template for system-wide visualization"""
+        import json
+        graph_data_json = json.dumps(cytoscape_data, indent=2)
+        
+        # Simplified template for system view
+        return f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Control Flow</title>
+    <script src="https://unpkg.com/cytoscape@3.23.0/dist/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+    <style>
+        body {{ margin: 0; font-family: Arial, sans-serif; }}
+        #cy {{ width: 100vw; height: 100vh; }}
+        .controls {{ position: absolute; top: 10px; left: 10px; background: white; padding: 10px; border-radius: 5px; }}
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h3>System Control Flow</h3>
+        <button onclick="cy.fit()">Fit to View</button>
+        <button onclick="setLayout('dagre')">Hierarchical</button>
+        <button onclick="setLayout('circle')">Circle</button>
+    </div>
+    <div id="cy"></div>
+    
+    <script>
+        const graphData = {graph_data_json};
+        const cy = cytoscape({{
+            container: document.getElementById('cy'),
+            elements: graphData.nodes.concat(graphData.edges),
+            style: [
+                {{
+                    selector: 'node',
+                    style: {{
+                        'content': 'data(label)',
+                        'background-color': '#3498db',
+                        'color': 'white',
+                        'font-size': '12px',
+                        'text-valign': 'center',
+                        'width': 80,
+                        'height': 40
+                    }}
+                }},
+                {{
+                    selector: 'edge',
+                    style: {{
+                        'width': 2,
+                        'line-color': '#34495e',
+                        'target-arrow-color': '#34495e',
+                        'target-arrow-shape': 'triangle'
+                    }}
+                }}
+            ],
+            layout: {{ name: 'dagre', rankDir: 'TB' }}
+        }});
+        
+        function setLayout(name) {{
+            cy.layout({{ name: name }}).run();
+        }}
+    </script>
+</body>
+</html>'''
+
 async def main():
     """Main function to run control flow analysis and visualization"""
     parser = argparse.ArgumentParser(description='Toka Control Flow Graph Visualizer')
@@ -740,6 +1729,11 @@ async def main():
     parser.add_argument('--async-patterns', action='store_true', help='Generate async coordination graph')
     parser.add_argument('--complexity', action='store_true', help='Generate complexity heatmap')
     parser.add_argument('--all', action='store_true', help='Generate all graphs')
+    parser.add_argument('--mermaid', action='store_true', help='Generate Mermaid flowcharts (LLM/docs friendly)')
+    parser.add_argument('--json', action='store_true', help='Export structured JSON data')
+    parser.add_argument('--summary', action='store_true', help='Generate textual summaries')
+    parser.add_argument('--llm-friendly', action='store_true', help='Generate all LLM-friendly formats (Mermaid, JSON, summaries)')
+    parser.add_argument('--interactive', action='store_true', help='Generate interactive HTML visualizations')
     
     args = parser.parse_args()
     
@@ -747,6 +1741,13 @@ async def main():
         args.system = True
         setattr(args, 'async_patterns', True)
         args.complexity = True
+        args.llm_friendly = True
+    
+    if args.llm_friendly:
+        args.mermaid = True
+        args.json = True
+        args.summary = True
+        args.interactive = True
     
     # Create output directory
     os.makedirs(args.output_dir, exist_ok=True)
@@ -762,11 +1763,28 @@ async def main():
     
     if args.function:
         output_path = os.path.join(args.output_dir, f"cfg_{args.function}")
+        
+        # Generate traditional graphviz output
         visualizer.generate_function_cfg(args.function, output_path)
+        
+        # Generate LLM-friendly formats if requested
+        if args.mermaid:
+            visualizer.generate_mermaid_flowchart(args.function, output_path)
+        if args.json:
+            visualizer.export_function_json(args.function, output_path)
+        if args.summary:
+            visualizer.generate_textual_summary(args.function, output_path)
+        if args.interactive:
+            visualizer.generate_interactive_html(args.function, output_path)
     
     if args.system:
         system_path = os.path.join(args.output_dir, "system_control_flow")
         visualizer.generate_system_flow_graph(system_path)
+        
+        if args.json:
+            visualizer.export_system_json(system_path)
+        if args.interactive:
+            visualizer.generate_system_interactive_html(system_path)
     
     if getattr(args, 'async_patterns', False):
         async_path = os.path.join(args.output_dir, "async_coordination")

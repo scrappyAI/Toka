@@ -1,0 +1,111 @@
+{
+  "function_name": "process_user_request",
+  "file_path": "src/handlers/request_handler.rs",
+  "location": {
+    "start_line": 45,
+    "end_line": 120
+  },
+  "properties": {
+    "is_async": true,
+    "return_type": "Result<Response, Error>"
+  },
+  "complexity_metrics": {
+    "cyclomatic_complexity": 8,
+    "async_complexity": 3,
+    "error_handling_complexity": 5
+  },
+  "nodes": [
+    {
+      "id": "entry",
+      "type": "entry",
+      "label": "\ud83d\ude80 Entry: process_user_request",
+      "source_line": 45
+    },
+    {
+      "id": "validate",
+      "type": "condition",
+      "label": "validate_request(req)?",
+      "source_line": 47
+    },
+    {
+      "id": "auth",
+      "type": "async_point",
+      "label": "\u26a1 authenticate_user().await",
+      "source_line": 52
+    },
+    {
+      "id": "process",
+      "type": "statement",
+      "label": "process_business_logic()",
+      "source_line": 58
+    },
+    {
+      "id": "error_handler",
+      "type": "error_handler",
+      "label": "\u274c handle_error(e)",
+      "source_line": 65
+    },
+    {
+      "id": "success",
+      "type": "statement",
+      "label": "format_response(result)",
+      "source_line": 70
+    },
+    {
+      "id": "exit",
+      "type": "exit",
+      "label": "\ud83c\udfc1 Exit: process_user_request",
+      "source_line": 120
+    }
+  ],
+  "edges": [
+    {
+      "source": "entry",
+      "target": "validate",
+      "edge_type": "control"
+    },
+    {
+      "source": "validate",
+      "target": "auth",
+      "edge_type": "control",
+      "condition": "valid"
+    },
+    {
+      "source": "validate",
+      "target": "error_handler",
+      "edge_type": "error",
+      "condition": "invalid"
+    },
+    {
+      "source": "auth",
+      "target": "process",
+      "edge_type": "async"
+    },
+    {
+      "source": "auth",
+      "target": "error_handler",
+      "edge_type": "error"
+    },
+    {
+      "source": "process",
+      "target": "success",
+      "edge_type": "control"
+    },
+    {
+      "source": "process",
+      "target": "error_handler",
+      "edge_type": "error"
+    },
+    {
+      "source": "success",
+      "target": "exit",
+      "edge_type": "control"
+    },
+    {
+      "source": "error_handler",
+      "target": "exit",
+      "edge_type": "control"
+    }
+  ],
+  "analysis_summary": "This function exhibits moderate complexity, async operations, comprehensive error handling, conditional logic."
+}
