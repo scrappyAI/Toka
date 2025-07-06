@@ -89,6 +89,21 @@ impl TokaStateMachine {
             TokaOperation::CommitEvent { header, payload } => {
                 self.apply_commit_event(header, payload).await?
             }
+            TokaOperation::ProcessMessage { message, .. } => {
+                // For now, return a placeholder result
+                use toka_bus_core::KernelEvent;
+                use chrono::Utc;
+                
+                let placeholder_event = KernelEvent::ObservationEmitted {
+                    agent: message.origin,
+                    data: b"placeholder".to_vec(),
+                    timestamp: Utc::now(),
+                };
+                
+                TokaOperationResult::MessageProcessed {
+                    event: placeholder_event,
+                }
+            }
             TokaOperation::CompactLog { before_index } => {
                 self.apply_compact_log(before_index).await?
             }
@@ -104,6 +119,7 @@ impl TokaStateMachine {
         let elapsed = start_time.elapsed().as_secs_f64() * 1000.0; // Convert to milliseconds
         let operation_name = match &result {
             TokaOperationResult::EventCommitted { .. } => "commit_event",
+            TokaOperationResult::MessageProcessed { .. } => "process_message",
             TokaOperationResult::LogCompacted { .. } => "compact_log",
             TokaOperationResult::SnapshotTaken { .. } => "take_snapshot",
             TokaOperationResult::SnapshotInstalled { .. } => "install_snapshot",

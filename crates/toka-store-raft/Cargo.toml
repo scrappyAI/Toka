@@ -13,6 +13,8 @@ toka-types = { path = "../toka-types" }
 toka-store-core = { path = "../toka-store-core" }
 toka-store-memory = { path = "../toka-store-memory" }
 toka-bus-core = { path = "../toka-bus-core" }
+toka-kernel = { path = "../toka-kernel" }
+toka-auth = { path = "../toka-auth" }
 
 # Raft dependencies
 raft-core = { path = "../raft-core" }

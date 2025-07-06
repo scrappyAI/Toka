@@ -49,14 +49,17 @@ use tracing::{debug, error, info, warn};
 
 use toka_store_core::{EventHeader, EventId, StorageBackend, CausalDigest};
 use toka_bus_core::{EventBus, KernelEvent};
+use toka_types::Message;
 use raft_core::{LogEntry, RaftNode, RaftConfig, Term};
 use raft_storage::Storage;
+use uuid::Uuid;
 
 pub mod storage;
 pub mod state_machine;
 pub mod network;
 pub mod config;
 pub mod error;
+pub mod distributed_kernel;
 
 pub use storage::RaftStorage;
 pub use state_machine::TokaStateMachine;
@@ -73,6 +76,13 @@ pub enum TokaOperation {
         header: EventHeader,
         /// Event payload bytes
         payload: Vec<u8>,
+    },
+    /// Process a message through the distributed kernel
+    ProcessMessage {
+        /// Message to be processed
+        message: Message,
+        /// Unique request ID for tracking
+        request_id: Uuid,
     },
     /// Compact log entries before a certain index
     CompactLog {
@@ -100,6 +110,11 @@ pub enum TokaOperationResult {
         /// Event ID that was committed
         event_id: EventId,
     },
+    /// Message was successfully processed
+    MessageProcessed {
+        /// Resulting kernel event
+        event: KernelEvent,
+    },
     /// Log was compacted
     LogCompacted {
         /// Number of entries removed
@@ -122,15 +137,28 @@ pub enum TokaOperationResult {
     },
 }
 
+/// Status of a node in the cluster
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum NodeStatus {
+    /// Node is active and healthy
+    Active,
+    /// Node is inactive or unreachable
+    Inactive,
+    /// Node status is unknown
+    Unknown,
+    /// Node has failed
+    Failed,
+}
+
 /// Node information for cluster members
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeInfo {
     /// Node ID
-    pub node_id: u64,
+    pub id: u64,
     /// Network address
     pub address: String,
-    /// Whether this node is currently reachable
-    pub reachable: bool,
+    /// Current status of the node
+    pub status: NodeStatus,
     /// Last known health check timestamp
     pub last_seen: chrono::DateTime<chrono::Utc>,
 }

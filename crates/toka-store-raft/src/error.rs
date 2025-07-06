@@ -126,6 +126,26 @@ pub enum RaftStorageError {
     /// Internal error
     #[error("Internal error: {0}")]
     Internal(String),
+    
+    /// No leader available
+    #[error("No leader available")]
+    NoLeader,
+    
+    /// Leader not found in topology
+    #[error("Leader not found in cluster topology")]
+    LeaderNotFound,
+    
+    /// Message forwarding error
+    #[error("Message forwarding failed: {0}")]
+    MessageForwarding(String),
+    
+    /// Unexpected result type
+    #[error("Unexpected operation result")]
+    UnexpectedResult,
+    
+    /// Kernel operation error
+    #[error("Kernel operation failed: {0}")]
+    KernelOperation(String),
 }
 
 impl RaftStorageError {
