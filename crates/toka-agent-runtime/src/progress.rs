@@ -72,7 +72,7 @@ pub struct ProgressReporter {
     /// Minimum progress change to trigger report
     min_progress_delta: f64,
     /// Minimum time between reports
-    min_report_interval: Duration,
+    min_report_interval: chrono::Duration,
 }
 
 impl ProgressReporter {
@@ -87,7 +87,7 @@ impl ProgressReporter {
             last_progress: 0.0,
             last_report_time: Utc::now(),
             min_progress_delta: 0.05, // Report every 5% progress
-            min_report_interval: Duration::from_secs(30), // Report at least every 30 seconds
+            min_report_interval: chrono::Duration::seconds(30), // Report at least every 30 seconds
         }
     }
 

@@ -9,7 +9,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use tracing::{info, warn, error};
 
-use toka_agent_runtime::{AgentProcessManager, ProcessResult};
+use toka_agent_runtime::{AgentProcessManager, process::ProcessResult};
 use toka_llm_gateway::LlmGateway;
 use toka_runtime::Runtime;
 use toka_types::EntityId;

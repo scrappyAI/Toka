@@ -197,11 +197,20 @@ impl TaskExecutor {
         let required_capabilities = self.infer_required_capabilities(task.description());
         
         for capability in required_capabilities {
-            if !self.capability_validator.can_perform(&capability)? {
-                return Err(AgentRuntimeError::CapabilityDenied {
-                    capability,
-                    operation: task.description().to_string(),
-                });
+            match self.capability_validator.can_perform(&capability) {
+                Ok(allowed) => {
+                    if !allowed {
+                        return Err(AgentRuntimeError::CapabilityDenied {
+                            capability,
+                            operation: task.description().to_string(),
+                        });
+                    }
+                }
+                Err(err) => {
+                    return Err(AgentRuntimeError::ExecutionFailed(
+                        format!("Capability validation failed: {}", err)
+                    ));
+                }
             }
         }
 

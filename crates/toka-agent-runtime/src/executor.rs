@@ -19,8 +19,10 @@ use toka_types::EntityId;
 
 use crate::{
     AgentContext, AgentExecutionState, AgentMetrics, ExecutionConfig, TaskExecutor,
-    ProgressReporter, LlmTask, AgentTask, TaskResult, AgentRuntimeError, AgentRuntimeResult,
+    ProgressReporter, TaskResult, AgentRuntimeError, AgentRuntimeResult,
 };
+use crate::task::LlmTask;
+use crate::AgentTask;
 
 /// Core agent execution engine that interprets and executes agent configurations
 pub struct AgentExecutor {
@@ -139,15 +141,23 @@ impl AgentExecutor {
 
         let mut context = self.context.write().await;
         
+        // Extract config values first to avoid borrowing conflicts
+        let agent_name = context.config.metadata.name.clone();
+        let agent_version = context.config.metadata.version.clone();
+        let workstream = context.config.metadata.workstream.clone();
+        let agent_domain = context.config.spec.domain.clone();
+        let agent_branch = context.config.metadata.branch.clone();
+        let capabilities = context.config.security.capabilities_required.clone();
+        
         // Add environment variables based on agent configuration
-        context.environment.insert("AGENT_NAME".to_string(), context.config.metadata.name.clone());
-        context.environment.insert("AGENT_VERSION".to_string(), context.config.metadata.version.clone());
-        context.environment.insert("WORKSTREAM".to_string(), context.config.metadata.workstream.clone());
-        context.environment.insert("AGENT_DOMAIN".to_string(), context.config.spec.domain.clone());
-        context.environment.insert("AGENT_BRANCH".to_string(), context.config.metadata.branch.clone());
+        context.environment.insert("AGENT_NAME".to_string(), agent_name);
+        context.environment.insert("AGENT_VERSION".to_string(), agent_version);
+        context.environment.insert("WORKSTREAM".to_string(), workstream);
+        context.environment.insert("AGENT_DOMAIN".to_string(), agent_domain);
+        context.environment.insert("AGENT_BRANCH".to_string(), agent_branch);
 
         // Add capability environment variables
-        for capability in &context.config.security.capabilities_required {
+        for capability in &capabilities {
             let env_var = format!("CAPABILITY_{}", capability.to_uppercase().replace("-", "_"));
             context.environment.insert(env_var, "true".to_string());
         }

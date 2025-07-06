@@ -107,17 +107,29 @@ pub enum AgentExecutionState {
     /// Agent is ready to execute tasks
     Ready,
     /// Agent is actively executing a task
-    ExecutingTask { task_id: String },
+    ExecutingTask { 
+        /// ID of the currently executing task
+        task_id: String 
+    },
     /// Agent is waiting for a resource or dependency
-    Waiting { reason: String },
+    Waiting { 
+        /// Reason for waiting
+        reason: String 
+    },
     /// Agent is paused by user or system
     Paused,
     /// Agent execution completed successfully
     Completed,
     /// Agent execution failed
-    Failed { error: String },
+    Failed { 
+        /// Error message describing the failure
+        error: String 
+    },
     /// Agent was terminated by user or system
-    Terminated { reason: String },
+    Terminated { 
+        /// Reason for termination
+        reason: String 
+    },
 }
 
 /// Context information for agent execution
@@ -215,7 +227,7 @@ impl Default for RetryConfig {
 
 /// Trait for agent task execution
 #[async_trait]
-pub trait AgentTask: Send + Sync {
+pub trait AgentTask: Send + Sync + std::fmt::Debug {
     /// Execute the task with the given context
     async fn execute(&self, context: &AgentContext) -> Result<TaskResult>;
     
@@ -249,20 +261,30 @@ pub enum AgentRuntimeError {
     
     /// Task execution timeout
     #[error("task execution timeout: {task_id} exceeded {timeout:?}")]
-    TaskTimeout { task_id: String, timeout: Duration },
+    TaskTimeout { 
+        /// ID of the task that timed out
+        task_id: String, 
+        /// Timeout duration that was exceeded
+        timeout: Duration 
+    },
     
     /// Resource limit exceeded
     #[error("resource limit exceeded: {resource} usage {current} > limit {limit}")]
     ResourceLimitExceeded {
+        /// Name of the resource that exceeded its limit
         resource: String,
+        /// Current usage value
         current: String,
+        /// Maximum allowed limit
         limit: String,
     },
     
     /// Capability not authorized
     #[error("capability not authorized: {capability} required for {operation}")]
     CapabilityDenied {
+        /// Name of the required capability
         capability: String,
+        /// Operation that was denied
         operation: String,
     },
     

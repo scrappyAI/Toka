@@ -39,7 +39,6 @@ pub struct AgentProcessManager {
 }
 
 /// Information about a running agent process
-#[derive(Debug)]
 pub struct AgentProcess {
     /// Agent configuration
     pub config: AgentConfig,
@@ -119,10 +118,29 @@ impl AgentProcessManager {
             }
         };
 
+        // We need to handle the executor ownership issue differently
+        // For now, let's create a second executor just for control operations
+        let control_executor = AgentExecutor::new(
+            config.clone(),
+            agent_id,
+            self.runtime.clone(),
+            self.llm_gateway.clone(),
+        ).await
+        .map_err(|e| AgentRuntimeError::ExecutionFailed(e.to_string()))?;
+        
         // Spawn agent execution task
-        let executor_clone = executor.clone();
+        let executor_for_task = match Arc::try_unwrap(executor) {
+            Ok(executor) => executor,
+            Err(_) => {
+                // This shouldn't happen since we just created it
+                return Err(AgentRuntimeError::ExecutionFailed(
+                    "Failed to unwrap executor for task execution".to_string()
+                ));
+            }
+        };
+        
         let task_handle = tokio::spawn(async move {
-            executor_clone.run().await
+            executor_for_task.run().await
         });
 
         // Create agent process
@@ -130,7 +148,7 @@ impl AgentProcessManager {
             config: config.clone(),
             agent_id,
             task_handle,
-            executor,
+            executor: Arc::new(control_executor),
             started_at: start_time,
             state: AgentExecutionState::Initializing,
         };
@@ -179,31 +197,48 @@ impl AgentProcessManager {
         
         info!("Stopping agent process: {:?}", agent_id);
 
-        let agent_process = self.agents.get(&agent_id)
-            .ok_or_else(|| AgentRuntimeError::ExecutionFailed(
-                format!("Agent {} not found", agent_id.0)
-            ))?;
+        // First, extract the necessary data from the agent process
+        let agent_name = {
+            let agent_process = self.agents.get(&agent_id)
+                .ok_or_else(|| AgentRuntimeError::ExecutionFailed(
+                    format!("Agent {} not found", agent_id.0)
+                ))?;
 
-        let agent_name = agent_process.config.metadata.name.clone();
+            let agent_name = agent_process.config.metadata.name.clone();
 
-        // Terminate the agent
-        if let Err(error) = agent_process.executor.terminate("Requested by process manager".to_string()).await {
-            warn!("Failed to gracefully terminate agent {}: {}", agent_name, error);
-        }
+            // Terminate the agent
+            if let Err(error) = agent_process.executor.terminate("Requested by process manager".to_string()).await {
+                warn!("Failed to gracefully terminate agent {}: {}", agent_name, error);
+            }
 
-        // Cancel the task
-        agent_process.task_handle.abort();
+            // Cancel the task and get the handle
+            agent_process.task_handle.abort();
+            
+            // We need to extract the name but can't clone the task handle
+            agent_name
+        };
 
+        // Remove from tracking first to get ownership
+        let removed_agent = self.agents.remove(&agent_id);
+        
         // Wait for task completion or timeout
-        let result = tokio::time::timeout(
-            Duration::from_secs(10),
-            &agent_process.task_handle
-        ).await;
+        let result = if let Some((_, agent_process)) = removed_agent {
+            tokio::time::timeout(
+                Duration::from_secs(10),
+                agent_process.task_handle
+            ).await
+        } else {
+            // Agent was already removed
+            return Err(AgentRuntimeError::ExecutionFailed(
+                format!("Agent {} was already removed", agent_id.0)
+            ));
+        };
 
-        drop(agent_process); // Release the reference before removal
-
-        // Remove from tracking
-        self.remove_agent(agent_id).await;
+        // Update statistics (agent already removed from map above)
+        {
+            let mut stats = self.stats.write().await;
+            stats.active_agents = stats.active_agents.saturating_sub(1);
+        }
 
         let duration = start_time.elapsed();
 
@@ -304,8 +339,8 @@ impl AgentProcessManager {
     pub async fn monitor_agents(&self) -> Result<()> {
         debug!("Monitoring {} agents", self.agents.len());
 
-        let mut completed_agents = Vec::new();
-        let mut failed_agents = Vec::new();
+        let mut completed_agents: Vec<EntityId> = Vec::new();
+        let mut failed_agents: Vec<EntityId> = Vec::new();
 
         // Check each agent's status
         for entry in self.agents.iter() {
@@ -314,11 +349,24 @@ impl AgentProcessManager {
 
             // Check if task is still running
             if agent_process.task_handle.is_finished() {
-                // Task has completed, check result
-                match &agent_process.task_handle.await {
+                // Task has completed, we need to handle this by removing the agent
+                // and checking the result in a separate step
+                completed_agents.push(agent_id);
+                continue;
+            }
+        }
+
+        // Handle completed agents
+        let mut successful_agents: Vec<EntityId> = Vec::new();
+        let mut failed_agents: Vec<EntityId> = Vec::new();
+        
+        for agent_id in completed_agents {
+            // Remove the agent and check its result
+            if let Some((_, agent_process)) = self.agents.remove(&agent_id) {
+                match agent_process.task_handle.await {
                     Ok(Ok(())) => {
                         info!("Agent completed successfully: {:?}", agent_id);
-                        completed_agents.push(agent_id);
+                        successful_agents.push(agent_id);
                     }
                     Ok(Err(error)) => {
                         error!("Agent failed: {:?} (error: {})", agent_id, error);
@@ -333,7 +381,7 @@ impl AgentProcessManager {
         }
 
         // Clean up completed and failed agents
-        for agent_id in completed_agents {
+        for agent_id in successful_agents {
             self.handle_agent_completion(agent_id).await;
         }
 
