@@ -1,6 +1,5 @@
 {
   "name": "Rust Development Environment",
   "user": "vscode",
-  "agentCanUpdateSnapshot": true,
-  "start": "echo 'Rust environment ready'",
+  "agentCanUpdateSnapshot": true
 }
