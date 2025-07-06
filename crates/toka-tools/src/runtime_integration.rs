@@ -10,11 +10,10 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
-use tracing::{debug, info, warn, error};
+use tracing::{debug, info, warn};
 
-use crate::core::{Tool, ToolParams, ToolResult, ToolRegistry};
-use crate::wrappers::{UnifiedToolRegistry, DiscoveredTool, ToolType};
-use crate::manifest::ToolManifest;
+use crate::core::{ToolParams, ToolResult};
+use crate::wrappers::UnifiedToolRegistry;
 
 /// Unified tool manifest in YAML format for agent integration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -243,7 +242,7 @@ impl RuntimeToolRegistry {
     pub async fn execute_tool_runtime(
         &self,
         tool_name: &str,
-        params: &ToolParams,
+        _params: &ToolParams,
         agent_capabilities: &[String],
         runtime_context: &RuntimeContext,
     ) -> Result<RuntimeToolResult> {
@@ -347,8 +346,8 @@ impl RuntimeToolRegistry {
     async fn emit_agent_lifecycle_event(
         &self,
         tool_name: &str,
-        result: &ToolResult,
-        runtime_context: &RuntimeContext,
+        _result: &ToolResult,
+        _runtime_context: &RuntimeContext,
     ) -> Result<()> {
         debug!("Emitting agent lifecycle event for tool: {}", tool_name);
         // Integration with toka-bus-core would go here
@@ -359,8 +358,8 @@ impl RuntimeToolRegistry {
     async fn emit_task_completion_event(
         &self,
         tool_name: &str,
-        result: &ToolResult,
-        runtime_context: &RuntimeContext,
+        _result: &ToolResult,
+        _runtime_context: &RuntimeContext,
     ) -> Result<()> {
         debug!("Emitting task completion event for tool: {}", tool_name);
         // Integration with toka-bus-core would go here

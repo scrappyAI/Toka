@@ -11,10 +11,8 @@ use std::sync::Arc;
 use std::collections::HashMap;
 use std::time::Instant;
 
-// Re-export canonical types from `toka_toolkit_core` so internal modules can
-// simply `use crate::tools::{Tool, ToolParams, …}` without caring about the
-// crate boundary.
-pub use crate::core::{Tool, ToolMetadata, ToolParams, ToolResult};
+use crate::core::{Tool, ToolParams, ToolResult, ToolMetadata};
+use crate::errors::ValidationError;
 
 /// Thin wrapper that delegates every call to an inner `CoreRegistry`.
 /// Essential tools are registered by default for common agent operations.
@@ -94,8 +92,23 @@ impl Tool for ReadFileTool {
 
     fn validate_params(&self, params: &ToolParams) -> Result<()> {
         if !params.args.contains_key("path") {
-            return Err(anyhow::anyhow!("Missing required parameter: path"));
+            return Err(ValidationError::RequiredFieldMissing {
+                field_name: "path".to_string(),
+                context: self.name.clone(),
+            }.into());
         }
+        
+        // Validate that the path is not empty
+        if let Some(path) = params.args.get("path") {
+            if path.trim().is_empty() {
+                return Err(ValidationError::InvalidFieldValue {
+                    field_name: "path".to_string(),
+                    context: self.name.clone(),
+                    reason: "path cannot be empty".to_string(),
+                }.into());
+            }
+        }
+        
         Ok(())
     }
 }
@@ -176,11 +189,29 @@ impl Tool for WriteFileTool {
 
     fn validate_params(&self, params: &ToolParams) -> Result<()> {
         if !params.args.contains_key("path") {
-            return Err(anyhow::anyhow!("Missing required parameter: path"));
+            return Err(ValidationError::RequiredFieldMissing {
+                field_name: "path".to_string(),
+                context: self.name.clone(),
+            }.into());
         }
         if !params.args.contains_key("content") {
-            return Err(anyhow::anyhow!("Missing required parameter: content"));
+            return Err(ValidationError::RequiredFieldMissing {
+                field_name: "content".to_string(),
+                context: self.name.clone(),
+            }.into());
         }
+        
+        // Validate that the path is not empty
+        if let Some(path) = params.args.get("path") {
+            if path.trim().is_empty() {
+                return Err(ValidationError::InvalidFieldValue {
+                    field_name: "path".to_string(),
+                    context: self.name.clone(),
+                    reason: "path cannot be empty".to_string(),
+                }.into());
+            }
+        }
+        
         Ok(())
     }
 }
@@ -275,8 +306,23 @@ impl Tool for RunCommandTool {
 
     fn validate_params(&self, params: &ToolParams) -> Result<()> {
         if !params.args.contains_key("command") {
-            return Err(anyhow::anyhow!("Missing required parameter: command"));
+            return Err(ValidationError::RequiredFieldMissing {
+                field_name: "command".to_string(),
+                context: self.name.clone(),
+            }.into());
         }
+        
+        // Validate that the command is not empty
+        if let Some(command) = params.args.get("command") {
+            if command.trim().is_empty() {
+                return Err(ValidationError::InvalidFieldValue {
+                    field_name: "command".to_string(),
+                    context: self.name.clone(),
+                    reason: "command cannot be empty".to_string(),
+                }.into());
+            }
+        }
+        
         Ok(())
     }
 }
@@ -384,8 +430,44 @@ impl Tool for HttpRequestTool {
 
     fn validate_params(&self, params: &ToolParams) -> Result<()> {
         if !params.args.contains_key("url") {
-            return Err(anyhow::anyhow!("Missing required parameter: url"));
+            return Err(ValidationError::RequiredFieldMissing {
+                field_name: "url".to_string(),
+                context: self.name.clone(),
+            }.into());
         }
+        
+        // Validate URL format
+        if let Some(url) = params.args.get("url") {
+            if url.trim().is_empty() {
+                return Err(ValidationError::InvalidFieldValue {
+                    field_name: "url".to_string(),
+                    context: self.name.clone(),
+                    reason: "URL cannot be empty".to_string(),
+                }.into());
+            }
+            
+            // Basic URL validation
+            if !url.starts_with("http://") && !url.starts_with("https://") {
+                return Err(ValidationError::InvalidFieldValue {
+                    field_name: "url".to_string(),
+                    context: self.name.clone(),
+                    reason: "URL must start with http:// or https://".to_string(),
+                }.into());
+            }
+        }
+        
+        // Validate method if provided
+        if let Some(method) = params.args.get("method") {
+            let valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
+            if !valid_methods.contains(&method.to_uppercase().as_str()) {
+                return Err(ValidationError::InvalidFieldValue {
+                    field_name: "method".to_string(),
+                    context: self.name.clone(),
+                    reason: format!("Invalid HTTP method. Must be one of: {}", valid_methods.join(", ")),
+                }.into());
+            }
+        }
+        
         Ok(())
     }
 }

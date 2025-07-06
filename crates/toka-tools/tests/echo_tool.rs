@@ -1,8 +1,7 @@
 use anyhow::Result;
 use std::sync::Arc;
-use std::collections::HashMap;
 
-use toka_tools::{ToolRegistry, tools::ReadFileTool, ToolParams};
+use toka_tools::{ToolRegistry, tools::ReadFileTool};
 
 #[tokio::test]
 async fn test_read_file_tool() -> Result<()> {

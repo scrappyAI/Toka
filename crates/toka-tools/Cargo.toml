@@ -14,6 +14,7 @@ toka-bus-core = { path = "../toka-bus-core" }
 # toka-vector-registry = { path = "../toka-vector-registry", optional = true }
 
 anyhow = "1"
+thiserror = "1"
 async-trait = "0.1"
 # Needed by the core registry & most tools – now non-optional to silence lints
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "fs", "sync", "io-util", "process"] }

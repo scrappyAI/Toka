@@ -11,9 +11,8 @@ use anyhow::{Context, Result};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
-use tracing::{debug, info, warn};
-
-use super::{DiscoveredTool, SecurityLevel, ToolType};
+use tracing::{debug, info};
+use super::{DiscoveredTool, ToolType};
 
 /// Configuration for tool discovery
 #[derive(Debug, Clone, Serialize, Deserialize)]

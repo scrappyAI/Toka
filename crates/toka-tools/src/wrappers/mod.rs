@@ -26,12 +26,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::Result;
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-use crate::core::{Tool, ToolParams, ToolResult};
-use crate::manifest::ToolManifest;
+use crate::core::Tool;
 
 /// Unified tool registry that combines all tool types with consistent security
 /// Currently a placeholder implementation while the full tool system is being built
@@ -116,8 +114,6 @@ pub struct ToolSecurityClassification {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
-    use std::io::Write;
     
     #[tokio::test]
     async fn test_unified_registry_creation() -> Result<()> {
