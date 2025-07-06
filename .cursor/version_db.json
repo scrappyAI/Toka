@@ -1,13 +1,13 @@
 {
   ".cursor/rules/00-core-baseline.yaml": {
-    "version": "1.0.1",
+    "version": "1.0.2",
     "created": "2025-07-06",
-    "modified": "2025-07-06T02:54:03.598012+00:00",
+    "modified": "2025-07-06T03:22:39.504249+00:00",
     "schema_version": "1.0.0",
-    "checksum": "b6ed487ecd9631f3",
+    "checksum": "8f7caed245ea3a37",
     "data": {
       "name": "CoreBaseline",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "Foundational guidelines applicable across all Rust projects in the workspace",
       "category": "core",
       "priority": 100,
@@ -80,21 +80,21 @@
       },
       "metadata": {
         "created": "2025-07-06",
-        "modified": "2025-07-06T02:54:03.598012+00:00",
+        "modified": "2025-07-06T03:22:39.504249+00:00",
         "schema_version": "1.0.0",
-        "checksum": "b6ed487ecd9631f3"
+        "checksum": "8f7caed245ea3a37"
       }
     }
   },
   ".cursor/rules/70-github-integration.yaml": {
-    "version": "1.0.1",
+    "version": "1.0.2",
     "created": "2025-07-06",
-    "modified": "2025-07-06T02:54:03.612570+00:00",
+    "modified": "2025-07-06T03:22:39.513430+00:00",
     "schema_version": "1.0.0",
-    "checksum": "8024b67529292310",
+    "checksum": "2fcf090932dacccf",
     "data": {
       "name": "GitHubIntegration",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "Guidelines for secure and efficient GitHub integration including API usage, CLI tooling, and automation best practices",
       "category": "github",
       "priority": 85,
@@ -209,28 +209,28 @@
       },
       "metadata": {
         "created": "2025-07-06",
-        "modified": "2025-07-06T02:54:03.612570+00:00",
+        "modified": "2025-07-06T03:22:39.513430+00:00",
         "schema_version": "1.0.0",
-        "checksum": "8024b67529292310"
+        "checksum": "2fcf090932dacccf"
       }
     }
   },
   "agents/v1.0.0/github/github-cli-integration.yaml": {
-    "version": "v1.0.1",
+    "version": "v1.0.2",
     "created": "2025-07-06",
-    "modified": "2025-07-06T02:54:03.872971+00:00",
+    "modified": "2025-07-06T03:22:39.574376+00:00",
     "schema_version": "1.0.0",
-    "checksum": "f115aa86fdf163ca",
+    "checksum": "9f795d1d868831c1",
     "data": {
       "metadata": {
         "name": "github-cli-integration",
-        "version": "v1.0.1",
+        "version": "v1.0.2",
         "created": "2025-07-06",
         "workstream": "GitHub CLI Integration & Automation",
         "branch": "feature/github-cli-integration",
-        "modified": "2025-07-06T02:54:03.872971+00:00",
+        "modified": "2025-07-06T03:22:39.574376+00:00",
         "schema_version": "1.0.0",
-        "checksum": "f115aa86fdf163ca"
+        "checksum": "9f795d1d868831c1"
       },
       "spec": {
         "name": "GitHub CLI Integration Agent",
@@ -613,21 +613,21 @@
     }
   },
   "agents/v1.0.0/github/github-api-integration.yaml": {
-    "version": "v1.0.1",
+    "version": "v1.0.2",
     "created": "2025-07-06",
-    "modified": "2025-07-06T02:54:03.893513+00:00",
+    "modified": "2025-07-06T03:22:39.596113+00:00",
     "schema_version": "1.0.0",
-    "checksum": "1ad331cbae5b7543",
+    "checksum": "0535e7719294b233",
     "data": {
       "metadata": {
         "name": "github-api-integration",
-        "version": "v1.0.1",
+        "version": "v1.0.2",
         "created": "2025-07-06",
         "workstream": "GitHub API Integration & Management",
         "branch": "feature/github-api-integration",
-        "modified": "2025-07-06T02:54:03.893513+00:00",
+        "modified": "2025-07-06T03:22:39.596113+00:00",
         "schema_version": "1.0.0",
-        "checksum": "1ad331cbae5b7543"
+        "checksum": "0535e7719294b233"
       },
       "spec": {
         "name": "GitHub API Integration Agent",
