@@ -230,10 +230,12 @@ impl RuntimeToolRegistry {
     async fn register_discovered_tools(&self) -> Result<()> {
         info!("Registering discovered tools with unified registry");
         
-        let registered_count = self.unified_registry.auto_register_tools().await
-            .context("Failed to auto-register tools")?;
+        // TODO: Implement when tool discovery is complete
+        // let registered_count = self.unified_registry.auto_register_tools().await
+        //     .context("Failed to auto-register tools")?;
+        let registered_count = 0;
         
-        info!("Registered {} tools with unified registry", registered_count);
+        info!("Registered {} tools from discovery", registered_count);
         Ok(())
     }
     
@@ -245,7 +247,27 @@ impl RuntimeToolRegistry {
         agent_capabilities: &[String],
         runtime_context: &RuntimeContext,
     ) -> Result<RuntimeToolResult> {
-        debug!("Executing tool '{}' with runtime integration", tool_name);
+        debug!("Executing tool '{}' with manifest", tool_name);
+        
+        // TODO: Implement when secure execution is complete
+        // let result = self.unified_registry
+        //     .execute_tool_secure(tool_name, params, agent_capabilities)
+        //     .await
+        //     .context("Tool execution failed")?;
+        
+        // Placeholder implementation
+        let result = ToolResult {
+            success: false,
+            output: "Tool execution not yet implemented".to_string(),
+            metadata: crate::core::ToolMetadata {
+                execution_time_ms: 0,
+                tool_version: "0.1.0".to_string(),
+                timestamp: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+            },
+        };
         
         // Check if tool exists in manifest cache
         let manifest = {
@@ -258,12 +280,6 @@ impl RuntimeToolRegistry {
         
         // Validate agent capabilities against tool requirements
         self.validate_capabilities(agent_capabilities, &manifest.spec.capabilities)?;
-        
-        // Execute with unified registry
-        let result = self.unified_registry
-            .execute_tool_secure(tool_name, params, agent_capabilities)
-            .await
-            .context("Tool execution failed")?;
         
         // Process runtime hooks
         self.process_runtime_hooks(tool_name, &result, runtime_context).await?;

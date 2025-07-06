@@ -226,16 +226,31 @@ impl ToolDiscovery {
     
     /// Extract description from Python docstring or comments
     fn extract_python_description(&self, content: &str) -> Result<String> {
-        // Look for module docstring
-        let docstring_regex = Regex::new(r#"^[\s]*"""(.*?)"""|^[\s]*'''(.*?)'''"#)?;
-        if let Some(captures) = docstring_regex.captures(content) {
-            let docstring = captures.get(1).or_else(|| captures.get(2))
-                .map(|m| m.as_str())
-                .unwrap_or("");
-            
-            // Return first line of docstring
-            if let Some(first_line) = docstring.lines().next() {
-                return Ok(first_line.trim().to_string());
+        // Look for module docstring - simplified approach for the test case
+        if let Some(start) = content.find("\"\"\"") {
+            if let Some(end) = content[start+3..].find("\"\"\"") {
+                let docstring = &content[start+3..start+3+end];
+                // Return first non-empty line of docstring
+                for line in docstring.lines() {
+                    let line = line.trim();
+                    if !line.is_empty() {
+                        return Ok(line.to_string());
+                    }
+                }
+            }
+        }
+        
+        // Try single quotes
+        if let Some(start) = content.find("'''") {
+            if let Some(end) = content[start+3..].find("'''") {
+                let docstring = &content[start+3..start+3+end];
+                // Return first non-empty line of docstring
+                for line in docstring.lines() {
+                    let line = line.trim();
+                    if !line.is_empty() {
+                        return Ok(line.to_string());
+                    }
+                }
             }
         }
         

@@ -63,7 +63,7 @@ impl SecurityLevel {
                 readonly_paths: vec![PathBuf::from(".")],
                 writable_paths: vec![PathBuf::from("target/analysis")],
                 forbidden_paths: vec![PathBuf::from("/etc"), PathBuf::from("/sys")],
-                allowed_syscalls: vec!["read", "write", "open", "close", "stat", "exit"],
+                allowed_syscalls: vec!["read".to_string(), "write".to_string(), "open".to_string(), "close".to_string(), "stat".to_string(), "exit".to_string()],
                 env_whitelist: vec!["PATH".to_string(), "HOME".to_string()],
                 disable_ptrace: true,
                 disable_core_dumps: true,
@@ -125,7 +125,7 @@ pub struct SandboxConfig {
     /// Forbidden filesystem paths
     pub forbidden_paths: Vec<PathBuf>,
     /// Allowed system calls (empty means all allowed)
-    pub allowed_syscalls: Vec<&'static str>,
+    pub allowed_syscalls: Vec<String>,
     /// Environment variables whitelist
     pub env_whitelist: Vec<String>,
     /// Disable ptrace
