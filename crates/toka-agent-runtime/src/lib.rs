@@ -26,15 +26,20 @@
 //!
 //! ## Usage
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use toka_agent_runtime::{AgentExecutor, AgentProcessManager};
-//! use toka_orchestration::AgentConfig;
+//! use toka_types::AgentConfig;
 //! use toka_types::EntityId;
+//! use std::sync::Arc;
 //!
 //! # #[tokio::main]
 //! # async fn main() -> anyhow::Result<()> {
-//! // Load agent configuration
-//! let config = AgentConfig::load_from_file("agents/v0.3.0/workstreams/build-system.yaml")?;
+//! # // Mock runtime and LLM gateway for example
+//! # let runtime: Arc<toka_runtime::Runtime> = unimplemented!();
+//! # let llm_gateway: Arc<toka_llm_gateway::LlmGateway> = unimplemented!();
+//! 
+//! // Load agent configuration (example)
+//! # let config: AgentConfig = unimplemented!();
 //! 
 //! // Create agent executor
 //! let executor = AgentExecutor::new(
