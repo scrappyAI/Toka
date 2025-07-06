@@ -19,6 +19,7 @@ members = [
     
     # Tools and utilities
     "crates/toka-tools",
+    "crates/toka-analysis-tools",    # New analysis tools crate
 
     # Applications / demos
     "crates/toka-cli",
@@ -46,6 +47,7 @@ members = [
     "crates/security/toka-cvm",
     "crates/security/toka-revocation",
     "crates/toka-performance",
+    "tests/integration",
 ]
 
 [workspace.dependencies]
