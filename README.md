@@ -146,10 +146,37 @@ cargo llvm-cov --workspace --all-features --html
 
 ## 📖 Documentation
 
-- [Architecture Overview](docs/architecture/)
+### Project Organization
+
+All documentation has been organized into the `docs/` directory:
+
+- **[docs/guides/](docs/guides/)**: Setup and user guides
+  - [RAFT Monitoring Setup](docs/guides/RAFT_MONITORING_README.md)
+  - [Testing Setup Guide](docs/guides/TOKA_TESTING_SETUP_GUIDE.md)
+  - [Quick Start Testing](docs/guides/QUICK_START_TESTING.md)
+  - [RAFT Monitoring Deployment](docs/guides/RAFT_MONITORING_DEPLOYMENT_SUMMARY.md)
+
+- **[docs/reports/](docs/reports/)**: Technical analysis and implementation reports
+  - [Unified Tools Integration](docs/reports/UNIFIED_PYTHON_TOOLS_INTEGRATION_README.md)
+  - [Implementation Roadmap](docs/reports/IMPLEMENTATION_ROADMAP.md)
+  - [Control Flow Analysis](docs/reports/CONTROL_FLOW_SUMMARY.md)
+  - [Dependency Analysis](docs/reports/DEPENDENCY_GRAPH_README.md)
+  - [Workspace Cleanup Summary](docs/reports/WORKSPACE_CLEANUP_SUMMARY.md)
+
+- **[docs/proposals/](docs/proposals/)**: Architecture proposals and RFCs
+- **[docs/protocols/](docs/protocols/)**: Protocol specifications
+- **[docs/research/](docs/research/)**: Research documents and analysis
+
+### Generated Visualizations
+
+- **[dependency_graphs/](dependency_graphs/)**: System dependency visualizations
+- **[control_flow_graphs/](control_flow_graphs/)**: Control flow analysis reports
+
+### Additional Resources
+
 - [Agent Configuration Guide](agents/v0.3.0/README.md)
-- [Security Hardening](docs/security/)
 - [API Documentation](https://docs.rs/toka-kernel)
+- [Docker Setup Guide](README-Docker.md)
 
 ## 🛠️ Development
 
