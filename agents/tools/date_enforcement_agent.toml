@@ -1,0 +1,118 @@
+[agent]
+name = "date-enforcement-validator"
+version = "1.0.0"
+description = "Enforces date accuracy and consistency across all workspace files"
+domain = "quality-assurance"
+priority = "critical"
+created = "2025-07-06"
+
+[agent.capabilities]
+primary = [
+    "date-validation",
+    "date-correction",
+    "template-processing",
+    "compliance-checking",
+    "automated-date-insertion"
+]
+
+secondary = [
+    "historical-date-verification",
+    "date-format-standardization",
+    "commit-date-synchronization"
+]
+
+[agent.interface]
+type = "command-line"
+executable = "scripts/validate_dates.py"
+working_directory = "."
+python_requirements = ["python3-dateutil"]
+
+[agent.commands]
+validate = {
+    description = "Validate all dates in workspace files",
+    args = ["--verbose"],
+    output_format = "text+json"
+}
+
+validate_specific = {
+    description = "Validate specific files",
+    args = ["${FILES}"],
+    output_format = "text+json"
+}
+
+fix_templates = {
+    description = "Process date templates with current dates",
+    executable = "scripts/insert_date.sh",
+    args = ["--all"],
+    output_format = "text"
+}
+
+fix_specific = {
+    description = "Process specific template files",
+    executable = "scripts/insert_date.sh", 
+    args = ["${FILES}"],
+    output_format = "text"
+}
+
+[agent.objectives]
+primary = [
+    { description = "Ensure all dates in documentation are accurate and current" },
+    { description = "Prevent future-dated content from being committed" },
+    { description = "Maintain consistency in date formatting across all files" },
+    { description = "Support automated date insertion in templates" }
+]
+
+secondary = [
+    { description = "Track historical accuracy of dates in documentation" },
+    { description = "Provide date compliance reports for auditing" },
+    { description = "Support exemption management for historical dates" }
+]
+
+[agent.dependencies]
+system = ["python3", "git", "bash"]
+workspace = ["**/*.md", "**/*.rs", "**/*.toml", "**/*.yml", "**/*.yaml"]
+tools = ["scripts/validate_dates.py", "scripts/insert_date.sh"]
+
+[agent.outputs]
+validation_report = "Detailed date validation report with errors and warnings"
+compliance_summary = "Summary of date compliance across workspace"
+exemption_log = "Log of all date exemptions and their justifications"
+fix_log = "Log of all date corrections applied"
+
+[agent.scheduling]
+trigger_on = ["pre-commit", "documentation-change", "daily"]
+schedule = "daily"
+priority = "high"
+
+[agent.integration]
+toka_bus = true
+capability_tokens = ["filesystem:read", "filesystem:write", "git:read"]
+metrics = ["files-checked", "errors-found", "fixes-applied"]
+
+[agent.security]
+sandbox = true
+network_access = false
+filesystem_access = "workspace-only"
+resource_limits = {
+    memory = "128MB",
+    cpu = "1 core",
+    disk = "50MB"
+}
+
+[agent.validation]
+patterns = {
+    date_format = "\\d{4}-\\d{2}-\\d{2}",
+    template_placeholder = "2025-07-06|2025-07-06",
+    exemption_tag = "DATE:EXEMPT"
+}
+
+tolerance = {
+    future_days = 30,
+    past_days = 365
+}
+
+[agent.metadata]
+tags = ["validation", "dates", "compliance", "quality-assurance"]
+category = "quality-tools"
+maturity = "stable"
+maintenance_status = "active"

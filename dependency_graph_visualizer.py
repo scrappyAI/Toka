@@ -8,7 +8,7 @@ This tool creates dependency graph visualizations for the Toka codebase:
 - Agent composition visualization based on agent spec schema
 - Parallel processing for efficient analysis
 
-Generated on: 2025-01-09
+Generated on: 2025-07-06
 """
 
 import os

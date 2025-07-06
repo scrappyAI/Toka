@@ -1,0 +1,122 @@
+[agent]
+name = "system-monitoring-agent"
+version = "1.0.0"
+description = "Monitors Raft consensus, system performance, and development metrics"
+domain = "operations"
+priority = "high"
+created = "2025-07-06"
+
+[agent.capabilities]
+primary = [
+    "raft-cluster-monitoring",
+    "performance-metrics-collection",
+    "system-health-monitoring",
+    "alert-generation",
+    "metrics-visualization"
+]
+
+secondary = [
+    "log-analysis",
+    "trend-analysis",
+    "anomaly-detection",
+    "capacity-planning"
+]
+
+[agent.interface]
+type = "service"
+executable = "raft_monitoring_service.sh"
+working_directory = "."
+python_requirements = ["requests", "psutil", "matplotlib", "pandas"]
+
+[agent.commands]
+start_monitoring = {
+    description = "Start continuous monitoring service",
+    args = ["--daemon"],
+    output_format = "service"
+}
+
+check_raft = {
+    description = "Check Raft cluster health",
+    executable = "raft_analysis.py",
+    args = ["--cluster-health"],
+    output_format = "json"
+}
+
+monitor_development = {
+    description = "Monitor development metrics",
+    executable = "monitor_raft_development.py",
+    args = ["--collect-metrics"],
+    output_format = "json"
+}
+
+generate_report = {
+    description = "Generate monitoring report",
+    executable = "raft_analysis.py",
+    args = ["--generate-report", "--output", "${OUTPUT_DIR}"],
+    output_format = "json+html"
+}
+
+[agent.objectives]
+primary = [
+    { description = "Ensure Raft cluster health and consensus integrity" },
+    { description = "Monitor system performance and resource utilization" },
+    { description = "Detect and alert on system anomalies" },
+    { description = "Provide actionable insights for system optimization" }
+]
+
+secondary = [
+    { description = "Track development velocity and code quality metrics" },
+    { description = "Support capacity planning with historical data" },
+    { description = "Enable proactive maintenance through predictive analysis" }
+]
+
+[agent.dependencies]
+system = ["python3", "bash", "systemctl", "docker"]
+workspace = ["docker-compose.yml", "config/monitoring.toml"]
+services = ["raft-cluster", "toka-runtime"]
+
+[agent.outputs]
+health_report = "Current system health status"
+metrics_dashboard = "Real-time metrics visualization"
+alert_log = "Historical alert log with resolutions"
+performance_trends = "Performance trend analysis"
+
+[agent.scheduling]
+trigger_on = ["system-start", "performance-threshold", "manual"]
+schedule = "continuous"
+priority = "high"
+
+[agent.integration]
+toka_bus = true
+capability_tokens = ["system:monitor", "network:read", "filesystem:read", "process:spawn"]
+metrics = ["uptime", "response-time", "error-rate", "resource-usage"]
+
+[agent.security]
+sandbox = false  # Requires system access for monitoring
+network_access = true
+filesystem_access = "system-monitoring"
+resource_limits = {
+    memory = "256MB",
+    cpu = "1 core",
+    disk = "1GB"
+}
+
+[agent.monitoring]
+endpoints = {
+    raft_cluster = "http://localhost:8080/health",
+    metrics_api = "http://localhost:9090/metrics",
+    system_stats = "/proc/stat"
+}
+
+thresholds = {
+    cpu_usage = 80,
+    memory_usage = 85,
+    disk_usage = 90,
+    response_time = 1000
+}
+
+[agent.metadata]
+tags = ["monitoring", "raft", "performance", "operations"]
+category = "system-tools"
+maturity = "stable"
+maintenance_status = "active"
