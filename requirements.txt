@@ -2,3 +2,9 @@ graphviz>=0.20.1
 toml>=0.10.2
 aiofiles>=23.2.1
 PyYAML>=6.0.1
+
+# Core analysis dependencies
+# Note: These are minimal requirements. Additional optional dependencies:
+# - mcp for MCP server integration (pip install mcp)
+# - vis-network for interactive HTML visualizations (included via CDN)
+# - cytoscape for advanced graph layouts (included via CDN)
