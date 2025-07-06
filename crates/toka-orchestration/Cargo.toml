@@ -14,6 +14,7 @@ toka-kernel = { path = "../toka-kernel", version = "0.2.1" }
 toka-runtime = { path = "../toka-runtime", version = "0.2.1" }
 toka-bus-core = { path = "../toka-bus-core", version = "0.2.1" }
 toka-llm-gateway = { path = "../toka-llm-gateway", version = "0.3.0" }
+toka-agent-runtime = { path = "../toka-agent-runtime", version = "0.2.1" }
 
 # Async runtime and utilities
 tokio = { workspace = true }

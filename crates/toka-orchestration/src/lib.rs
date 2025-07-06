@@ -69,12 +69,14 @@ pub mod dependency;
 pub mod monitor;
 pub mod workstream;
 pub mod llm_integration;
+pub mod integration;
 
 pub use config::{AgentConfigLoader, OrchestrationConfig};
 pub use dependency::DependencyResolver;
 pub use monitor::ProgressMonitor;
 pub use workstream::WorkstreamCoordinator;
 pub use llm_integration::{LlmOrchestrationIntegrator, TaskExecutionResult, CoordinationPlan};
+pub use integration::{RuntimeIntegration, OrchestrationRuntimeExt};
 
 /// Maximum number of agents that can be spawned simultaneously
 pub const MAX_CONCURRENT_AGENTS: usize = 10;

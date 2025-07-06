@@ -1,0 +1,51 @@
+[package]
+name = "toka-agent-runtime"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Agent execution runtime for Toka OS - interprets and executes agent configurations with LLM integration"
+
+[dependencies]
+# Core Toka dependencies
+toka-types = { path = "../toka-types" }
+toka-kernel = { path = "../toka-kernel" }
+toka-runtime = { path = "../toka-runtime" }
+toka-orchestration = { path = "../toka-orchestration" }
+toka-llm-gateway = { path = "../toka-llm-gateway" }
+toka-bus-core = { path = "../toka-bus-core" }
+
+# Async runtime
+tokio = { workspace = true, features = ["full"] }
+futures = { workspace = true }
+async-trait = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Logging and tracing
+tracing = { workspace = true }
+
+# Time handling
+chrono = { workspace = true, features = ["serde"] }
+
+# UUID generation
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+# Collections
+dashmap = "5.5"
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+tempfile = "3.8"
+toka-auth = { path = "../toka-auth" }
+
+[features]
+default = []
+testing = []
