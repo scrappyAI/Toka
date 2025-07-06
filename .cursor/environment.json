@@ -1,86 +1,25 @@
 {
-  "name": "Toka Agent Development Environment",
+  "name": "Rust Development Environment",
   "user": "vscode",
   "build": {
     "dockerfile": "Dockerfile.dev",
     "context": "."
   },
   "agentCanUpdateSnapshot": true,
-  "install": "cargo install --path . && cargo build --release && docker-compose up -d prometheus grafana redis",
-  "start": "cargo run --bin toka-cli orchestrate --config config/cursor-agents.toml",
-  "ports": [
-    {
-      "name": "Agent Orchestration API",
-      "port": 8080
-    },
-    {
-      "name": "Agent Communication",
-      "port": 9000
-    },
-    {
-      "name": "Cursor WebSocket",
-      "port": 9001
-    },
-    {
-      "name": "Metrics Dashboard",
-      "port": 9090
-    },
-    {
-      "name": "Grafana Dashboard",
-      "port": 3001
-    },
-    {
-      "name": "Redis Cache",
-      "port": 6379
-    },
-    {
-      "name": "Health Check",
-      "port": 8081
-    }
-  ],
+  "install": "cargo build --release",
+  "start": "echo 'Rust environment ready'",
   "terminals": [
     {
-      "name": "Cursor Agent Orchestrator",
-      "command": "cargo run --bin toka-cli orchestrate --config config/cursor-agents.toml",
-      "description": "Main cursor agent orchestration service with ownership management"
+      "name": "Run Application",
+      "command": "cargo run"
     },
     {
-      "name": "Agent Monitor",
-      "command": "cargo run --bin toka-cli monitor --config config/cursor-agents.toml",
-      "description": "Real-time monitoring of cursor agent status and performance"
+      "name": "Tests",
+      "command": "cargo test"
     },
     {
-      "name": "Metrics Server",
-      "command": "cargo run --bin toka-cli metrics --config config/prometheus.yml",
-      "description": "Prometheus metrics collection for agent performance monitoring"
-    },
-    {
-      "name": "Development Shell",
-      "command": "bash",
-      "description": "Interactive shell for development and debugging"
-    },
-    {
-      "name": "Agent Logs",
-      "command": "tail -f logs/agents.log",
-      "description": "Real-time agent execution logs"
-    },
-    {
-      "name": "Build & Test",
-      "command": "cargo test && cargo clippy",
-      "description": "Run tests and linting for code quality"
-    },
-    {
-      "name": "Docker Services",
-      "command": "docker-compose ps",
-      "description": "Check status of background services (Prometheus, Grafana, Redis)"
-    },
-    {
-      "name": "Agent Health Check",
-      "command": "curl -f http://localhost:8080/health",
-      "description": "Check agent orchestration service health"
+      "name": "Watch Mode",
+      "command": "cargo watch -x run"
     }
-  ],
-  "repositoryDependencies": [
-    "github.com/ScrappyAI/toka"
   ]
 }
