@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     # Core kernel ecosystem (v0.2) - deterministic layer
+    "crates/toka-core",
     "crates/toka-types",
     "crates/toka-auth",
     "crates/toka-bus-core", 
@@ -51,6 +52,9 @@ members = [
 ]
 
 [workspace.dependencies]
+# Core Toka crates
+toka-core = { version = "0.2.1", path = "crates/toka-core" }
+
 # Core dependencies
 tokio = { version = "1.36", features = ["full"] }
 axum = { version = "0.7", features = ["macros"] }

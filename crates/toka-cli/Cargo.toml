@@ -16,6 +16,8 @@ path = "src/main.rs"
 toka-runtime = { path = "../toka-runtime" }
 toka-auth = { path = "../toka-auth" }
 toka-types = { path = "../toka-types" }
+toka-kernel = { path = "../toka-kernel" }
+toka-bus-core = { path = "../toka-bus-core" }
 
 # Storage components
 toka-store-memory = { path = "../toka-store-memory" }

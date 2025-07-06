@@ -14,8 +14,78 @@ use tracing::{info, error, debug};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use toka_auth::{JwtHs256Validator, TokenValidator, Claims};
-use toka_runtime::{Runtime, RuntimeConfig, StorageConfig};
+use toka_kernel::{Kernel, WorldState};
+use toka_bus_core::{InMemoryBus, EventBus};
 use toka_types::{Message, Operation, TaskSpec, AgentSpec, EntityId};
+use tokio::sync::broadcast;
+
+// Simple runtime configuration enum
+#[derive(Debug, Clone)]
+enum StorageConfig {
+    Memory,
+    Sled { path: String },
+    Sqlite { path: String },
+}
+
+// Simple runtime configuration
+#[derive(Debug, Clone)]
+struct RuntimeConfig {
+    bus_capacity: usize,
+    storage: StorageConfig,
+    spawn_kernel: bool,
+    persistence_buffer_size: usize,
+}
+
+// Simple runtime wrapper that combines kernel and bus
+struct Runtime {
+    kernel: Arc<Kernel>,
+    bus: Arc<InMemoryBus>,
+    world_state: Arc<tokio::sync::RwLock<WorldState>>,
+    event_rx: broadcast::Receiver<toka_bus_core::KernelEvent>,
+}
+
+impl Runtime {
+    async fn new(config: RuntimeConfig, auth: Arc<dyn TokenValidator>) -> Result<Self> {
+        // Create world state
+        let world_state = WorldState::default();
+        
+        // Create event bus
+        let bus = Arc::new(InMemoryBus::default());
+        
+        // Create kernel
+        let kernel = Arc::new(Kernel::new(world_state, auth, bus.clone()));
+        
+        // Get world state reference
+        let world_state = kernel.state_ptr();
+        
+        // Subscribe to events
+        let event_rx = bus.subscribe();
+        
+        Ok(Self {
+            kernel,
+            bus,
+            world_state,
+            event_rx,
+        })
+    }
+    
+    async fn submit(&self, message: Message) -> Result<toka_bus_core::KernelEvent> {
+        self.kernel.submit(message).await
+    }
+    
+    fn world_state(&self) -> Arc<tokio::sync::RwLock<WorldState>> {
+        self.world_state.clone()
+    }
+    
+    fn subscribe(&self) -> broadcast::Receiver<toka_bus_core::KernelEvent> {
+        self.bus.subscribe()
+    }
+    
+    async fn shutdown(&self) -> Result<()> {
+        // Placeholder for shutdown logic
+        Ok(())
+    }
+}
 
 //─────────────────────────────
 //  CLI structure

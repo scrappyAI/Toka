@@ -68,26 +68,21 @@ pub use toka_runtime::{
     SecurityLevel, Capability, CapabilitySet, ExecutionContext,
 };
 
+// Import modules
+pub mod core;
+pub mod tools;
+pub mod wrappers;
+pub mod runtime_integration;
+pub mod manifest;
+pub mod loader;
+
 // Re-export core types
 pub use crate::core::{Tool, ToolRegistry, ToolParams, ToolResult, ToolMetadata};
-
-// Re-export tools module
-pub use crate::tools;
-
-// Re-export wrappers module
-pub use crate::wrappers;
-
-// Re-export runtime integration
-pub use crate::runtime_integration;
-
-// Re-export manifest and loader
-pub use crate::core::{manifest, loader};
 
 /// Unified tool system that integrates all components
 /// 
 /// This is a placeholder for the full unified system that will be implemented
 /// once all dependencies are available.
-#[derive(Debug)]
 pub struct ToolSystem {
     /// Kernel for security enforcement
     pub kernel: Arc<Kernel>,
@@ -120,7 +115,7 @@ impl ToolSystem {
     
     /// Create a new tool system with development preset
     pub async fn development() -> Result<Self> {
-        let mut system = Self::new().await?;
+        let system = Self::new().await?;
         
         // Register essential tools for development
         tools::register_essential_tools(&system.registry).await?;
@@ -149,7 +144,6 @@ impl ToolSystem {
 }
 
 /// Builder for creating a complete tool system
-#[derive(Debug)]
 pub struct ToolSystemBuilder {
     include_core_tools: bool,
     include_runtime_engines: bool,
@@ -186,7 +180,7 @@ impl ToolSystemBuilder {
     
     /// Build the complete tool system
     pub async fn build(self) -> Result<ToolSystem> {
-        let mut system = ToolSystem::new().await?;
+        let system = ToolSystem::new().await?;
         
         if self.include_core_tools {
             tools::register_essential_tools(&system.registry).await?;
@@ -215,7 +209,7 @@ pub mod presets {
     pub async fn testing_system() -> Result<ToolSystem> {
         ToolSystemBuilder::new()
             .with_core_tools()
-            .with_security_level(SecurityLevel::Sandboxed)
+            .with_security_level(SecurityLevel::Restricted)
             .build()
             .await
     }
@@ -263,7 +257,7 @@ mod tests {
     async fn test_builder_pattern() -> Result<()> {
         let system = ToolSystemBuilder::new()
             .with_core_tools()
-            .with_security_level(SecurityLevel::Sandboxed)
+            .with_security_level(SecurityLevel::Restricted)
             .build()
             .await?;
         
