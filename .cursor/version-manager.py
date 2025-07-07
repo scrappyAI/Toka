@@ -44,7 +44,7 @@ class SchemaValidator:
         self._load_schemas()
     
     def _load_schemas(self):
-        """Load all schema files"""
+        """Load all schema files - JSON schemas are canonical"""
         try:
             import jsonschema
             self.jsonschema = jsonschema
@@ -53,7 +53,14 @@ class SchemaValidator:
             self.jsonschema = None
             return
         
+        # JSON schemas are canonical, YAML schemas are deprecated
         schema_files = {
+            'cursor-rule': self.schema_dir / 'cursor-rule-schema.json',
+            'agent-spec': self.schema_dir / 'agent-spec-schema.json'
+        }
+        
+        # Fallback to YAML schemas if JSON doesn't exist (for backward compatibility)
+        fallback_schemas = {
             'cursor-rule': self.schema_dir / 'cursor-rule-schema.yaml',
             'agent-spec': self.schema_dir / 'agent-spec-schema.yaml'
         }
@@ -61,7 +68,13 @@ class SchemaValidator:
         for schema_name, schema_path in schema_files.items():
             if schema_path.exists():
                 with open(schema_path, 'r') as f:
+                    self.schemas[schema_name] = json.load(f)
+            elif fallback_schemas[schema_name].exists():
+                print(f"Warning: Using deprecated YAML schema for {schema_name}. Please migrate to JSON.")
+                with open(fallback_schemas[schema_name], 'r') as f:
                     self.schemas[schema_name] = yaml.safe_load(f)
+            else:
+                print(f"Warning: No schema found for {schema_name}")
     
     def validate_cursor_rule(self, rule_data: Dict) -> Tuple[bool, List[str]]:
         """Validate cursor rule against schema"""
@@ -212,8 +225,12 @@ class AutoVersionManager:
     def update_cursor_rule(self, rule_path: Path, auto_version: bool = True) -> bool:
         """Update cursor rule with automatic versioning"""
         try:
+            # Support both YAML and JSON files
             with open(rule_path, 'r') as f:
-                data = yaml.safe_load(f)
+                if rule_path.suffix == '.json':
+                    data = json.load(f)
+                else:
+                    data = yaml.safe_load(f)
             
             if not data:
                 print(f"Error: Empty or invalid YAML file: {rule_path}")
@@ -227,8 +244,11 @@ class AutoVersionManager:
                     print(f"  - {error}")
                 return False
             
-            # Calculate checksum
-            content = yaml.dump(data, default_flow_style=False)
+            # Calculate checksum based on file format
+            if rule_path.suffix == '.json':
+                content = json.dumps(data, indent=2, sort_keys=False)
+            else:
+                content = yaml.dump(data, default_flow_style=False)
             checksum = self._calculate_checksum(content)
             
             # Get current version info
@@ -263,9 +283,12 @@ class AutoVersionManager:
                 'checksum': checksum
             })
             
-            # Save updated file
+            # Save updated file in original format
             with open(rule_path, 'w') as f:
-                yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+                if rule_path.suffix == '.json':
+                    json.dump(data, f, indent=2, sort_keys=False)
+                else:
+                    yaml.dump(data, f, default_flow_style=False, sort_keys=False)
             
             # Update version database
             self.version_db[file_key] = {
@@ -287,8 +310,12 @@ class AutoVersionManager:
     def update_agent_spec(self, spec_path: Path, auto_version: bool = True) -> bool:
         """Update agent spec with automatic versioning"""
         try:
+            # Support both YAML and JSON files
             with open(spec_path, 'r') as f:
-                data = yaml.safe_load(f)
+                if spec_path.suffix == '.json':
+                    data = json.load(f)
+                else:
+                    data = yaml.safe_load(f)
             
             if not data:
                 print(f"Error: Empty or invalid YAML file: {spec_path}")
@@ -302,8 +329,11 @@ class AutoVersionManager:
                     print(f"  - {error}")
                 return False
             
-            # Calculate checksum
-            content = yaml.dump(data, default_flow_style=False)
+            # Calculate checksum based on file format
+            if spec_path.suffix == '.json':
+                content = json.dumps(data, indent=2, sort_keys=False)
+            else:
+                content = yaml.dump(data, default_flow_style=False)
             checksum = self._calculate_checksum(content)
             
             # Get current version info
@@ -339,9 +369,12 @@ class AutoVersionManager:
                 'checksum': checksum
             })
             
-            # Save updated file
+            # Save updated file in original format
             with open(spec_path, 'w') as f:
-                yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+                if spec_path.suffix == '.json':
+                    json.dump(data, f, indent=2, sort_keys=False)
+                else:
+                    yaml.dump(data, f, default_flow_style=False, sort_keys=False)
             
             # Update version database
             self.version_db[file_key] = {
@@ -367,6 +400,9 @@ class AutoVersionManager:
             for rule_file in self.cursor_rules_dir.glob('*.yaml'):
                 if not self.update_cursor_rule(rule_file, auto_version):
                     success = False
+            for rule_file in self.cursor_rules_dir.glob('*.json'):
+                if not self.update_cursor_rule(rule_file, auto_version):
+                    success = False
         
         self._save_version_db()
         return success
@@ -376,6 +412,9 @@ class AutoVersionManager:
         success = True
         if self.agent_specs_dir.exists():
             for spec_file in self.agent_specs_dir.rglob('*.yaml'):
+                if not self.update_agent_spec(spec_file, auto_version):
+                    success = False
+            for spec_file in self.agent_specs_dir.rglob('*.json'):
                 if not self.update_agent_spec(spec_file, auto_version):
                     success = False
         
@@ -410,7 +449,7 @@ def main():
     success = True
     
     if args.file:
-        if args.file.suffix == '.yaml':
+        if args.file.suffix in ['.yaml', '.json']:
             if 'rules' in str(args.file):
                 success = manager.update_cursor_rule(args.file, auto_version)
             elif 'agents' in str(args.file):
@@ -419,7 +458,7 @@ def main():
                 print(f"Unknown file type: {args.file}")
                 success = False
         else:
-            print(f"Only YAML files are supported: {args.file}")
+            print(f"Only YAML and JSON files are supported: {args.file}")
             success = False
     elif args.rules:
         success = manager.update_all_rules(auto_version)

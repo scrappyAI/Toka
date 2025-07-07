@@ -1,0 +1,140 @@
+{
+  "name": "TestingQuality",
+  "version": "1.0.0",
+  "description": "Testing guidelines and code coverage requirements",
+  "category": "testing",
+  "priority": 80,
+  "always_apply": true,
+  "extends": [
+    "CoreBaseline"
+  ],
+  "objectives": [
+    "Improve test coverage meaningfully",
+    "Focus on under-tested modules and edge cases",
+    "Avoid superficial tests that add no value"
+  ],
+  "guidelines": {
+    "coverage_strategy": [
+      "Focus on core logic and public APIs",
+      "Target error handling and branching logic",
+      "Prioritize high-risk modules with decision complexity"
+    ],
+    "test_design": [
+      "Keep tests isolated and repeatable",
+      "No hidden state or side effects",
+      "Assert intent, not implementation details"
+    ],
+    "quality_gates": [
+      "Maintain minimum 80% coverage threshold",
+      "Generate reports and verify improvements",
+      "Document coverage gains in commit messages"
+    ]
+  },
+  "coverage_strategy": {
+    "tools": [
+      "cargo-tarpaulin",
+      "grcov"
+    ],
+    "targets": [
+      "Core logic and public APIs",
+      "Error handling and branching logic",
+      "High-risk modules with decision complexity"
+    ]
+  },
+  "test_types": {
+    "unit_tests": {
+      "purpose": "Small, deterministic logic",
+      "focus": [
+        "Pure functions",
+        "Data transformations",
+        "Business rules"
+      ],
+      "naming": "test_<functionality>_<condition>"
+    },
+    "integration_tests": {
+      "purpose": "Crate-level behavior and cross-module flows",
+      "focus": [
+        "API contracts",
+        "Module interactions",
+        "End-to-end scenarios"
+      ]
+    },
+    "coverage_areas": {
+      "required": [
+        "Success cases (happy paths)",
+        "Boundary conditions (empty, max values)",
+        "Expected failures and error paths",
+        "Edge cases and regressions"
+      ]
+    }
+  },
+  "test_design": {
+    "principles": [
+      "Keep tests isolated and repeatable",
+      "No hidden state or side effects",
+      "Use fixtures to reduce duplication",
+      "Assert intent, not implementation details",
+      "Prefer clarity over cleverness"
+    ]
+  },
+  "quality_gates": {
+    "commands": [
+      "cargo test --workspace",
+      "cargo clippy --workspace --all-targets -- -D warnings",
+      "cargo fmt --all -- --check"
+    ],
+    "coverage": {
+      "minimum_threshold": 80,
+      "tracking": "Generate reports and verify improvements",
+      "documentation": "Document coverage gains in commit messages"
+    }
+  },
+  "debugging_protocol": {
+    "reproduction": [
+      "Add minimal failing test when possible",
+      "Capture inputs, environment, and trigger steps",
+      "Log additional context for intermittent issues"
+    ],
+    "root_cause_analysis": {
+      "tools": [
+        "RUST_BACKTRACE=1",
+        "RUST_LOG=debug",
+        "gdb/lldb"
+      ],
+      "approach": [
+        "Use targeted dbg!(), tracing, or structured logging",
+        "Validate assumptions with assert! and expect",
+        "Understand error semantics (panic vs Result vs Option)"
+      ]
+    },
+    "fix_requirements": [
+      "Fix root cause, not just symptoms",
+      "Include justification comment explaining why it's safe",
+      "Add regression test that would catch original issue",
+      "Use proper error propagation with context"
+    ]
+  },
+  "commit_conventions": {
+    "testing": {
+      "format": "test(<scope>): <description>",
+      "examples": [
+        "test(parser): add edge case tests for empty config",
+        "test(auth): cover expired token validation"
+      ]
+    },
+    "debugging": {
+      "format": "fix(<scope>): <description> + test",
+      "requirements": [
+        "Reference failure cause",
+        "Include test ID if applicable",
+        "Cite before/after metrics in body"
+      ]
+    }
+  },
+  "metadata": {
+    "created": "2025-07-07",
+    "modified": "2025-07-07T05:22:50.984883+00:00",
+    "schema_version": "1.0.0",
+    "checksum": "057377bc092f26f2"
+  }
+}

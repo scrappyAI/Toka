@@ -1,0 +1,128 @@
+{
+  "name": "Documentation",
+  "version": "1.0.0",
+  "description": "Comprehensive documentation generation and maintenance guidelines",
+  "category": "documentation",
+  "priority": 70,
+  "always_apply": true,
+  "extends": [
+    "CoreBaseline"
+  ],
+  "objectives": [
+    "Achieve zero missing_docs warnings",
+    "Keep docs aligned with current code",
+    "Provide architectural diagrams using Mermaid",
+    "Ensure reliable doc builds across platforms"
+  ],
+  "guidelines": {
+    "documentation_requirements": [
+      "Document every pub struct, enum, trait, function, macro with ///",
+      "Include concise, example-driven descriptions",
+      "Add #![deny(missing_docs)] for new code"
+    ],
+    "quality_checks": [
+      "Enforce #![deny(missing_docs)]",
+      "Run cargo test --doc --workspace",
+      "CI must fail on new missing_docs warnings"
+    ],
+    "maintenance": [
+      "Verify examples compile correctly",
+      "Confirm Mermaid diagrams render on GitHub",
+      "Check all missing_docs warnings resolved"
+    ]
+  },
+  "toolchain": {
+    "required_tools": [
+      "cargo-readme",
+      "mdbook",
+      "mdbook-mermaid",
+      "graphviz"
+    ],
+    "installation": {
+      "command": "cargo install --locked cargo-readme mdbook mdbook-mermaid",
+      "macos_extra": "brew install graphviz"
+    }
+  },
+  "generation_workflow": {
+    "api_docs": {
+      "command": "RUSTDOCFLAGS=\"-Dwarnings --cfg docsrs\" cargo doc --workspace --all-features --no-deps",
+      "local_preview": "cargo doc --open"
+    },
+    "crate_readmes": {
+      "command": "cargo readme -r > README.md",
+      "location": "Run in each crate root"
+    },
+    "architecture_book": {
+      "build": "cd docs/book && mdbook build",
+      "serve": "mdbook serve -n 127.0.0.1 -p 3000"
+    },
+    "one_liner": "./scripts/gen-docs.sh"
+  },
+  "documentation_requirements": {
+    "crate_level": [
+      "Start lib.rs/main.rs with //! describing purpose and API",
+      "Include high-level example usage",
+      "Add #![deny(missing_docs)] for new code"
+    ],
+    "public_items": [
+      "Document every pub struct, enum, trait, function, macro with ///",
+      "Include concise, example-driven descriptions",
+      "Show happy path first, advanced details later"
+    ],
+    "modules": [
+      "Add //! headers explaining scope and relationships",
+      "Use #[doc(hidden)] for intentionally undocumented internals"
+    ]
+  },
+  "mermaid_diagrams": {
+    "when_to_use": "When prose becomes complex",
+    "types": [
+      "Component/package graphs (high-level crates and deps)",
+      "Sequence diagrams for async workflows",
+      "State machines for finite-state logic"
+    ],
+    "storage": "Large diagrams in /docs/architecture/*.md",
+    "embedding": "Link from crate README or root docs"
+  },
+  "quality_checks": {
+    "enforcement": "#![deny(missing_docs)]",
+    "linting": "cargo clippy --workspace --all-targets -- -D warnings",
+    "doc_tests": "cargo test --doc --workspace",
+    "local_verification": "cargo doc --open"
+  },
+  "ci_integration": {
+    "github_actions": "name: Docs\non:\n  push: {branches: [main]}\n  pull_request:\njobs:\n  build-docs:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: dtolnay/rust-toolchain@stable\n      - run: cargo install --locked cargo-readme mdbook mdbook-mermaid\n      - run: RUSTDOCFLAGS=\"-Dwarnings --cfg docsrs\" cargo doc --workspace --all-features --no-deps\n      - run: ./scripts/gen-docs.sh\n      - uses: actions/upload-artifact@v4\n        with:\n          name: docs\n          path: |\n            target/doc\n            docs/book/book\n",
+    "quality_gates": [
+      "cargo test --doc --workspace",
+      "cargo clippy --workspace --all-targets -- -D warnings",
+      "CI must fail on new missing_docs warnings"
+    ]
+  },
+  "maintenance_process": {
+    "audit": {
+      "command": "cargo doc --workspace --no-deps",
+      "ci_enforcement": "RUSTDOCFLAGS=\"-Dwarnings\" cargo doc --workspace --no-deps",
+      "tracking": "Record issues in /docs/todo.md"
+    },
+    "review_checklist": [
+      "Verify examples compile correctly",
+      "Confirm Mermaid diagrams render on GitHub",
+      "Check all missing_docs warnings resolved",
+      "Ensure API docs match current behavior"
+    ]
+  },
+  "commit_conventions": {
+    "format": "docs(<scope>): <description>",
+    "examples": [
+      "docs(core): regen README.md via cargo-readme",
+      "docs(book): add mermaid sequence diagram for payment flow",
+      "docs(auth): fix missing_docs warnings on token structs"
+    ]
+  },
+  "metadata": {
+    "created": "2025-07-07",
+    "modified": "2025-07-07T05:22:50.966899+00:00",
+    "schema_version": "1.0.0",
+    "checksum": "2bb61ec7f497aecc"
+  }
+}

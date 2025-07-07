@@ -1,0 +1,229 @@
+{
+  "name": "ArchitectureResearch",
+  "version": "1.0.0",
+  "description": "Architecture documentation, diagram generation, and codebase research protocols",
+  "category": "architecture",
+  "priority": 50,
+  "always_apply": false,
+  "extends": [
+    "CoreBaseline"
+  ],
+  "objectives": [
+    "Generate code-accurate architectural diagrams",
+    "Conduct comprehensive codebase analysis",
+    "Maintain current architectural documentation",
+    "Support protocol adherence (A2A, MCP)"
+  ],
+  "guidelines": {
+    "diagram_generation": [
+      "Reflect current codebase (HEAD) in every diagram",
+      "Store artifacts with deterministic filenames",
+      "Keep architecture.md up-to-date with latest diagrams"
+    ],
+    "codebase_research": [
+      "Deep-dive analysis of entire Rust workspace",
+      "Generate comprehensive reports with findings",
+      "Use data-driven profiling, not intuition"
+    ],
+    "protocol_adherence": [
+      "Support A2A and MCP protocols",
+      "Implement proper security and validation",
+      "Document protocol versions in rustdoc"
+    ]
+  },
+  "diagram_generation": {
+    "goals": [
+      "Reflect current codebase (HEAD) in every diagram",
+      "Store artifacts with deterministic filenames",
+      "Keep architecture.md up-to-date with latest diagrams"
+    ],
+    "toolchain": {
+      "required": [
+        "cargo metadata --format-version=1",
+        "cargo deps --filter '*' --dot-output",
+        "cargo mod graph",
+        "dot (Graphviz)",
+        "git rev-parse HEAD"
+      ],
+      "custom": "./scripts/gen_mermaid.rs"
+    },
+    "workflow": {
+      "preparation": [
+        "cargo check --workspace --all-features",
+        "mkdir -p target/arch/$(date +%Y%m%d_%H%M%S)",
+        "export GIT_SHA=$(git rev-parse --short HEAD)"
+      ],
+      "crate_topology": {
+        "commands": [
+          "cargo deps --no-deps --dot-output target/arch/dep_graph.dot",
+          "dot -Tsvg target/arch/dep_graph.dot -o target/arch/crate_topology.svg",
+          "scripts/gen_mermaid.rs target/arch/dep_graph.dot > docs/architecture/crate_topology.mmd"
+        ]
+      },
+      "module_graphs": {
+        "condition": "For crates with LOC > 1k or pub API > 20",
+        "command": "cargo mod graph -p crate_name -o target/arch/crate_name.dot"
+      },
+      "data_flows": {
+        "approach": "Trace via integration tests or instrumentation",
+        "requirement": "Must come from tracing hooks, not hand-drawn",
+        "example": "RUST_LOG=trace APP_TRACE=mermaid cargo test"
+      }
+    }
+  },
+  "codebase_research": {
+    "scope": "Deep-dive analysis of entire Rust workspace",
+    "deliverable": "/docs/research/<date>_workspace_report.md",
+    "analysis_tools": {
+      "structural": [
+        "cargo metadata",
+        "cargo tree",
+        "cargo deps"
+      ],
+      "static": [
+        "cargo clippy",
+        "cargo geiger",
+        "cargo udeps"
+      ],
+      "dynamic": [
+        "cargo tarpaulin",
+        "cargo flamegraph",
+        "cargo bloat"
+      ],
+      "search": [
+        "rg",
+        "grep -R"
+      ]
+    },
+    "workflow": {
+      "structural_survey": [
+        "cargo metadata --format-version=1 > meta.json",
+        "cargo tree -e features > tree.txt",
+        "cargo deps --no-deps --dot-output deps.dot",
+        "Highlight crates with >1k LOC or >5 direct deps"
+      ],
+      "static_analysis": [
+        "cargo clippy --workspace --all-targets -- -D warnings",
+        "cargo geiger --all-features > unsafe.txt",
+        "cargo udeps --workspace > unused.txt"
+      ],
+      "dynamic_analysis": [
+        "cargo tarpaulin --workspace --out Html",
+        "cargo flamegraph --bin perf_target -o flame.svg",
+        "cargo bloat --workspace -n 20 > bloat.txt"
+      ],
+      "report_generation": {
+        "sections": [
+          "Executive summary (1-2 paragraphs)",
+          "Crate matrix (name, LOC, deps, pub API count)",
+          "Embedded diagrams (SVG or Mermaid)",
+          "Coverage, unsafe counts, bloat analysis",
+          "Findings & Recommendations (Bug/Perf/Cleanup/Docs)",
+          "Next Steps checklist"
+        ]
+      }
+    }
+  },
+  "protocol_adherence": {
+    "supported_protocols": {
+      "a2a": {
+        "name": "Google Agent-to-Agent (A2A)",
+        "use_case": "Agent \u2194 Agent coordination",
+        "requirements": [
+          "Expose /agent HTTP endpoint serving JSON Agent Card",
+          "Implement POST /task accepting Task objects",
+          "Stream updates via SSE",
+          "Handle artifacts per spec"
+        ]
+      },
+      "mcp": {
+        "name": "Anthropic Model Context Protocol (MCP)",
+        "use_case": "LLM \u2194 Tool/Data context exchange",
+        "requirements": [
+          "Implement JSON-RPC 2.0 methods",
+          "Support capability negotiation via initialize",
+          "Handle tools/*, prompts/*, resources/*"
+        ]
+      }
+    },
+    "implementation_requirements": {
+      "security": [
+        "Use OAuth2/service tokens per spec",
+        "Enforce explicit user consent for tool execution",
+        "Explicit approval for cross-agent data sharing"
+      ],
+      "validation": [
+        "cargo test --features 'mcp_conformance'",
+        "cargo test --features 'a2a_conformance'",
+        "Validate JSON schemas against upstream specs"
+      ],
+      "documentation": [
+        "Document protocol version in rustdoc",
+        "Create Mermaid diagrams for complex flows",
+        "Reference local protocol docs"
+      ]
+    }
+  },
+  "optimization_guidelines": {
+    "performance_focus": {
+      "metrics": [
+        "CPU time",
+        "Memory footprint",
+        "Binary size"
+      ],
+      "approach": "Data-driven profiling, not intuition",
+      "tools": [
+        "flamegraph",
+        "dhat",
+        "cargo-bloat"
+      ]
+    },
+    "optimization_workflow": {
+      "planning": [
+        "Define KPIs (latency \u2264 10ms P95, binary \u2264 5MB, etc.)",
+        "Select representative workloads",
+        "Add tracking issue with target metrics"
+      ],
+      "profiling": [
+        "cargo flamegraph --bin app --profile=release",
+        "dhat -- target/release/app <args>",
+        "cargo bloat --release -n 20",
+        "Document findings in /docs/perf/"
+      ],
+      "optimization": [
+        "Apply zero-cost wins first (remove clones, etc.)",
+        "Consider algorithmic improvements",
+        "Guard with PERF: comments",
+        "Use benchmarks for validation"
+      ]
+    }
+  },
+  "commit_conventions": {
+    "architecture": {
+      "format": "arch: <description>",
+      "example": "arch: regen diagrams @ abc1234 (2025-06-28)"
+    },
+    "research": {
+      "format": "research: <description>",
+      "example": "research: complete workspace analysis for Q1"
+    },
+    "protocol": {
+      "format": "proto(<protocol>): <description>",
+      "examples": [
+        "proto(a2a): implement agent_card endpoint",
+        "proto(mcp): add tool registration capability"
+      ]
+    },
+    "performance": {
+      "format": "perf(<scope>): <description>",
+      "requirements": "Include before/after metrics in commit body",
+      "example": "perf(core): halve allocation count in parser"
+    }
+  },
+  "metadata": {
+    "created": "2025-07-07",
+    "modified": "2025-07-07T05:22:50.977872+00:00",
+    "schema_version": "1.0.0",
+    "checksum": "ab942759bc6f5101"
+  }
+}

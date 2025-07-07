@@ -1,13 +1,13 @@
 {
   ".cursor/rules/00-core-baseline.yaml": {
-    "version": "1.0.2",
+    "version": "1.0.6",
     "created": "2025-07-06",
-    "modified": "2025-07-06T03:22:39.504249+00:00",
+    "modified": "2025-07-07T05:22:50.890012+00:00",
     "schema_version": "1.0.0",
-    "checksum": "8f7caed245ea3a37",
+    "checksum": "5b65963127c76292",
     "data": {
       "name": "CoreBaseline",
-      "version": "1.0.2",
+      "version": "1.0.6",
       "description": "Foundational guidelines applicable across all Rust projects in the workspace",
       "category": "core",
       "priority": 100,
@@ -80,21 +80,21 @@
       },
       "metadata": {
         "created": "2025-07-06",
-        "modified": "2025-07-06T03:22:39.504249+00:00",
+        "modified": "2025-07-07T05:22:50.890012+00:00",
         "schema_version": "1.0.0",
-        "checksum": "8f7caed245ea3a37"
+        "checksum": "5b65963127c76292"
       }
     }
   },
   ".cursor/rules/70-github-integration.yaml": {
-    "version": "1.0.2",
+    "version": "1.0.6",
     "created": "2025-07-06",
-    "modified": "2025-07-06T03:22:39.513430+00:00",
+    "modified": "2025-07-07T05:22:50.904893+00:00",
     "schema_version": "1.0.0",
-    "checksum": "2fcf090932dacccf",
+    "checksum": "83b97aeeae407b8a",
     "data": {
       "name": "GitHubIntegration",
-      "version": "1.0.2",
+      "version": "1.0.6",
       "description": "Guidelines for secure and efficient GitHub integration including API usage, CLI tooling, and automation best practices",
       "category": "github",
       "priority": 85,
@@ -209,9 +209,9 @@
       },
       "metadata": {
         "created": "2025-07-06",
-        "modified": "2025-07-06T03:22:39.513430+00:00",
+        "modified": "2025-07-07T05:22:50.904893+00:00",
         "schema_version": "1.0.0",
-        "checksum": "2fcf090932dacccf"
+        "checksum": "83b97aeeae407b8a"
       }
     }
   },
@@ -947,6 +947,1097 @@
           "primary_rate_limit": "5000 requests/hour",
           "secondary_rate_limit": "Dynamic based on resource usage"
         }
+      }
+    }
+  },
+  ".cursor/rules/70-github-integration.json": {
+    "version": "1.0.3",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T05:22:50.991116+00:00",
+    "schema_version": "1.0.0",
+    "checksum": "c99230dcdd3bc53e",
+    "data": {
+      "name": "GitHubIntegration",
+      "version": "1.0.3",
+      "description": "Guidelines for secure and efficient GitHub integration including API usage, CLI tooling, and automation best practices",
+      "category": "github",
+      "priority": 85,
+      "always_apply": false,
+      "extends": [
+        "CoreBaseline",
+        "SecurityBase"
+      ],
+      "objectives": [
+        "Ensure secure GitHub API and CLI integration",
+        "Implement proper rate limiting and error handling",
+        "Maintain audit trails for all GitHub operations",
+        "Follow GitHub best practices for automation",
+        "Enable safe multi-repository operations"
+      ],
+      "guidelines": {
+        "authentication": [
+          "Use GitHub Personal Access Tokens with minimal required scopes",
+          "Implement automatic token rotation where possible",
+          "Store tokens securely using environment variables or secure storage",
+          "Never commit tokens or credentials to version control",
+          "Implement token expiration and renewal workflows",
+          "Use GitHub Apps for production integrations when appropriate"
+        ],
+        "rate_limiting": [
+          "Implement intelligent rate limiting respecting GitHub API limits",
+          "Use conditional requests with ETags to minimize API usage",
+          "Implement exponential backoff for rate limit and abuse detection",
+          "Monitor rate limit consumption and alert on approaching limits",
+          "Prioritize critical operations in rate-limited environments",
+          "Cache API responses when appropriate to reduce API calls"
+        ],
+        "api_usage": [
+          "Use GitHub's REST API v4 (GraphQL) for complex queries when possible",
+          "Implement proper pagination for list operations",
+          "Handle GitHub API errors gracefully with appropriate retry logic",
+          "Validate webhook signatures for security",
+          "Use batch operations where supported to reduce API calls",
+          "Implement proper error categorization (retryable vs permanent)"
+        ],
+        "cli_integration": [
+          "Use GitHub CLI (gh) for local development and automation",
+          "Test CLI operations across different platforms and versions",
+          "Implement proper authentication handling for CLI operations",
+          "Provide fallback mechanisms when CLI operations fail",
+          "Use CLI extensions appropriately for specialized operations",
+          "Handle CLI output parsing robustly across different formats"
+        ],
+        "security": [
+          "Implement webhook signature verification for all webhook endpoints",
+          "Use least-privilege access for GitHub permissions",
+          "Audit GitHub API access patterns regularly",
+          "Implement proper input validation for all GitHub data",
+          "Log all GitHub operations with sufficient detail for audit",
+          "Protect against common GitHub-specific attack vectors"
+        ],
+        "automation": [
+          "Design GitHub operations to be idempotent and safely retryable",
+          "Implement dry-run modes for destructive operations",
+          "Provide clear confirmation prompts for bulk operations",
+          "Maintain audit logs of all automated GitHub operations",
+          "Implement proper rollback mechanisms for failed operations",
+          "Test automation scripts in isolated environments first"
+        ],
+        "error_handling": [
+          "Distinguish between retryable and permanent GitHub API errors",
+          "Implement appropriate timeouts for all GitHub operations",
+          "Provide clear error messages that help diagnose issues",
+          "Log GitHub API responses for debugging purposes",
+          "Handle GitHub service outages gracefully with queuing",
+          "Implement circuit breaker patterns for repeated failures"
+        ],
+        "monitoring": [
+          "Monitor GitHub API usage metrics and success rates",
+          "Track webhook delivery success and failure rates",
+          "Alert on authentication failures or token expiration",
+          "Monitor GitHub operation performance and latency",
+          "Track rate limit consumption patterns",
+          "Implement health checks for GitHub integration components"
+        ]
+      },
+      "commit_conventions": {
+        "github_specific": [
+          "feat(github): add new GitHub API integration",
+          "fix(github): resolve GitHub CLI authentication issue",
+          "docs(github): update GitHub integration documentation",
+          "refactor(github): optimize GitHub API rate limiting"
+        ]
+      },
+      "validation": {
+        "required_tools": [
+          "github-cli (gh)",
+          "curl or equivalent HTTP client",
+          "jq for JSON processing"
+        ],
+        "compatibility": {
+          "github_cli_version": ">=2.0.0",
+          "github_api_version": "v4 (GraphQL) and v3 (REST)",
+          "authentication_methods": [
+            "token",
+            "oauth",
+            "github-app"
+          ]
+        },
+        "tests": [
+          "GitHub API authentication validation",
+          "Rate limiting compliance testing",
+          "Webhook signature verification",
+          "CLI integration cross-platform testing",
+          "Error handling and retry logic validation"
+        ]
+      },
+      "metadata": {
+        "created": "2025-07-07",
+        "modified": "2025-07-07T05:22:50.991116+00:00",
+        "schema_version": "1.0.0",
+        "checksum": "c99230dcdd3bc53e"
+      }
+    }
+  },
+  ".cursor/rules/00-core-baseline.json": {
+    "version": "1.0.3",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T05:22:51.007265+00:00",
+    "schema_version": "1.0.0",
+    "checksum": "15dba71fbefd6752",
+    "data": {
+      "name": "CoreBaseline",
+      "version": "1.0.3",
+      "description": "Foundational guidelines applicable across all Rust projects in the workspace",
+      "category": "core",
+      "priority": 100,
+      "always_apply": true,
+      "extends": [],
+      "objectives": [
+        "Provide canonical engineering conventions",
+        "Encourage reuse and incremental adoption",
+        "Reduce duplication between rule files",
+        "Enable composition through extension mechanism"
+      ],
+      "guidelines": {
+        "security": [
+          "All code must be safe and resilient",
+          "Validate inputs, limit unsafe blocks",
+          "Follow security best practices"
+        ],
+        "documentation": [
+          "Every public item must have doc comments",
+          "Use /// for items, //! for modules/crates",
+          "Keep README.md and Cargo.toml in sync",
+          "Annotate design decisions in comments"
+        ],
+        "code_style": [
+          "Follow rustfmt and clippy standards",
+          "Use descriptive, consistent naming",
+          "Maintain consistent module layout",
+          "Prefer pure functions where possible"
+        ],
+        "testing": [
+          "Write meaningful behavior tests",
+          "Cover edge cases and failure modes",
+          "Use helpers to reduce duplication",
+          "Separate unit from integration tests"
+        ],
+        "error_handling": [
+          "Never ignore Result or Option",
+          "Use rich error context (thiserror, anyhow)",
+          "Avoid panics in library code",
+          "Prefer ? operator for error propagation"
+        ],
+        "dependencies": [
+          "Keep dependency graph shallow",
+          "Audit dependencies regularly",
+          "Prefer standard library solutions",
+          "Justify all third-party crates"
+        ]
+      },
+      "commit_conventions": {
+        "format": "<type>(<scope>): <description>",
+        "types": [
+          "feat",
+          "fix",
+          "docs",
+          "refactor",
+          "test",
+          "chore"
+        ],
+        "examples": [
+          "feat(auth): add JWT token validation",
+          "fix(config): handle missing TOML keys",
+          "docs(api): update README examples"
+        ]
+      },
+      "versioning": {
+        "scheme": "semantic",
+        "patch": "Internal refactors, no API changes",
+        "minor": "Additive changes, backward compatible",
+        "major": "Breaking changes, architectural shifts"
+      },
+      "metadata": {
+        "created": "2025-07-07",
+        "modified": "2025-07-07T05:22:51.007265+00:00",
+        "schema_version": "1.0.0",
+        "checksum": "15dba71fbefd6752"
+      }
+    }
+  },
+  ".cursor/rules/40-development-process.json": {
+    "version": "1.0.1",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T05:22:50.997991+00:00",
+    "schema_version": "1.0.0",
+    "checksum": "3dded98e69930435",
+    "data": {
+      "name": "DevelopmentProcess",
+      "version": "1.0.1",
+      "description": "Development workflow including refactoring, proposals, and date enforcement",
+      "category": "process",
+      "priority": 60,
+      "always_apply": true,
+      "extends": [
+        "CoreBaseline"
+      ],
+      "objectives": [
+        "Ensure systematic and productive refactoring",
+        "Maintain verifiable date accuracy",
+        "Provide structured change proposals"
+      ],
+      "guidelines": {
+        "refactoring": [
+          "Work in small, isolated slices",
+          "Ensure each slice compiles and passes tests",
+          "Respect existing public APIs or provide migration"
+        ],
+        "proposals": [
+          "Draft proposal with template",
+          "Review cycle with GitHub comments",
+          "Update status: DRAFT \u2192 REVIEW \u2192 APPROVED"
+        ],
+        "date_enforcement": [
+          "Use canonical source of 'now'",
+          "Validate dates against git commit timestamps",
+          "Block PRs with future dates or mismatches"
+        ]
+      },
+      "refactoring_guidelines": {
+        "scope": [
+          "Identify target crate(s) or modules within workspace",
+          "Define clear goals (separation of concerns, improved API, etc.)",
+          "Work within crate boundaries"
+        ],
+        "execution": {
+          "principles": [
+            "Work in small, isolated slices",
+            "Ensure each slice compiles and passes tests",
+            "Respect existing public APIs or provide migration",
+            "Use --workspace only for integration checks"
+          ],
+          "commands": [
+            "cargo check -p <crate>",
+            "cargo test -p <crate>",
+            "cargo test --workspace"
+          ]
+        },
+        "commit_strategy": {
+          "format": "refactor(<scope>): <description>",
+          "requirements": [
+            "Descriptive, atomic commits",
+            "One logical step per commit",
+            "Include brief rationale if non-obvious"
+          ],
+          "examples": [
+            "refactor(auth): extract token verification into submodule",
+            "refactor(config): simplify TOML parsing logic"
+          ]
+        }
+      },
+      "change_proposals": {
+        "when_required": [
+          "Changes spanning multiple crates",
+          "Public API alterations",
+          "New optional subsystems (feature flags)"
+        ],
+        "template_structure": {
+          "required_sections": [
+            "Context: current behavior, pain points, metrics",
+            "Goals: numbered objectives",
+            "Proposed Changes: API diffs, feature flags",
+            "Compatibility: breaking changes and migration",
+            "Implementation Plan: task breakdown"
+          ],
+          "format": "Markdown with Mermaid diagrams for complex flows",
+          "location": "/docs/proposals/YYYY-MM-DD_<slug>.md"
+        },
+        "workflow": [
+          "Draft proposal with template",
+          "Review cycle with GitHub comments",
+          "Update status: DRAFT \u2192 REVIEW \u2192 APPROVED",
+          "Convert implementation plan to GitHub issues"
+        ]
+      },
+      "date_enforcement": {
+        "objectives": [
+          "Eliminate hallucinated or stale dates",
+          "Provide canonical source of 'now'",
+          "Ensure tag dates match git commit timestamps"
+        ],
+        "toolchain": {
+          "date_injection": "TODAY=$(date -u +%Y-%m-%d)",
+          "commit_date": "git log -1 --format=%cd --date=format:%Y-%m-%d",
+          "template_replacement": "./scripts/insert_date.sh"
+        },
+        "validation": {
+          "script": "./scripts/validate_dates.py",
+          "patterns": "Scans for \\d{4}-\\d{2}-\\d{2} date patterns",
+          "rules": [
+            "Must match TODAY \u00b10 days OR",
+            "Equal COMMIT_DATE for release docs OR",
+            "Preceded by DATE:EXEMPT comment"
+          ]
+        },
+        "exemptions": {
+          "format": "<!-- DATE:EXEMPT source=\"reference\" -->",
+          "example": "<!-- DATE:EXEMPT source=\"RFC 2119, published 1997-03-01\" -->",
+          "usage": "For historical references only"
+        },
+        "ci_integration": {
+          "commands": [
+            "pip install -r scripts/requirements.txt",
+            "./scripts/validate_dates.py"
+          ],
+          "enforcement": "Block PRs with future dates or mismatches"
+        }
+      },
+      "versioning_requirements": {
+        "per_crate": {
+          "patch": "Internal refactors, no API changes",
+          "minor": "Additive changes, backward compatible",
+          "major": "Breaking changes, architectural shifts"
+        },
+        "workspace_coordination": [
+          "Update version fields in affected Cargo.toml",
+          "Propagate through workspace dependencies",
+          "Tag versions appropriately (e.g., v0.5.0)"
+        ]
+      },
+      "quality_gates": {
+        "before_merge": [
+          "All crates compile cleanly",
+          "All tests pass workspace-wide",
+          "Documentation updated appropriately",
+          "Version numbers aligned with changes"
+        ],
+        "commit_hygiene": [
+          "Squash trivial commits preserving intent",
+          "Maintain clear history",
+          "Include rationale for significant changes"
+        ]
+      },
+      "metadata": {
+        "created": "2025-07-07",
+        "modified": "2025-07-07T05:22:50.997991+00:00",
+        "schema_version": "1.0.0",
+        "checksum": "3dded98e69930435"
+      }
+    }
+  },
+  ".cursor/rules/10-security-base.json": {
+    "version": "1.0.1",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T05:22:51.017808+00:00",
+    "schema_version": "1.0.0",
+    "checksum": "f9790064d727911a",
+    "data": {
+      "name": "SecurityBase",
+      "version": "1.0.1",
+      "description": "Core security hardening guidelines for all components",
+      "category": "security",
+      "priority": 90,
+      "always_apply": true,
+      "extends": [
+        "CoreBaseline"
+      ],
+      "objectives": [
+        "Detect and mitigate common security weaknesses",
+        "Enforce secure-by-default architecture",
+        "Provide clear audit trails"
+      ],
+      "guidelines": {
+        "security_checks": [
+          "Scan for insecure dependencies",
+          "Detect unsafe block usage",
+          "Check for injection risks"
+        ],
+        "code_practices": [
+          "Replace unsafe code with safe patterns",
+          "Validate inputs at system boundaries",
+          "Encrypt secrets at rest"
+        ],
+        "monitoring": [
+          "Add structured logging for auth failures",
+          "Log anomalous input patterns",
+          "Use fuzz testing for parsing logic"
+        ]
+      },
+      "security_checks": {
+        "dependencies": {
+          "tools": [
+            "cargo-audit",
+            "cargo-geiger"
+          ],
+          "actions": [
+            "Scan for insecure dependencies",
+            "Detect unsafe block usage",
+            "Check for injection risks"
+          ]
+        },
+        "code_practices": [
+          "Replace unsafe code with safe patterns",
+          "Validate inputs at system boundaries",
+          "Encrypt secrets at rest",
+          "Scrub in-memory secrets after use"
+        ],
+        "monitoring": [
+          "Add structured logging for auth failures",
+          "Log anomalous input patterns",
+          "Use fuzz testing for parsing logic",
+          "Gate sensitive features with permissions"
+        ]
+      },
+      "commit_requirements": {
+        "security_commits": {
+          "format": "fix(auth): <description of vulnerability fixed>",
+          "required_fields": [
+            "Intent description",
+            "Risk addressed",
+            "Test coverage added"
+          ]
+        }
+      },
+      "maintenance": {
+        "tagging": "// SECURITY: <explanation>",
+        "testing": "Write tests for edge cases and regressions",
+        "reviews": "Security changes require dual approval"
+      },
+      "metadata": {
+        "created": "2025-07-07",
+        "modified": "2025-07-07T05:22:51.017808+00:00",
+        "schema_version": "1.0.0",
+        "checksum": "f9790064d727911a"
+      }
+    }
+  },
+  ".cursor/rules/11-security-agents.json": {
+    "version": "1.0.1",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T05:22:51.031156+00:00",
+    "schema_version": "1.0.0",
+    "checksum": "a61fd939544a1e48",
+    "data": {
+      "name": "SecurityAgents",
+      "version": "1.0.1",
+      "description": "Security guidelines for AI agents with execution capabilities",
+      "category": "security",
+      "priority": 85,
+      "always_apply": false,
+      "extends": [
+        "CoreBaseline",
+        "SecurityBase"
+      ],
+      "objectives": [
+        "Prevent unauthorized or irreversible agent actions",
+        "Constrain agents within observable environments",
+        "Prevent prompt injection and capability escalation"
+      ],
+      "guidelines": {
+        "agent_constraints": [
+          "All agents must declare capabilities explicitly",
+          "Disallow dynamic tool access unless authorized",
+          "Prefer capability-based over natural language interfaces"
+        ],
+        "sandboxing": [
+          "Run in isolated environments (WASM, Docker, virtual VFS)",
+          "Log inputs and outputs deterministically",
+          "Enforce timeouts and memory limits"
+        ],
+        "input_hardening": [
+          "Sanitize all user input before LLM forwarding",
+          "Detect prompt injection patterns",
+          "Use structured schemas for critical actions"
+        ]
+      },
+      "agent_constraints": {
+        "capabilities": [
+          "All agents must declare capabilities explicitly",
+          "Disallow dynamic tool access unless authorized",
+          "Prefer capability-based over natural language interfaces"
+        ],
+        "sandboxing": {
+          "requirements": [
+            "Run in isolated environments (WASM, Docker, virtual VFS)",
+            "Log inputs and outputs deterministically",
+            "Enforce timeouts and memory limits",
+            "Disable network/filesystem unless scoped"
+          ]
+        },
+        "input_hardening": [
+          "Sanitize all user input before LLM forwarding",
+          "Detect prompt injection patterns",
+          "Use structured schemas for critical actions",
+          "Validate against instruction leakage"
+        ]
+      },
+      "logging_requirements": {
+        "mandatory_fields": [
+          "original_intent",
+          "tools_invoked",
+          "outcome_status",
+          "failure_state"
+        ],
+        "storage": [
+          "Use tamper-evident formats for critical actions",
+          "Include timestamps and agent IDs",
+          "Audit trail for financial/security operations"
+        ]
+      },
+      "policy_enforcement": {
+        "runtime_policies": [
+          "Define constraints per invocation layer",
+          "Use static rules for high-risk actions (DELETE, TRANSFER, EXEC)",
+          "Dynamic evaluation for context-sensitive decisions"
+        ],
+        "memory_safety": [
+          "Agent memory ephemeral by default",
+          "Namespace by agent ID and purpose",
+          "Include timestamps and access reasons"
+        ]
+      },
+      "fail_safe_defaults": [
+        "Fail closed when in doubt",
+        "Elevated actions require human approval",
+        "Avoid speculative or irreversible actions",
+        "Use confirmation rounds for critical operations"
+      ],
+      "tool_constraints": {
+        "registration": [
+          "Central manifest with ID, version, capability",
+          "Deny runtime-discovered tools",
+          "Require authorization for privileged tools"
+        ],
+        "isolation": [
+          "Subprocess/network tools in sandboxes",
+          "Mark privileged tools explicitly",
+          "Emit audit logs with trace IDs"
+        ]
+      },
+      "metadata": {
+        "created": "2025-07-07",
+        "modified": "2025-07-07T05:22:51.031156+00:00",
+        "schema_version": "1.0.0",
+        "checksum": "a61fd939544a1e48"
+      }
+    }
+  },
+  ".cursor/rules/30-documentation.json": {
+    "version": "1.0.0",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T05:22:50.966899+00:00",
+    "schema_version": "1.0.0",
+    "checksum": "2bb61ec7f497aecc",
+    "data": {
+      "name": "Documentation",
+      "version": "1.0.0",
+      "description": "Comprehensive documentation generation and maintenance guidelines",
+      "category": "documentation",
+      "priority": 70,
+      "always_apply": true,
+      "extends": [
+        "CoreBaseline"
+      ],
+      "objectives": [
+        "Achieve zero missing_docs warnings",
+        "Keep docs aligned with current code",
+        "Provide architectural diagrams using Mermaid",
+        "Ensure reliable doc builds across platforms"
+      ],
+      "guidelines": {
+        "documentation_requirements": [
+          "Document every pub struct, enum, trait, function, macro with ///",
+          "Include concise, example-driven descriptions",
+          "Add #![deny(missing_docs)] for new code"
+        ],
+        "quality_checks": [
+          "Enforce #![deny(missing_docs)]",
+          "Run cargo test --doc --workspace",
+          "CI must fail on new missing_docs warnings"
+        ],
+        "maintenance": [
+          "Verify examples compile correctly",
+          "Confirm Mermaid diagrams render on GitHub",
+          "Check all missing_docs warnings resolved"
+        ]
+      },
+      "toolchain": {
+        "required_tools": [
+          "cargo-readme",
+          "mdbook",
+          "mdbook-mermaid",
+          "graphviz"
+        ],
+        "installation": {
+          "command": "cargo install --locked cargo-readme mdbook mdbook-mermaid",
+          "macos_extra": "brew install graphviz"
+        }
+      },
+      "generation_workflow": {
+        "api_docs": {
+          "command": "RUSTDOCFLAGS=\"-Dwarnings --cfg docsrs\" cargo doc --workspace --all-features --no-deps",
+          "local_preview": "cargo doc --open"
+        },
+        "crate_readmes": {
+          "command": "cargo readme -r > README.md",
+          "location": "Run in each crate root"
+        },
+        "architecture_book": {
+          "build": "cd docs/book && mdbook build",
+          "serve": "mdbook serve -n 127.0.0.1 -p 3000"
+        },
+        "one_liner": "./scripts/gen-docs.sh"
+      },
+      "documentation_requirements": {
+        "crate_level": [
+          "Start lib.rs/main.rs with //! describing purpose and API",
+          "Include high-level example usage",
+          "Add #![deny(missing_docs)] for new code"
+        ],
+        "public_items": [
+          "Document every pub struct, enum, trait, function, macro with ///",
+          "Include concise, example-driven descriptions",
+          "Show happy path first, advanced details later"
+        ],
+        "modules": [
+          "Add //! headers explaining scope and relationships",
+          "Use #[doc(hidden)] for intentionally undocumented internals"
+        ]
+      },
+      "mermaid_diagrams": {
+        "when_to_use": "When prose becomes complex",
+        "types": [
+          "Component/package graphs (high-level crates and deps)",
+          "Sequence diagrams for async workflows",
+          "State machines for finite-state logic"
+        ],
+        "storage": "Large diagrams in /docs/architecture/*.md",
+        "embedding": "Link from crate README or root docs"
+      },
+      "quality_checks": {
+        "enforcement": "#![deny(missing_docs)]",
+        "linting": "cargo clippy --workspace --all-targets -- -D warnings",
+        "doc_tests": "cargo test --doc --workspace",
+        "local_verification": "cargo doc --open"
+      },
+      "ci_integration": {
+        "github_actions": "name: Docs\non:\n  push: {branches: [main]}\n  pull_request:\njobs:\n  build-docs:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: dtolnay/rust-toolchain@stable\n      - run: cargo install --locked cargo-readme mdbook mdbook-mermaid\n      - run: RUSTDOCFLAGS=\"-Dwarnings --cfg docsrs\" cargo doc --workspace --all-features --no-deps\n      - run: ./scripts/gen-docs.sh\n      - uses: actions/upload-artifact@v4\n        with:\n          name: docs\n          path: |\n            target/doc\n            docs/book/book\n",
+        "quality_gates": [
+          "cargo test --doc --workspace",
+          "cargo clippy --workspace --all-targets -- -D warnings",
+          "CI must fail on new missing_docs warnings"
+        ]
+      },
+      "maintenance_process": {
+        "audit": {
+          "command": "cargo doc --workspace --no-deps",
+          "ci_enforcement": "RUSTDOCFLAGS=\"-Dwarnings\" cargo doc --workspace --no-deps",
+          "tracking": "Record issues in /docs/todo.md"
+        },
+        "review_checklist": [
+          "Verify examples compile correctly",
+          "Confirm Mermaid diagrams render on GitHub",
+          "Check all missing_docs warnings resolved",
+          "Ensure API docs match current behavior"
+        ]
+      },
+      "commit_conventions": {
+        "format": "docs(<scope>): <description>",
+        "examples": [
+          "docs(core): regen README.md via cargo-readme",
+          "docs(book): add mermaid sequence diagram for payment flow",
+          "docs(auth): fix missing_docs warnings on token structs"
+        ]
+      },
+      "metadata": {
+        "created": "2025-07-07",
+        "modified": "2025-07-07T05:22:50.966899+00:00",
+        "schema_version": "1.0.0",
+        "checksum": "2bb61ec7f497aecc"
+      }
+    }
+  },
+  ".cursor/rules/50-architecture-research.json": {
+    "version": "1.0.0",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T05:22:50.977872+00:00",
+    "schema_version": "1.0.0",
+    "checksum": "ab942759bc6f5101",
+    "data": {
+      "name": "ArchitectureResearch",
+      "version": "1.0.0",
+      "description": "Architecture documentation, diagram generation, and codebase research protocols",
+      "category": "architecture",
+      "priority": 50,
+      "always_apply": false,
+      "extends": [
+        "CoreBaseline"
+      ],
+      "objectives": [
+        "Generate code-accurate architectural diagrams",
+        "Conduct comprehensive codebase analysis",
+        "Maintain current architectural documentation",
+        "Support protocol adherence (A2A, MCP)"
+      ],
+      "guidelines": {
+        "diagram_generation": [
+          "Reflect current codebase (HEAD) in every diagram",
+          "Store artifacts with deterministic filenames",
+          "Keep architecture.md up-to-date with latest diagrams"
+        ],
+        "codebase_research": [
+          "Deep-dive analysis of entire Rust workspace",
+          "Generate comprehensive reports with findings",
+          "Use data-driven profiling, not intuition"
+        ],
+        "protocol_adherence": [
+          "Support A2A and MCP protocols",
+          "Implement proper security and validation",
+          "Document protocol versions in rustdoc"
+        ]
+      },
+      "diagram_generation": {
+        "goals": [
+          "Reflect current codebase (HEAD) in every diagram",
+          "Store artifacts with deterministic filenames",
+          "Keep architecture.md up-to-date with latest diagrams"
+        ],
+        "toolchain": {
+          "required": [
+            "cargo metadata --format-version=1",
+            "cargo deps --filter '*' --dot-output",
+            "cargo mod graph",
+            "dot (Graphviz)",
+            "git rev-parse HEAD"
+          ],
+          "custom": "./scripts/gen_mermaid.rs"
+        },
+        "workflow": {
+          "preparation": [
+            "cargo check --workspace --all-features",
+            "mkdir -p target/arch/$(date +%Y%m%d_%H%M%S)",
+            "export GIT_SHA=$(git rev-parse --short HEAD)"
+          ],
+          "crate_topology": {
+            "commands": [
+              "cargo deps --no-deps --dot-output target/arch/dep_graph.dot",
+              "dot -Tsvg target/arch/dep_graph.dot -o target/arch/crate_topology.svg",
+              "scripts/gen_mermaid.rs target/arch/dep_graph.dot > docs/architecture/crate_topology.mmd"
+            ]
+          },
+          "module_graphs": {
+            "condition": "For crates with LOC > 1k or pub API > 20",
+            "command": "cargo mod graph -p crate_name -o target/arch/crate_name.dot"
+          },
+          "data_flows": {
+            "approach": "Trace via integration tests or instrumentation",
+            "requirement": "Must come from tracing hooks, not hand-drawn",
+            "example": "RUST_LOG=trace APP_TRACE=mermaid cargo test"
+          }
+        }
+      },
+      "codebase_research": {
+        "scope": "Deep-dive analysis of entire Rust workspace",
+        "deliverable": "/docs/research/<date>_workspace_report.md",
+        "analysis_tools": {
+          "structural": [
+            "cargo metadata",
+            "cargo tree",
+            "cargo deps"
+          ],
+          "static": [
+            "cargo clippy",
+            "cargo geiger",
+            "cargo udeps"
+          ],
+          "dynamic": [
+            "cargo tarpaulin",
+            "cargo flamegraph",
+            "cargo bloat"
+          ],
+          "search": [
+            "rg",
+            "grep -R"
+          ]
+        },
+        "workflow": {
+          "structural_survey": [
+            "cargo metadata --format-version=1 > meta.json",
+            "cargo tree -e features > tree.txt",
+            "cargo deps --no-deps --dot-output deps.dot",
+            "Highlight crates with >1k LOC or >5 direct deps"
+          ],
+          "static_analysis": [
+            "cargo clippy --workspace --all-targets -- -D warnings",
+            "cargo geiger --all-features > unsafe.txt",
+            "cargo udeps --workspace > unused.txt"
+          ],
+          "dynamic_analysis": [
+            "cargo tarpaulin --workspace --out Html",
+            "cargo flamegraph --bin perf_target -o flame.svg",
+            "cargo bloat --workspace -n 20 > bloat.txt"
+          ],
+          "report_generation": {
+            "sections": [
+              "Executive summary (1-2 paragraphs)",
+              "Crate matrix (name, LOC, deps, pub API count)",
+              "Embedded diagrams (SVG or Mermaid)",
+              "Coverage, unsafe counts, bloat analysis",
+              "Findings & Recommendations (Bug/Perf/Cleanup/Docs)",
+              "Next Steps checklist"
+            ]
+          }
+        }
+      },
+      "protocol_adherence": {
+        "supported_protocols": {
+          "a2a": {
+            "name": "Google Agent-to-Agent (A2A)",
+            "use_case": "Agent \u2194 Agent coordination",
+            "requirements": [
+              "Expose /agent HTTP endpoint serving JSON Agent Card",
+              "Implement POST /task accepting Task objects",
+              "Stream updates via SSE",
+              "Handle artifacts per spec"
+            ]
+          },
+          "mcp": {
+            "name": "Anthropic Model Context Protocol (MCP)",
+            "use_case": "LLM \u2194 Tool/Data context exchange",
+            "requirements": [
+              "Implement JSON-RPC 2.0 methods",
+              "Support capability negotiation via initialize",
+              "Handle tools/*, prompts/*, resources/*"
+            ]
+          }
+        },
+        "implementation_requirements": {
+          "security": [
+            "Use OAuth2/service tokens per spec",
+            "Enforce explicit user consent for tool execution",
+            "Explicit approval for cross-agent data sharing"
+          ],
+          "validation": [
+            "cargo test --features 'mcp_conformance'",
+            "cargo test --features 'a2a_conformance'",
+            "Validate JSON schemas against upstream specs"
+          ],
+          "documentation": [
+            "Document protocol version in rustdoc",
+            "Create Mermaid diagrams for complex flows",
+            "Reference local protocol docs"
+          ]
+        }
+      },
+      "optimization_guidelines": {
+        "performance_focus": {
+          "metrics": [
+            "CPU time",
+            "Memory footprint",
+            "Binary size"
+          ],
+          "approach": "Data-driven profiling, not intuition",
+          "tools": [
+            "flamegraph",
+            "dhat",
+            "cargo-bloat"
+          ]
+        },
+        "optimization_workflow": {
+          "planning": [
+            "Define KPIs (latency \u2264 10ms P95, binary \u2264 5MB, etc.)",
+            "Select representative workloads",
+            "Add tracking issue with target metrics"
+          ],
+          "profiling": [
+            "cargo flamegraph --bin app --profile=release",
+            "dhat -- target/release/app <args>",
+            "cargo bloat --release -n 20",
+            "Document findings in /docs/perf/"
+          ],
+          "optimization": [
+            "Apply zero-cost wins first (remove clones, etc.)",
+            "Consider algorithmic improvements",
+            "Guard with PERF: comments",
+            "Use benchmarks for validation"
+          ]
+        }
+      },
+      "commit_conventions": {
+        "architecture": {
+          "format": "arch: <description>",
+          "example": "arch: regen diagrams @ abc1234 (2025-06-28)"
+        },
+        "research": {
+          "format": "research: <description>",
+          "example": "research: complete workspace analysis for Q1"
+        },
+        "protocol": {
+          "format": "proto(<protocol>): <description>",
+          "examples": [
+            "proto(a2a): implement agent_card endpoint",
+            "proto(mcp): add tool registration capability"
+          ]
+        },
+        "performance": {
+          "format": "perf(<scope>): <description>",
+          "requirements": "Include before/after metrics in commit body",
+          "example": "perf(core): halve allocation count in parser"
+        }
+      },
+      "metadata": {
+        "created": "2025-07-07",
+        "modified": "2025-07-07T05:22:50.977872+00:00",
+        "schema_version": "1.0.0",
+        "checksum": "ab942759bc6f5101"
+      }
+    }
+  },
+  ".cursor/rules/20-testing-quality.json": {
+    "version": "1.0.0",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T05:22:50.984883+00:00",
+    "schema_version": "1.0.0",
+    "checksum": "057377bc092f26f2",
+    "data": {
+      "name": "TestingQuality",
+      "version": "1.0.0",
+      "description": "Testing guidelines and code coverage requirements",
+      "category": "testing",
+      "priority": 80,
+      "always_apply": true,
+      "extends": [
+        "CoreBaseline"
+      ],
+      "objectives": [
+        "Improve test coverage meaningfully",
+        "Focus on under-tested modules and edge cases",
+        "Avoid superficial tests that add no value"
+      ],
+      "guidelines": {
+        "coverage_strategy": [
+          "Focus on core logic and public APIs",
+          "Target error handling and branching logic",
+          "Prioritize high-risk modules with decision complexity"
+        ],
+        "test_design": [
+          "Keep tests isolated and repeatable",
+          "No hidden state or side effects",
+          "Assert intent, not implementation details"
+        ],
+        "quality_gates": [
+          "Maintain minimum 80% coverage threshold",
+          "Generate reports and verify improvements",
+          "Document coverage gains in commit messages"
+        ]
+      },
+      "coverage_strategy": {
+        "tools": [
+          "cargo-tarpaulin",
+          "grcov"
+        ],
+        "targets": [
+          "Core logic and public APIs",
+          "Error handling and branching logic",
+          "High-risk modules with decision complexity"
+        ]
+      },
+      "test_types": {
+        "unit_tests": {
+          "purpose": "Small, deterministic logic",
+          "focus": [
+            "Pure functions",
+            "Data transformations",
+            "Business rules"
+          ],
+          "naming": "test_<functionality>_<condition>"
+        },
+        "integration_tests": {
+          "purpose": "Crate-level behavior and cross-module flows",
+          "focus": [
+            "API contracts",
+            "Module interactions",
+            "End-to-end scenarios"
+          ]
+        },
+        "coverage_areas": {
+          "required": [
+            "Success cases (happy paths)",
+            "Boundary conditions (empty, max values)",
+            "Expected failures and error paths",
+            "Edge cases and regressions"
+          ]
+        }
+      },
+      "test_design": {
+        "principles": [
+          "Keep tests isolated and repeatable",
+          "No hidden state or side effects",
+          "Use fixtures to reduce duplication",
+          "Assert intent, not implementation details",
+          "Prefer clarity over cleverness"
+        ]
+      },
+      "quality_gates": {
+        "commands": [
+          "cargo test --workspace",
+          "cargo clippy --workspace --all-targets -- -D warnings",
+          "cargo fmt --all -- --check"
+        ],
+        "coverage": {
+          "minimum_threshold": 80,
+          "tracking": "Generate reports and verify improvements",
+          "documentation": "Document coverage gains in commit messages"
+        }
+      },
+      "debugging_protocol": {
+        "reproduction": [
+          "Add minimal failing test when possible",
+          "Capture inputs, environment, and trigger steps",
+          "Log additional context for intermittent issues"
+        ],
+        "root_cause_analysis": {
+          "tools": [
+            "RUST_BACKTRACE=1",
+            "RUST_LOG=debug",
+            "gdb/lldb"
+          ],
+          "approach": [
+            "Use targeted dbg!(), tracing, or structured logging",
+            "Validate assumptions with assert! and expect",
+            "Understand error semantics (panic vs Result vs Option)"
+          ]
+        },
+        "fix_requirements": [
+          "Fix root cause, not just symptoms",
+          "Include justification comment explaining why it's safe",
+          "Add regression test that would catch original issue",
+          "Use proper error propagation with context"
+        ]
+      },
+      "commit_conventions": {
+        "testing": {
+          "format": "test(<scope>): <description>",
+          "examples": [
+            "test(parser): add edge case tests for empty config",
+            "test(auth): cover expired token validation"
+          ]
+        },
+        "debugging": {
+          "format": "fix(<scope>): <description> + test",
+          "requirements": [
+            "Reference failure cause",
+            "Include test ID if applicable",
+            "Cite before/after metrics in body"
+          ]
+        }
+      },
+      "metadata": {
+        "created": "2025-07-07",
+        "modified": "2025-07-07T05:22:50.984883+00:00",
+        "schema_version": "1.0.0",
+        "checksum": "057377bc092f26f2"
       }
     }
   }
