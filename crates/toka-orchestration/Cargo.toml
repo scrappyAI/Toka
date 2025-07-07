@@ -6,6 +6,7 @@ description = "Agent orchestration and coordination for Toka OS"
 license = "Apache-2.0"
 repository = "https://github.com/ScrappyAI/toka"
 authors = ["Seb"]
+exclude = ["examples/*"]
 
 [dependencies]
 # Core Toka dependencies

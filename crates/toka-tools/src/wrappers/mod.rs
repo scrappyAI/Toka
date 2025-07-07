@@ -6,6 +6,7 @@
 //! for the Toka agent OS.
 
 pub mod external;
+#[cfg(feature = "python")]
 pub mod python;
 pub mod shell;
 pub mod discovery;
@@ -13,6 +14,7 @@ pub mod security;
 
 // Re-export what's actually available from the stub modules
 pub use external::{ExternalToolWrapper, ExternalToolConfig};
+#[cfg(feature = "python")]
 pub use python::{PythonToolWrapper, PythonToolConfig};
 pub use shell::{ShellToolWrapper, ShellToolConfig};
 pub use discovery::{ToolDiscovery, DiscoveryConfig};
