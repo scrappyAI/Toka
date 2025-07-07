@@ -14,9 +14,7 @@ use std::vec::Vec;
 use core::fmt::Debug;
 
 use async_trait::async_trait;
-use blake3;
 use chrono::{DateTime, Utc};
-use rmp_serde;
 use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use uuid::Uuid;
@@ -428,7 +426,6 @@ pub mod prelude {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
     struct TestEvent {

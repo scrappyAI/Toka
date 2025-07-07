@@ -7,7 +7,7 @@
 //! storage logic, supporting extensions for content classification, relationship
 //! extraction, and anomaly detection.
 
-use crate::{EventHeader, EventId, IntentId, CausalDigest};
+use crate::{EventHeader, EventId};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
