@@ -7,7 +7,7 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use tracing::{info, warn, error};
+use tracing::info;
 
 use toka_agent_runtime::{AgentProcessManager, process::ProcessResult};
 use toka_llm_gateway::LlmGateway;
@@ -17,6 +17,7 @@ use toka_types::EntityId;
 use crate::{OrchestrationEngine, AgentConfig};
 
 /// Integration service that connects orchestration with agent runtime
+#[allow(dead_code)]
 pub struct RuntimeIntegration {
     /// Orchestration engine
     orchestration: Arc<OrchestrationEngine>,
@@ -111,7 +112,8 @@ impl OrchestrationRuntimeExt for OrchestrationEngine {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // Test that the trait extension exists and can be used
+    // Note: This would require mock implementations for full testing
 
     #[test]
     fn test_runtime_integration_trait() {

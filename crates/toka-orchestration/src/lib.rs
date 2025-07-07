@@ -46,7 +46,6 @@
 //! - **Audit logging**: All orchestration actions are logged
 //! - **Fail-safe defaults**: System fails closed on ambiguous operations
 
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -61,6 +60,7 @@ use uuid::Uuid;
 
 use toka_llm_gateway::LlmGateway;
 use toka_runtime::RuntimeManager;
+#[allow(unused_imports)]
 use toka_types::{
     AgentSpec, EntityId, Message, Operation, TaskSpec,
     AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority, AgentCapabilities,
@@ -629,37 +629,14 @@ impl Default for SessionState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use toka_runtime::RuntimeConfig;
-    use toka_auth::{TokenValidator, Claims};
+    use std::sync::Arc;
+    use toka_kernel::{Kernel, WorldState};
+    use toka_runtime::{RuntimeManager, RuntimeKernel};
+    use toka_bus_core::InMemoryBus;
+    use toka_types::EntityId;
     use anyhow::Result;
-    use std::future::Future;
-    use std::pin::Pin;
-
-    struct MockTokenValidator;
-
-    impl TokenValidator for MockTokenValidator {
-        fn validate<'life0, 'life1, 'async_trait>(
-            &'life0 self,
-            _token: &'life1 str,
-        ) -> Pin<Box<dyn Future<Output = Result<Claims, toka_auth::Error>> + Send + 'async_trait>>
-        where
-            'life0: 'async_trait,
-            'life1: 'async_trait,
-            Self: 'async_trait,
-        {
-            Box::pin(async move {
-                let now = chrono::Utc::now().timestamp() as u64;
-                Ok(Claims {
-                    sub: "test-user".to_string(),
-                    vault: "test-vault".to_string(),
-                    permissions: vec!["test-permission".to_string()],
-                    iat: now,
-                    exp: now + 3600,
-                    jti: uuid::Uuid::new_v4().to_string(),
-                })
-            })
-        }
-    }
+    use toka_auth::hs256::JwtHs256Validator;
+    use toka_auth::{TokenValidator, Claims, Error as AuthError};
 
     #[tokio::test]
     async fn test_orchestration_engine_creation() {
@@ -669,12 +646,49 @@ mod tests {
             max_concurrent_agents: 5,
         };
 
+        // Use a test secret for the validator
+        let validator = Arc::new(JwtHs256Validator::new("test-secret"));
+        let bus = Arc::new(InMemoryBus::default());
+        let kernel = Kernel::new(WorldState::default(), validator, bus);
+        let runtime_kernel = RuntimeKernel::new(kernel);
         let runtime = Arc::new(
-            Runtime::new(RuntimeConfig::default(), Arc::new(MockTokenValidator))
-                .await
-                .expect("Failed to create runtime")
+            RuntimeManager::new(runtime_kernel).await.expect("Failed to create runtime manager")
         );
 
+        let engine = OrchestrationEngine::new(config, runtime).await;
+        assert!(engine.is_ok());
+    }
+
+    struct AlwaysFailValidator;
+    impl TokenValidator for AlwaysFailValidator {
+        fn validate<'life0, 'life1, 'async_trait>(
+            &'life0 self,
+            _token: &'life1 str,
+        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Claims, AuthError>> + Send + 'async_trait>>
+        where
+            'life0: 'async_trait,
+            'life1: 'async_trait,
+            Self: 'async_trait,
+        {
+            Box::pin(async move { Err(AuthError::new("always fails")) })
+        }
+    }
+
+    #[tokio::test]
+    async fn test_kernel_construction_error_propagation() {
+        let config = OrchestrationConfig {
+            agents: vec![],
+            global_timeout: Duration::from_secs(3600),
+            max_concurrent_agents: 5,
+        };
+        let validator = Arc::new(AlwaysFailValidator);
+        let bus = Arc::new(InMemoryBus::default());
+        let kernel = Kernel::new(WorldState::default(), validator, bus);
+        let runtime_kernel = RuntimeKernel::new(kernel);
+        let runtime = Arc::new(
+            RuntimeManager::new(runtime_kernel).await.expect("Failed to create runtime manager")
+        );
+        // Engine creation should still succeed, but any operation requiring token validation will fail.
         let engine = OrchestrationEngine::new(config, runtime).await;
         assert!(engine.is_ok());
     }

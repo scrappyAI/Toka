@@ -319,12 +319,12 @@ impl WorkstreamCoordinator {
 
     /// Start a workstream.
     pub async fn start_workstream(&self, workstream_name: &str) -> Result<()> {
+        // Check if dependencies are satisfied before acquiring write lock
+        let dependencies_satisfied = self.check_workstream_dependencies(workstream_name).await?;
+        
         let mut workstreams = self.workstreams.write().await;
         
         if let Some(workstream) = workstreams.get_mut(workstream_name) {
-            // Check if dependencies are satisfied
-            let dependencies_satisfied = self.check_workstream_dependencies(workstream_name).await?;
-            
             if dependencies_satisfied {
                 let old_state = workstream.state.clone();
                 workstream.state = WorkstreamState::Active;
@@ -494,9 +494,17 @@ impl WorkstreamCoordinator {
                     dependency: completed_workstream.to_string(),
                 }).await;
 
-                // Check if workstream can now start
-                if self.check_workstream_dependencies(workstream).await? {
-                    self.start_workstream(workstream).await?;
+                // Check if workstream can now start (only if it's currently waiting)
+                let workstreams = self.workstreams.read().await;
+                if let Some(ws) = workstreams.get(workstream) {
+                    if ws.state == WorkstreamState::Waiting {
+                        // Check if all dependencies are satisfied
+                        if self.check_workstream_dependencies(workstream).await? {
+                            // Drop the read lock before calling start_workstream to avoid deadlock
+                            drop(workstreams);
+                            self.start_workstream(workstream).await?;
+                        }
+                    }
                 }
             }
         }
@@ -627,7 +635,14 @@ mod tests {
         let agents = vec![create_test_agent("agent1", "workstream1")];
 
         coordinator.initialize_workstreams(&agents).await.unwrap();
-        coordinator.start_workstream("workstream1").await.unwrap();
+        
+        // Add timeout to prevent hanging
+        let start_result = tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            coordinator.start_workstream("workstream1")
+        ).await;
+        start_result.unwrap().unwrap();
+        
         coordinator.update_workstream_progress("workstream1", 0.5).await.unwrap();
 
         let workstream = coordinator.get_workstream("workstream1").await.unwrap();
@@ -641,7 +656,14 @@ mod tests {
         let agents = vec![create_test_agent("agent1", "workstream1")];
 
         coordinator.initialize_workstreams(&agents).await.unwrap();
-        coordinator.start_workstream("workstream1").await.unwrap();
+        
+        // Add timeout to prevent hanging
+        let start_result = tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            coordinator.start_workstream("workstream1")
+        ).await;
+        start_result.unwrap().unwrap();
+        
         coordinator.update_workstream_progress("workstream1", 1.0).await.unwrap();
 
         let workstream = coordinator.get_workstream("workstream1").await.unwrap();
