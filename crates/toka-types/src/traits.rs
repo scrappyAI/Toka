@@ -1,9 +1,29 @@
 use std::collections::HashMap;
 use async_trait::async_trait;
 use anyhow::Result;
+use serde::{Serialize, Deserialize};
 
-/// Common parameter map type used by tools.
+/// Common parameter map type used by tools (key-value string pairs).
 pub type Params = HashMap<String, String>;
+
+/// Structured parameter wrapper used by tools and registries. Keeps the
+/// original `ToolParams` naming used across the codebase.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct ToolParams {
+    /// Name of the tool for which the parameters are intended (useful for
+    /// logging/audit).
+    pub name: String,
+    /// Arbitrary key-value argument map.
+    #[serde(default)]
+    pub args: Params,
+}
+
+impl ToolParams {
+    /// Borrow the inner map for APIs that expect `Params`.
+    pub fn as_map(&self) -> &Params {
+        &self.args
+    }
+}
 
 /// Core abstraction for executable tools in the Toka ecosystem.
 ///
@@ -19,12 +39,11 @@ pub trait Tool: Send + Sync {
     /// Semantic version string (e.g. "1.2.0").
     fn version(&self) -> &str;
 
-    /// Validate input parameters. Implementations must reject unknown keys and
-    /// malformed values to maintain kernel safety.
-    async fn validate(&self, params: &Params) -> Result<()>;
+    /// Validate input parameters.
+    fn validate_params(&self, params: &ToolParams) -> Result<()>;
 
     /// Execute the tool.
-    async fn execute(&self, params: &Params) -> Result<String>;
+    async fn execute(&self, params: &ToolParams) -> Result<String>;
 }
 
 /// Minimal interface for an agent instance that can receive kernel messages.

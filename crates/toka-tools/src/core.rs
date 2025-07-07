@@ -9,6 +9,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 use anyhow::Result;
+#[allow(unused_imports)]
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -17,6 +18,9 @@ use tokio::sync::RwLock;
 use tracing::info;
 
 use crate::errors::ToolError;
+
+// Re-export so downstream modules can `use crate::core::Tool`.
+pub use toka_types::traits::{Tool, ToolParams};
 
 /// Execution metadata returned by every tool
 /// 
@@ -77,131 +81,6 @@ pub struct ToolResult {
     pub output: String,
     /// Execution metadata including timing and version information
     pub metadata: ToolMetadata,
-}
-
-/// Parameters passed to a tool for execution
-/// 
-/// Provides a standardized way to pass arguments to tools using a key-value
-/// map structure. The tool name is included for auditing purposes.
-/// 
-/// # Examples
-/// 
-/// ```rust
-/// use toka_tools::ToolParams;
-/// use std::collections::HashMap;
-/// 
-/// let mut params = ToolParams {
-///     name: "read_file".to_string(),
-///     args: HashMap::new(),
-/// };
-/// params.args.insert("path".to_string(), "/path/to/file.txt".to_string());
-/// 
-/// assert_eq!(params.name, "read_file");
-/// assert_eq!(params.args.get("path").unwrap(), "/path/to/file.txt");
-/// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolParams {
-    /// Name of the target tool (for auditing and logging)
-    pub name: String,
-    /// Key-value argument map for tool parameters
-    #[serde(default)]
-    pub args: HashMap<String, String>,
-}
-
-/// Contract that every tool must implement
-/// 
-/// This trait defines the standard interface for all tools in the system,
-/// ensuring consistent behavior for discovery, validation, and execution.
-/// 
-/// # Security
-/// 
-/// Tools should validate all input parameters in `validate_params` and
-/// implement proper error handling in `execute` to prevent security issues.
-/// 
-/// # Examples
-/// 
-/// ```rust
-/// use toka_tools::{Tool, ToolParams, ToolResult, ToolMetadata};
-/// use async_trait::async_trait;
-/// use anyhow::Result;
-/// 
-/// struct ExampleTool;
-/// 
-/// #[async_trait]
-/// impl Tool for ExampleTool {
-///     fn name(&self) -> &str { "example" }
-///     fn description(&self) -> &str { "An example tool" }
-///     fn version(&self) -> &str { "1.0.0" }
-/// 
-///     async fn execute(&self, _params: &ToolParams) -> Result<ToolResult> {
-///         Ok(ToolResult {
-///             success: true,
-///             output: "Hello, World!".to_string(),
-///             metadata: ToolMetadata {
-///                 execution_time_ms: 1,
-///                 tool_version: self.version().to_string(),
-///                 timestamp: std::time::SystemTime::now()
-///                     .duration_since(std::time::UNIX_EPOCH)
-///                     .unwrap()
-///                     .as_secs(),
-///             },
-///         })
-///     }
-/// 
-///     fn validate_params(&self, _params: &ToolParams) -> Result<()> {
-///         Ok(())
-///     }
-/// }
-/// ```
-#[async_trait]
-pub trait Tool: Send + Sync {
-    /// Canonical name by which the tool is looked up in a registry
-    /// 
-    /// This name must be unique within a registry and should follow
-    /// a consistent naming convention (e.g., snake_case).
-    fn name(&self) -> &str;
-    
-    /// Human-readable description of the tool's purpose
-    /// 
-    /// Should be concise but informative enough for users to understand
-    /// what the tool does without reading implementation details.
-    fn description(&self) -> &str;
-    
-    /// Semantic version of the tool implementation
-    /// 
-    /// Should follow semantic versioning (semver) conventions to help
-    /// with compatibility and dependency management.
-    fn version(&self) -> &str;
-
-    /// Execute the tool with the given parameters
-    /// 
-    /// This is the main entry point for tool functionality. Implementations
-    /// should handle errors gracefully and return meaningful output.
-    /// 
-    /// # Arguments
-    /// 
-    /// * `params` - Parameters for tool execution
-    /// 
-    /// # Errors
-    /// 
-    /// Returns an error if execution fails or parameters are invalid.
-    /// Tools should provide detailed error messages for debugging.
-    async fn execute(&self, params: &ToolParams) -> Result<ToolResult>;
-
-    /// Validate parameters before execution
-    /// 
-    /// This method should check that all required parameters are present
-    /// and that their values are valid. It's called before `execute`.
-    /// 
-    /// # Arguments
-    /// 
-    /// * `params` - Parameters to validate
-    /// 
-    /// # Errors
-    /// 
-    /// Returns an error if validation fails, with a descriptive message
-    /// indicating what was wrong with the parameters.
-    fn validate_params(&self, params: &ToolParams) -> Result<()>;
 }
 
 /// Thread-safe registry for managing tool instances
