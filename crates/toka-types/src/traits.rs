@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use std::collections::HashMap;
 use async_trait::async_trait;
 use anyhow::Result;
@@ -80,4 +81,78 @@ pub trait Agent: Send + Sync {
 pub trait Resource: Send + Sync {
     /// Stable identifier of the resource owner / handle.
     fn id(&self) -> crate::EntityId;
+}
+
+//─────────────────────────────
+//  Capability primitives
+//─────────────────────────────
+
+/// Canonical claim set embedded in every capability token.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Claims {
+    /// Subject – usually the user or agent identifier.
+    pub sub: String,
+    /// Vault / workspace identifier the subject wishes to access.
+    pub vault: String,
+    /// Ordered list of permission strings (e.g. "transfer").
+    pub permissions: Vec<String>,
+    /// Issued-at timestamp (seconds since Unix epoch).
+    pub iat: u64,
+    /// Expiry timestamp (seconds since Unix epoch, must be > `iat`).
+    pub exp: u64,
+    /// Unique token identifier for replay protection.
+    pub jti: String,
+}
+
+/// Maximum allowed token lifetime in seconds (24h).
+pub const MAX_TOKEN_LIFETIME_SECS: u64 = 86_400;
+/// Maximum permission entries per token.
+pub const MAX_PERMISSIONS_COUNT: usize = 100;
+
+/// Simple error type used by capability validation logic.
+#[derive(Debug)]
+pub struct CapabilityError(pub String);
+
+impl std::fmt::Display for CapabilityError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl std::error::Error for CapabilityError {}
+
+/// Convenience result alias for capability‐related functions.
+pub type CapResult<T> = std::result::Result<T, CapabilityError>;
+
+/// Validate common semantic rules for claims.
+impl Claims {
+    /// Perform semantic validation of the claim set.
+    ///
+    /// Ensures lengths, lifetimes and counts are within safe bounds.
+    pub fn validate(&self) -> CapResult<()> {
+        if self.sub.trim().is_empty() || self.sub.len() > 256 {
+            return Err(CapabilityError("Invalid subject identifier".into()));
+        }
+        if self.vault.trim().is_empty() || self.vault.len() > 256 {
+            return Err(CapabilityError("Invalid vault identifier".into()));
+        }
+        if self.permissions.len() > MAX_PERMISSIONS_COUNT { return Err(CapabilityError("Too many permissions".into())); }
+        if self.exp <= self.iat || self.exp - self.iat > MAX_TOKEN_LIFETIME_SECS {
+            return Err(CapabilityError("Invalid token lifetime".into()));
+        }
+        Ok(())
+    }
+}
+
+/// Capability token trait implemented by concrete formats (JWT, Biscuit…).
+#[async_trait]
+pub trait CapabilityToken: Sized + Send + Sync {
+    async fn mint(claims: &Claims, key: &[u8]) -> CapResult<Self>;
+    fn as_str(&self) -> &str;
+}
+
+/// Validator trait used by kernel/auth middleware.
+#[async_trait]
+pub trait TokenValidator: Send + Sync {
+    async fn validate(&self, raw: &str) -> CapResult<Claims>;
 }
