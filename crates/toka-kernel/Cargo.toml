@@ -47,8 +47,3 @@ tempfile = "3.0"
 default = ["monitoring"]
 monitoring = ["sysinfo", "tracing-subscriber"]
 testing = []
-
-[[bin]]
-name = "toka-kernel-monitor"
-path = "src/bin/monitor.rs"
-required-features = ["monitoring"]
