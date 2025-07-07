@@ -17,7 +17,7 @@ use toka_types::{TaskConfig, TaskPriority, SecurityConfig};
 
 use crate::{
     AgentContext, AgentTask, TaskResult, CapabilityValidator, ResourceManager,
-    AgentRuntimeError, AgentRuntimeResult, ExecutionConfig, RetryConfig,
+    AgentRuntimeError, AgentRuntimeResult, ExecutionConfig,
 };
 
 /// Task execution engine that uses LLM integration for intelligent task execution
@@ -191,7 +191,7 @@ impl TaskExecutor {
     fn validate_task_permissions(
         &self,
         task: &dyn AgentTask,
-        context: &AgentContext,
+        _context: &AgentContext,
     ) -> AgentRuntimeResult<()> {
         // Check capability requirements based on task description
         let required_capabilities = self.infer_required_capabilities(task.description());
@@ -468,7 +468,7 @@ impl AgentTask for LlmTask {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use toka_types::{AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority, ResourceLimits};
+    use toka_types::{ResourceLimits};
 
     fn create_test_security_config() -> SecurityConfig {
         SecurityConfig {
@@ -502,8 +502,8 @@ mod tests {
 
     #[test]
     fn test_capability_inference() {
-        let security_config = create_test_security_config();
-        let execution_config = ExecutionConfig::default();
+        let _security_config = create_test_security_config();
+        let _execution_config = ExecutionConfig::default();
         
         // Mock LLM gateway for testing
         // Note: In real tests, we'd use a mock implementation
@@ -532,7 +532,7 @@ mod tests {
         config.retry_config.max_delay = Duration::from_secs(60);
         config.retry_config.backoff_multiplier = 2.0;
 
-        let security_config = create_test_security_config();
+        let _security_config = create_test_security_config();
         
         // Note: Would need mock LLM gateway for full test
         // For now, testing the retry calculation logic conceptually

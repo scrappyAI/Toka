@@ -19,24 +19,26 @@ use toka_types::EntityId;
 
 use crate::{
     AgentContext, AgentExecutionState, AgentMetrics, ExecutionConfig, TaskExecutor,
-    ProgressReporter, TaskResult, AgentRuntimeError, AgentRuntimeResult,
+    ProgressReporter, TaskResult,
 };
 use crate::task::LlmTask;
-use crate::AgentTask;
 
 /// Core agent execution engine that interprets and executes agent configurations
 pub struct AgentExecutor {
     /// Agent context with configuration and state
     context: Arc<RwLock<AgentContext>>,
     /// Runtime connection for kernel operations
+    #[allow(dead_code)]
     runtime: Arc<RuntimeManager>,
     /// LLM gateway for intelligent task execution
+    #[allow(dead_code)]
     llm_gateway: Arc<LlmGateway>,
     /// Task executor for LLM-integrated execution
     task_executor: TaskExecutor,
     /// Progress reporter for orchestration communication
     progress_reporter: Arc<RwLock<ProgressReporter>>,
     /// Execution configuration
+    #[allow(dead_code)]
     execution_config: ExecutionConfig,
     /// Execution start time
     start_time: Instant,

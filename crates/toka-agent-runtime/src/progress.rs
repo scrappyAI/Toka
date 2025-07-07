@@ -310,6 +310,7 @@ mod tests {
     };
     use std::collections::HashMap;
     
+    #[allow(dead_code)]
     fn create_test_context() -> AgentContext {
         let config = AgentConfig {
             metadata: AgentMetadata {
