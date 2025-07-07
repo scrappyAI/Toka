@@ -27,6 +27,14 @@ pub const MAX_OBSERVATION_DATA_LEN: usize = 1_048_576; // 1MB
 pub const MAX_CAPABILITY_TOKEN_LEN: usize = 8192;
 
 //─────────────────────────────
+//  Core behaviour traits
+//─────────────────────────────
+
+/// Behaviour traits (`Tool`, `Agent`, `Resource`) shared across crates.
+pub mod traits;
+pub use traits::{Agent, Tool, Resource, Params};
+
+//─────────────────────────────
 //  Core identifiers
 //─────────────────────────────
 
