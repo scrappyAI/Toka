@@ -11,7 +11,7 @@
 use anyhow::Result;
 #[allow(unused_imports)]
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize}; // still used for manifest types
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -22,66 +22,8 @@ use crate::errors::ToolError;
 // Re-export so downstream modules can `use crate::core::Tool`.
 pub use toka_types::traits::{Tool, ToolParams};
 
-/// Execution metadata returned by every tool
-/// 
-/// This structure provides timing and versioning information for tool executions,
-/// enabling performance monitoring and audit trails.
-/// 
-/// # Examples
-/// 
-/// ```rust
-/// use toka_tools::ToolMetadata;
-/// 
-/// let metadata = ToolMetadata {
-///     execution_time_ms: 150,
-///     tool_version: "1.0.0".to_string(),
-///     timestamp: 1640995200, // Unix timestamp
-/// };
-/// 
-/// assert_eq!(metadata.execution_time_ms, 150);
-/// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolMetadata {
-    /// Wall-clock execution duration in milliseconds
-    pub execution_time_ms: u64,
-    /// Semantic version of the tool implementation
-    pub tool_version: String,
-    /// Unix timestamp when the tool finished execution
-    pub timestamp: u64,
-}
-
-/// Result wrapper for tool execution
-/// 
-/// Contains the execution outcome, output data, and metadata for every tool run.
-/// Tools should populate this structure with meaningful output and accurate metadata.
-/// 
-/// # Examples
-/// 
-/// ```rust
-/// use toka_tools::{ToolResult, ToolMetadata};
-/// 
-/// let result = ToolResult {
-///     success: true,
-///     output: "File read successfully".to_string(),
-///     metadata: ToolMetadata {
-///         execution_time_ms: 50,
-///         tool_version: "1.0.0".to_string(),
-///         timestamp: 1640995200,
-///     },
-/// };
-/// 
-/// assert!(result.success);
-/// assert!(!result.output.is_empty());
-/// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolResult {
-    /// Whether the execution was successful
-    pub success: bool,
-    /// Tool output (format determined by the tool implementation)
-    pub output: String,
-    /// Execution metadata including timing and version information
-    pub metadata: ToolMetadata,
-}
+// Re-export metadata/result types from toka-types
+pub use toka_types::{ToolMetadata, ToolResult};
 
 /// Thread-safe registry for managing tool instances
 /// 

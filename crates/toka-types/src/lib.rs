@@ -32,7 +32,7 @@ pub const MAX_CAPABILITY_TOKEN_LEN: usize = 8192;
 
 /// Behaviour traits (`Tool`, `Agent`, `Resource`) shared across crates.
 pub mod traits;
-pub use traits::{Agent, Tool, Resource, Params};
+pub use traits::{Agent, Tool, Resource, Params, ToolResult, ToolMetadata};
 
 //─────────────────────────────
 //  Core identifiers

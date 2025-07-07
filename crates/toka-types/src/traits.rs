@@ -25,6 +25,28 @@ impl ToolParams {
     }
 }
 
+/// Execution metadata returned by every tool run.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ToolMetadata {
+    /// Wall-clock execution duration in milliseconds.
+    pub execution_time_ms: u64,
+    /// Semantic version of the tool implementation.
+    pub tool_version: String,
+    /// Unix timestamp when the tool finished execution.
+    pub timestamp: u64,
+}
+
+/// Standard result wrapper for tool execution.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ToolResult {
+    /// Whether execution was successful.
+    pub success: bool,
+    /// Tool output payload (format defined by tool implementation).
+    pub output: String,
+    /// Execution metadata including timing, version etc.
+    pub metadata: ToolMetadata,
+}
+
 /// Core abstraction for executable tools in the Toka ecosystem.
 ///
 /// The trait is intentionally minimal and lives in `toka-types` so it can be
@@ -43,7 +65,7 @@ pub trait Tool: Send + Sync {
     fn validate_params(&self, params: &ToolParams) -> Result<()>;
 
     /// Execute the tool.
-    async fn execute(&self, params: &ToolParams) -> Result<String>;
+    async fn execute(&self, params: &ToolParams) -> Result<ToolResult>;
 }
 
 /// Minimal interface for an agent instance that can receive kernel messages.
