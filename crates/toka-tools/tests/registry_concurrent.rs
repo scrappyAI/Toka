@@ -2,12 +2,12 @@ use anyhow::Result;
 use std::sync::Arc;
 use tokio::task;
 
-use toka_tools::{ToolRegistry, tools::ReadFileTool};
+use toka_tools::{ToolRegistry, tools::FileReader};
 
 #[tokio::test]
 async fn concurrent_execution_is_safe() -> Result<()> {
     let registry = Arc::new(ToolRegistry::new().await?);
-    registry.register_tool(Arc::new(ReadFileTool::new())).await?;
+    registry.register_tool(Arc::new(FileReader::new())).await?;
 
     let mut handles = vec![];
     
@@ -24,7 +24,7 @@ async fn concurrent_execution_is_safe() -> Result<()> {
     for handle in handles {
         let result = handle.await?;
         assert_eq!(result.len(), 1);
-        assert!(result.contains(&"read_file".to_string()));
+        assert!(result.contains(&"file-reader".to_string()));
     }
 
     Ok(())

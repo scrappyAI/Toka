@@ -44,12 +44,14 @@ impl Tool for FileReader {
         Ok(ToolResult {
             success: true,
             output: content,
-            metadata: Some({
-                let mut meta = HashMap::new();
-                meta.insert("file_path".to_string(), path.clone());
-                meta.insert("file_size".to_string(), fs::metadata(path).await?.len().to_string());
-                meta
-            }),
+            metadata: crate::core::ToolMetadata {
+                execution_time_ms: 0, // Will be set by registry
+                tool_version: self.version().to_string(),
+                timestamp: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+            },
         })
     }
     
@@ -106,12 +108,14 @@ impl Tool for FileWriter {
         Ok(ToolResult {
             success: true,
             output: format!("Successfully wrote {} bytes to {}", content.len(), path),
-            metadata: Some({
-                let mut meta = HashMap::new();
-                meta.insert("file_path".to_string(), path.clone());
-                meta.insert("bytes_written".to_string(), content.len().to_string());
-                meta
-            }),
+            metadata: crate::core::ToolMetadata {
+                execution_time_ms: 0, // Will be set by registry
+                tool_version: self.version().to_string(),
+                timestamp: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+            },
         })
     }
     
@@ -185,13 +189,14 @@ impl Tool for FileLister {
         Ok(ToolResult {
             success: true,
             output: serde_json::to_string(&result)?,
-            metadata: Some({
-                let mut meta = HashMap::new();
-                meta.insert("directory_path".to_string(), path.clone());
-                meta.insert("entry_count".to_string(), result.entries.len().to_string());
-                meta.insert("recursive".to_string(), recursive.to_string());
-                meta
-            }),
+            metadata: crate::core::ToolMetadata {
+                execution_time_ms: 0, // Will be set by registry
+                tool_version: self.version().to_string(),
+                timestamp: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+            },
         })
     }
     

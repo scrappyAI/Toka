@@ -1,6 +1,5 @@
 //! Validation tools for ensuring workspace integrity
 
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
@@ -220,13 +219,14 @@ impl Tool for DateValidator {
         Ok(ToolResult {
             success: result.violations.is_empty(),
             output: serde_json::to_string(&result)?,
-            metadata: Some({
-                let mut meta = HashMap::new();
-                meta.insert("files_checked".to_string(), result.files_checked.to_string());
-                meta.insert("violations_found".to_string(), result.violations.len().to_string());
-                meta.insert("fixes_applied".to_string(), result.fixes_applied.to_string());
-                meta
-            }),
+            metadata: crate::core::ToolMetadata {
+                execution_time_ms: 0, // Will be set by registry
+                tool_version: self.version().to_string(),
+                timestamp: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+            },
         })
     }
     
@@ -378,12 +378,14 @@ impl Tool for BuildValidator {
         Ok(ToolResult {
             success: result.issues.is_empty(),
             output: serde_json::to_string(&result)?,
-            metadata: Some({
-                let mut meta = HashMap::new();
-                meta.insert("files_checked".to_string(), result.files_checked.to_string());
-                meta.insert("issues_found".to_string(), result.issues.len().to_string());
-                meta
-            }),
+            metadata: crate::core::ToolMetadata {
+                execution_time_ms: 0, // Will be set by registry
+                tool_version: self.version().to_string(),
+                timestamp: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+            },
         })
     }
     

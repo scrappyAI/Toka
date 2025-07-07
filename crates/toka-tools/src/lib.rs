@@ -504,7 +504,7 @@ mod tests {
         let system = ToolSystem::development().await?;
         let tools = system.list_tools().await;
         assert!(!tools.is_empty());
-        assert!(tools.contains(&"read_file".to_string()));
+        assert!(tools.contains(&"file-reader".to_string()));
         Ok(())
     }
     
@@ -513,12 +513,12 @@ mod tests {
         let system = ToolSystem::development().await?;
         
         let mut params = ToolParams {
-            name: "read_file".to_string(),
+            name: "file-reader".to_string(),
             args: HashMap::new(),
         };
         params.args.insert("path".to_string(), "Cargo.toml".to_string());
         
-        let result = system.execute_tool("read_file", &params).await?;
+        let result = system.execute_tool("file-reader", &params).await?;
         assert!(result.success);
         assert!(result.output.contains("toka-tools"));
         

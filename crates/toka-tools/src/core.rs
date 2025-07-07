@@ -217,19 +217,19 @@ pub trait Tool: Send + Sync {
 /// # Examples
 /// 
 /// ```rust
-/// use toka_tools::{ToolRegistry, tools::ReadFileTool};
+/// use toka_tools::{ToolRegistry, tools::FileReader};
 /// use std::sync::Arc;
 /// 
 /// # tokio_test::block_on(async {
 /// let registry = ToolRegistry::new().await?;
 /// 
 /// // Register a tool
-/// let tool = Arc::new(ReadFileTool::new());
+/// let tool = Arc::new(FileReader::new());
 /// registry.register_tool(tool).await?;
 /// 
 /// // List registered tools
 /// let tools = registry.list_tools().await;
-/// assert!(tools.contains(&"read_file".to_string()));
+/// assert!(tools.contains(&"file-reader".to_string()));
 /// # Ok::<(), anyhow::Error>(())
 /// # });
 /// ```
@@ -305,17 +305,17 @@ impl ToolRegistry {
     /// # Examples
     /// 
     /// ```rust
-    /// use toka_tools::{ToolRegistry, tools::ReadFileTool};
+    /// use toka_tools::{ToolRegistry, tools::FileReader};
     /// use std::sync::Arc;
     /// 
     /// # tokio_test::block_on(async {
     /// let registry = ToolRegistry::new().await?;
-    /// let tool = Arc::new(ReadFileTool::new());
+    /// let tool = Arc::new(FileReader::new());
     /// 
     /// registry.register_tool(tool).await?;
     /// 
     /// let tools = registry.list_tools().await;
-    /// assert!(tools.contains(&"read_file".to_string()));
+    /// assert!(tools.contains(&"file-reader".to_string()));
     /// # Ok::<(), anyhow::Error>(())
     /// # });
     /// ```
@@ -346,15 +346,15 @@ impl ToolRegistry {
     /// # Examples
     /// 
     /// ```rust
-    /// use toka_tools::{ToolRegistry, tools::ReadFileTool};
+    /// use toka_tools::{ToolRegistry, tools::FileReader};
     /// use std::sync::Arc;
     /// 
     /// # tokio_test::block_on(async {
     /// let registry = ToolRegistry::new().await?;
-    /// let tool = Arc::new(ReadFileTool::new());
+    /// let tool = Arc::new(FileReader::new());
     /// registry.register_tool(tool).await?;
     /// 
-    /// let retrieved = registry.get_tool("read_file").await;
+    /// let retrieved = registry.get_tool("file-reader").await;
     /// assert!(retrieved.is_some());
     /// 
     /// let missing = registry.get_tool("nonexistent").await;
@@ -387,22 +387,22 @@ impl ToolRegistry {
     /// # Examples
     /// 
     /// ```rust
-    /// use toka_tools::{ToolRegistry, ToolParams, tools::ReadFileTool};
+    /// use toka_tools::{ToolRegistry, ToolParams, tools::FileReader};
     /// use std::sync::Arc;
     /// use std::collections::HashMap;
     /// 
     /// # tokio_test::block_on(async {
     /// let registry = ToolRegistry::new().await?;
-    /// let tool = Arc::new(ReadFileTool::new());
+    /// let tool = Arc::new(FileReader::new());
     /// registry.register_tool(tool).await?;
     /// 
     /// let mut params = ToolParams {
-    ///     name: "read_file".to_string(),
+    ///     name: "file-reader".to_string(),
     ///     args: HashMap::new(),
     /// };
     /// params.args.insert("path".to_string(), "Cargo.toml".to_string());
     /// 
-    /// let result = registry.execute_tool("read_file", &params).await?;
+    /// let result = registry.execute_tool("file-reader", &params).await?;
     /// assert!(result.success);
     /// # Ok::<(), anyhow::Error>(())
     /// # });

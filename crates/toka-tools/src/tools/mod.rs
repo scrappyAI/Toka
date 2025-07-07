@@ -6,16 +6,14 @@
 use std::sync::Arc;
 use anyhow::Result;
 
-use crate::core::{Tool, ToolRegistry};
+use crate::core::ToolRegistry;
 
 // Tool modules
 pub mod file_tools;
-pub mod text_tools;
 pub mod validation;
 
 // Re-export tools for easy access
 pub use file_tools::{FileReader, FileWriter, FileLister};
-pub use text_tools::{TextProcessor, RegexTool};
 pub use validation::{DateValidator, BuildValidator};
 
 /// Register essential tools with the registry
@@ -48,10 +46,6 @@ pub async fn register_essential_tools(registry: &ToolRegistry) -> Result<()> {
     registry.register_tool(Arc::new(FileWriter::new())).await?;
     registry.register_tool(Arc::new(FileLister::new())).await?;
     
-    // Text processing
-    registry.register_tool(Arc::new(TextProcessor::new())).await?;
-    registry.register_tool(Arc::new(RegexTool::new())).await?;
-    
     // Validation tools
     registry.register_tool(Arc::new(DateValidator::new()?)).await?;
     registry.register_tool(Arc::new(BuildValidator::new())).await?;
@@ -67,8 +61,6 @@ pub fn essential_tool_names() -> Vec<&'static str> {
         "file-reader",
         "file-writer", 
         "file-lister",
-        "text-processor",
-        "regex-tool",
         "date-validator",
         "build-validator",
     ]
