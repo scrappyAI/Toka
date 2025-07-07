@@ -52,7 +52,7 @@ tempfile = "3.0"
 tokio-test = "0.4"
 
 [features]
-default = ["python", "wasm", "codegen"]
+default = []
 python = ["pyo3"]
 wasm = ["wasmtime", "wasmtime-wasi"]
 codegen = ["tera"]
