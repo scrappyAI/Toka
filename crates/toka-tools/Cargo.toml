@@ -32,6 +32,8 @@ hex = { version = "0.4", optional = true }
 sha2 = { version = "0.10", optional = true }
 base64 = { version = "0.22", optional = true }
 tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3", optional = true }
+clap = { version = "4.0", features = ["derive"], optional = true }
 typetag = { version = "0.2", optional = true }
 # new deps from former toolkit-core
 url = "2"
@@ -56,10 +58,13 @@ futures = { workspace = true }
 # Phase-0: clean slate – only the `echo` demo tool.
 echo = []
 minimal = ["echo"]
+# Agent system features
+agents = []
+agent_migration = ["clap", "tracing-subscriber"]
 # additional features ported from toolkit-core
 schema_cache = ["once_cell", "dashmap"]
 allow_remote_refs = []
 wasm_loader = ["wasmtime"]
 http_transport = []
 
-default = ["minimal"]
+default = ["minimal", "agents"]
