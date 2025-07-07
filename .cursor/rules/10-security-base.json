@@ -1,79 +1,43 @@
 {
-  "name": "SecurityBase",
-  "version": "1.0.1",
-  "description": "Core security hardening guidelines for all components",
-  "category": "security",
-  "priority": 90,
-  "always_apply": true,
-  "extends": [
-    "CoreBaseline"
-  ],
-  "objectives": [
-    "Detect and mitigate common security weaknesses",
-    "Enforce secure-by-default architecture",
-    "Provide clear audit trails"
-  ],
-  "guidelines": {
-    "security_checks": [
-      "Scan for insecure dependencies",
-      "Detect unsafe block usage",
-      "Check for injection risks"
+  "kind": "rule",
+  "metadata": {
+    "name": "security-base",
+    "version": "2.0.0",
+    "title": "SecurityBase",
+    "description": "Core security hardening guidelines for all components",
+    "tags": [
+      "security.base"
     ],
-    "code_practices": [
-      "Replace unsafe code with safe patterns",
-      "Validate inputs at system boundaries",
-      "Encrypt secrets at rest"
-    ],
-    "monitoring": [
-      "Add structured logging for auth failures",
-      "Log anomalous input patterns",
-      "Use fuzz testing for parsing logic"
-    ]
+    "priority": "critical",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T06:32:26.511258+00:00",
+    "checksum": "f24d4ed75053880e",
+    "schema_version": "2.0.0"
   },
-  "security_checks": {
-    "dependencies": {
-      "tools": [
-        "cargo-audit",
-        "cargo-geiger"
-      ],
-      "actions": [
+  "spec": {
+    "always_apply": true,
+    "extends": [],
+    "objectives": [
+      "Detect and mitigate common security weaknesses",
+      "Enforce secure-by-default architecture",
+      "Provide clear audit trails"
+    ],
+    "guidelines": {
+      "security_checks": [
         "Scan for insecure dependencies",
         "Detect unsafe block usage",
         "Check for injection risks"
-      ]
-    },
-    "code_practices": [
-      "Replace unsafe code with safe patterns",
-      "Validate inputs at system boundaries",
-      "Encrypt secrets at rest",
-      "Scrub in-memory secrets after use"
-    ],
-    "monitoring": [
-      "Add structured logging for auth failures",
-      "Log anomalous input patterns",
-      "Use fuzz testing for parsing logic",
-      "Gate sensitive features with permissions"
-    ]
-  },
-  "commit_requirements": {
-    "security_commits": {
-      "format": "fix(auth): <description of vulnerability fixed>",
-      "required_fields": [
-        "Intent description",
-        "Risk addressed",
-        "Test coverage added"
+      ],
+      "code_practices": [
+        "Replace unsafe code with safe patterns",
+        "Validate inputs at system boundaries",
+        "Encrypt secrets at rest"
+      ],
+      "monitoring": [
+        "Add structured logging for auth failures",
+        "Log anomalous input patterns",
+        "Use fuzz testing for parsing logic"
       ]
     }
-  },
-  "maintenance": {
-    "tagging": "// SECURITY: <explanation>",
-    "testing": "Write tests for edge cases and regressions",
-    "reviews": "Security changes require dual approval"
-  },
-  "metadata": {
-    "created": "2025-07-07",
-    "modified": "2025-07-07T05:22:51.017808+00:00",
-    "schema_version": "1.0.0",
-    "checksum": "f9790064d727911a"
   }
 }

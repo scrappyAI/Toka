@@ -1,0 +1,63 @@
+{
+  "schemas": {
+    "event-schema": {
+      "file": "event-schema.json",
+      "title": "Event Schema",
+      "version": "1.0.0",
+      "description": "Schema for runtime events with DAG pointers, vector clocks, and traceability",
+      "$id": "https://github.com/scrappyAI/Toka/blob/main/.cursor/schemas/event-schema.json"
+    },
+    "agent-spec-schema": {
+      "file": "agent-spec-schema.json",
+      "title": "Agent Specification Schema",
+      "version": "2.0.0",
+      "description": "Schema for AI agent specifications using universal envelope format",
+      "$id": "https://github.com/scrappyAI/Toka/blob/main/.cursor/schemas/agent-spec-schema.json"
+    },
+    "resource-envelope-v1": {
+      "file": "resource-envelope-v1.json",
+      "title": "Universal Resource Envelope Schema",
+      "version": "1.0.0",
+      "description": "Universal meta-schema for all Toka resources (agents, rules, tools, plans, events)",
+      "$id": "https://github.com/scrappyAI/Toka/blob/main/.cursor/schemas/resource-envelope-v1.json",
+      "kinds": [
+        "agent",
+        "rule",
+        "tool",
+        "plan",
+        "event",
+        "capability",
+        "workflow",
+        "policy",
+        "metric"
+      ]
+    },
+    "cursor-rule-schema": {
+      "file": "cursor-rule-schema.json",
+      "title": "Cursor Rule Schema",
+      "version": "2.0.0",
+      "description": "Schema for Cursor IDE rules using universal envelope format",
+      "$id": "https://github.com/scrappyAI/Toka/blob/main/.cursor/schemas/cursor-rule-schema.json"
+    },
+    "plan-schema": {
+      "file": "plan-schema.json",
+      "title": "Plan Schema",
+      "version": "1.0.0",
+      "description": "Schema for execution plans with ordered steps, guard conditions, and rollback procedures",
+      "$id": "https://github.com/scrappyAI/Toka/blob/main/.cursor/schemas/plan-schema.json"
+    }
+  },
+  "kinds": [
+    "agent",
+    "rule",
+    "tool",
+    "plan",
+    "event",
+    "capability",
+    "workflow",
+    "policy",
+    "metric"
+  ],
+  "version": "1.0.0",
+  "generated": "auto"
+}

@@ -1,0 +1,319 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$id": "https://github.com/scrappyAI/Toka/blob/main/.cursor/schemas/event-schema.json",
+  "title": "Event Schema",
+  "description": "Schema for runtime events with DAG pointers, vector clocks, and traceability",
+  "version": "1.0.0",
+  "allOf": [
+    {
+      "$ref": "resource-envelope-v1.json"
+    },
+    {
+      "properties": {
+        "kind": {
+          "const": "event"
+        },
+        "spec": {
+          "type": "object",
+          "required": [
+            "event_type",
+            "timestamp",
+            "source",
+            "trace_context"
+          ],
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "enum": [
+                "plan.started",
+                "plan.completed",
+                "plan.failed",
+                "step.started",
+                "step.completed",
+                "step.failed",
+                "step.skipped",
+                "agent.spawned",
+                "agent.terminated",
+                "capability.requested",
+                "capability.granted",
+                "capability.denied",
+                "rule.applied",
+                "rule.violated",
+                "checkpoint.created",
+                "rollback.initiated",
+                "rollback.completed",
+                "validation.started",
+                "validation.passed",
+                "validation.failed",
+                "resource.created",
+                "resource.updated",
+                "resource.deleted",
+                "system.started",
+                "system.stopped",
+                "error.occurred",
+                "warning.issued"
+              ],
+              "description": "Type of event"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Event timestamp in ISO 8601 format"
+            },
+            "source": {
+              "$ref": "#/$defs/event-source"
+            },
+            "trace_context": {
+              "$ref": "#/$defs/trace-context"
+            },
+            "payload": {
+              "type": "object",
+              "description": "Event-specific data payload"
+            },
+            "correlation_id": {
+              "type": "string",
+              "pattern": "^[a-f0-9-]{36}$",
+              "description": "UUID for correlating related events"
+            },
+            "parent_event_id": {
+              "type": "string",
+              "description": "ID of parent event in causality chain"
+            },
+            "severity": {
+              "type": "string",
+              "enum": [
+                "trace",
+                "debug",
+                "info",
+                "warn",
+                "error",
+                "fatal"
+              ],
+              "description": "Event severity level"
+            },
+            "categories": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9.-]*[a-z0-9]$"
+              },
+              "description": "Event categories for filtering"
+            },
+            "metrics": {
+              "type": "object",
+              "patternProperties": {
+                "^[a-z][a-z0-9_]*$": {
+                  "type": "number"
+                }
+              },
+              "description": "Associated metrics"
+            },
+            "duration": {
+              "$ref": "resource-envelope-v1.json#/$defs/duration"
+            },
+            "error": {
+              "$ref": "#/$defs/error-info"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "event-source": {
+      "type": "object",
+      "required": [
+        "type",
+        "id"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "agent",
+            "plan",
+            "step",
+            "rule",
+            "system",
+            "external"
+          ],
+          "description": "Source type"
+        },
+        "id": {
+          "type": "string",
+          "description": "Source identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable source name"
+        },
+        "version": {
+          "$ref": "resource-envelope-v1.json#/$defs/semver"
+        },
+        "host": {
+          "type": "string",
+          "description": "Host where event originated"
+        },
+        "process_id": {
+          "type": "string",
+          "description": "Process ID where event originated"
+        },
+        "thread_id": {
+          "type": "string",
+          "description": "Thread ID where event originated"
+        }
+      },
+      "additionalProperties": false
+    },
+    "trace-context": {
+      "type": "object",
+      "required": [
+        "trace_id",
+        "span_id",
+        "vector_clock"
+      ],
+      "properties": {
+        "trace_id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{32}$",
+          "description": "Distributed trace identifier"
+        },
+        "span_id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{16}$",
+          "description": "Span identifier within trace"
+        },
+        "parent_span_id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{16}$",
+          "description": "Parent span identifier"
+        },
+        "vector_clock": {
+          "$ref": "#/$defs/vector-clock"
+        },
+        "dag_pointer": {
+          "$ref": "#/$defs/dag-pointer"
+        },
+        "causality_chain": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Chain of causally related event IDs"
+        },
+        "execution_context": {
+          "type": "object",
+          "properties": {
+            "plan_id": {
+              "type": "string"
+            },
+            "step_id": {
+              "type": "string"
+            },
+            "agent_id": {
+              "type": "string"
+            },
+            "rule_id": {
+              "type": "string"
+            }
+          },
+          "description": "Execution context information"
+        }
+      },
+      "additionalProperties": false
+    },
+    "vector-clock": {
+      "type": "object",
+      "description": "Vector clock for distributed event ordering",
+      "patternProperties": {
+        "^[a-z][a-z0-9-]*[a-z0-9]$": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "dag-pointer": {
+      "type": "object",
+      "required": [
+        "node_id"
+      ],
+      "properties": {
+        "node_id": {
+          "type": "string",
+          "description": "DAG node identifier"
+        },
+        "graph_id": {
+          "type": "string",
+          "description": "DAG graph identifier"
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Depth in DAG"
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Path from root to this node"
+        },
+        "predecessors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Immediate predecessor node IDs"
+        },
+        "successors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Immediate successor node IDs"
+        }
+      },
+      "additionalProperties": false
+    },
+    "error-info": {
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "description": "Error code"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message"
+        },
+        "type": {
+          "type": "string",
+          "description": "Error type or class"
+        },
+        "stack_trace": {
+          "type": "string",
+          "description": "Stack trace if available"
+        },
+        "context": {
+          "type": "object",
+          "description": "Additional error context"
+        },
+        "recoverable": {
+          "type": "boolean",
+          "description": "Whether error is recoverable"
+        },
+        "retry_after": {
+          "$ref": "resource-envelope-v1.json#/$defs/duration"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

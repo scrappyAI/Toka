@@ -1,82 +1,202 @@
-# Schema-Based Configuration System
+# Universal Envelope-Based Schema System
 
-This directory contains the formal schemas and automation tools for cursor rules and agent specifications. The system ensures consistency, automatic versioning, and validation across all configuration files.
+This directory contains the formal schemas and automation tools for all Toka resources using a universal envelope-based architecture. The system ensures consistency, automatic versioning, and validation across all configuration files while providing maximum flexibility and future-proofing.
 
 ## 🚀 Overview
 
-The schema-based system provides:
-- **Formal schemas** that ALL implementations MUST follow
+The envelope-based schema system provides:
+- **Universal envelope** that wraps ALL resource types (agents, rules, tools, plans, events)
+- **Future-proof design** with hierarchical tags instead of rigid enums
 - **Automatic versioning** based on semantic changes
 - **Validation** against JSON Schema specifications
 - **Metadata management** with checksums and timestamps
 - **Consistency enforcement** across all configuration files
+- **Vendor extensions** through `x-` prefixed fields
+- **Schema composition** through reusable `$defs`
 
 ## 📁 Directory Structure
 
 ```
 .cursor/schemas/
-├── README.md                    # This documentation
-├── cursor-rule-schema.yaml      # Schema for cursor rules
-├── agent-spec-schema.yaml       # Schema for agent specifications
-└── version-manager.py           # Automatic versioning tool
+├── README.md                       # This documentation
+├── resource-envelope-v1.json       # Universal envelope schema (canonical)
+├── cursor-rule-schema.json         # Rule-specific schema (extends envelope)
+├── agent-spec-schema.json          # Agent-specific schema (extends envelope)
+├── plan-schema.json                # Plan-specific schema (extends envelope)
+├── event-schema.json               # Event-specific schema (extends envelope)
+├── schema-index.json               # Auto-generated schema index
+├── schema-helper.py                # Schema management utilities
+├── migrate-to-envelope.py          # Migration script for legacy files
+└── version-manager.py              # Automatic versioning tool
 ```
 
-## 🏗️ Schema Files
+## 🏗️ Universal Envelope Architecture
 
-### cursor-rule-schema.yaml
-Defines the structure for `.cursor/rules/*.yaml` files with:
-- Formal field definitions and constraints
-- Required vs optional fields
-- Validation patterns and examples
-- Metadata management requirements
+### Core Concept
 
-### agent-spec-schema.yaml
-Defines the structure for `agents/**/*.yaml` files with:
-- Comprehensive agent specification format
-- Domain-specific extensions (e.g., GitHub integration)
-- Security and behavioral directive requirements
-- Success criteria and metrics definitions
+Every resource in the Toka system uses the same top-level envelope structure:
+
+```json
+{
+  "kind": "rule | agent | tool | plan | event | capability | workflow | policy | metric",
+  "metadata": {
+    "name": "resource-identifier",
+    "version": "1.0.0",
+    "title": "Human Readable Title",
+    "description": "Detailed description",
+    "tags": ["hierarchical.tags", "for.categorization"],
+    "priority": "critical | high | medium | low"
+  },
+  "spec": {
+    // Kind-specific payload
+  },
+  "extensions": {
+    "x-vendor-field": "vendor-specific data"
+  }
+}
+```
+
+### Key Benefits
+
+1. **Single Top-Level Shape**: All resources use the same envelope structure
+2. **Hierarchical Tags**: Replace rigid enums with flexible tags (e.g., `security.auth`, `io.fs.read`)
+3. **Reusable Components**: Common `$defs` shared across all schemas
+4. **Explicit Extensions**: Vendor fields through `x-` prefix
+5. **Future-Proof**: New kinds can be added without schema changes
+
+## 🔧 Schema Files
+
+### resource-envelope-v1.json (Universal)
+The canonical envelope schema that defines:
+- Universal metadata structure
+- Reusable `$defs` for common types
+- Extension point definitions
+- Tag and capability patterns
+
+### Kind-Specific Schemas
+Each resource kind has its own schema that extends the envelope:
+- **cursor-rule-schema.json**: IDE rules with guidelines and objectives
+- **agent-spec-schema.json**: AI agents with capabilities and tasks
+- **plan-schema.json**: Execution plans with steps and rollback
+- **event-schema.json**: Runtime events with tracing and DAG pointers
+
+## 🏷️ Hierarchical Tagging System
+
+Replace rigid categorical enums with flexible hierarchical tags:
+
+### Tag Examples
+```
+# Security domain
+security.auth          # Authentication rules
+security.encryption    # Encryption requirements
+security.audit         # Audit and compliance
+
+# System domain  
+system.core           # Core system functionality
+system.infrastructure # Infrastructure components
+system.monitoring     # Monitoring and metrics
+
+# Integration domain
+integration.github    # GitHub integration
+integration.ai        # AI service integration
+integration.api       # API integrations
+
+# Process domain
+process.documentation # Documentation processes
+process.testing       # Testing procedures
+process.deployment    # Deployment workflows
+```
+
+### Benefits
+- **Searchable**: Filter by tag prefix (`security.*`)
+- **Hierarchical**: Natural organization and grouping
+- **Extensible**: New tags without schema updates
+- **Compositional**: Multiple tags per resource
+
+## 🔄 Capability Maps
+
+Structured capability definitions replace simple string lists:
+
+```json
+{
+  "capabilities": {
+    "read": ["fs:/src", "net:github.com"],
+    "write": ["fs:/tmp", "db:events"],
+    "execute": [
+      {"tool": "cargo", "args": ["check"]},
+      {"tool": "docker", "args": ["build"]}
+    ],
+    "network": ["github.com", "api.openai.com"]
+  }
+}
+```
+
+Benefits:
+- **POSIX/RBAC Compatible**: Maps to standard permission systems
+- **Composable**: Runtime can compute unions/intersections
+- **Structured**: Tool execution with args and environment
+
+## 🔗 Rule References
+
+Behavioral directives are now rule references:
+
+```json
+{
+  "rules": [
+    {
+      "rule_id": "https://example.com/rules/security-baseline",
+      "version": "v1.2.0",
+      "conditions": {"environment": "production"}
+    }
+  ]
+}
+```
+
+Benefits:
+- **Composition**: Rules live independently, agents import them
+- **Versioning**: Specific rule versions
+- **Conditional**: Context-specific rule application
 
 ## 🔄 Automatic Versioning System
 
-The `version-manager.py` script provides automatic version management:
+The enhanced version manager handles envelope-based resources:
 
 ### Installation
 ```bash
-# Install required dependencies
+# Required dependencies already installed
 pip install pyyaml jsonschema semantic-version
-
-# Make the script executable
-chmod +x .cursor/version-manager.py
 ```
 
 ### Usage
 
 #### Update All Files
 ```bash
-# Update all cursor rules and agent specs with automatic versioning
+# Update all envelope-based resources with automatic versioning
 python .cursor/version-manager.py --all
 
-# Update only cursor rules
+# Update only rules (migrated to envelope format)
 python .cursor/version-manager.py --rules
-
-# Update only agent specifications
-python .cursor/version-manager.py --specs
 ```
 
-#### Update Specific Files
+#### Migration from Legacy Format
 ```bash
-# Update a specific cursor rule
-python .cursor/version-manager.py --file .cursor/rules/00-core-baseline.yaml
+# Migrate legacy files to envelope format
+python .cursor/schemas/migrate-to-envelope.py --all
 
-# Update a specific agent spec
-python .cursor/version-manager.py --file agents/v1.0.0/github/github-api-integration.yaml
+# Migrate specific file
+python .cursor/schemas/migrate-to-envelope.py --file path/to/legacy/file.json
 ```
 
-#### Validation Only
+#### Schema Management
 ```bash
-# Validate without updating
-python .cursor/version-manager.py --all --validate-only
+# Inject GitHub $id fields into all schemas
+python .cursor/schemas/schema-helper.py --inject-ids
+
+# Create schema index
+python .cursor/schemas/schema-helper.py --create-index
+
+# All schema operations
+python .cursor/schemas/schema-helper.py --all
 ```
 
 ### How Versioning Works
@@ -84,7 +204,7 @@ python .cursor/version-manager.py --all --validate-only
 The system automatically determines version bumps based on changes:
 
 #### Major Version (X.0.0)
-- Breaking changes to required fields
+- Migration to envelope format (breaking change)
 - Capability or objective removals
 - Priority level changes
 - Schema-breaking modifications
@@ -92,7 +212,7 @@ The system automatically determines version bumps based on changes:
 #### Minor Version (X.Y.0)
 - New capabilities added
 - New objectives added
-- New guidelines or features
+- New tags or features
 - Backward-compatible enhancements
 
 #### Patch Version (X.Y.Z)
@@ -101,121 +221,108 @@ The system automatically determines version bumps based on changes:
 - Non-breaking clarifications
 - Metadata updates
 
-### Version Database
-
-The system maintains a version database at `.cursor/version_db.json` containing:
-- Current version for each file
-- Creation and modification timestamps
-- Content checksums for change detection
-- Previous content for comparison
-
 ## 📋 Schema Validation
 
-### Cursor Rules Validation
+### Envelope Validation
 
-All cursor rules must follow the schema requirements:
+All resources must validate against both:
+1. **Universal envelope schema** - Structure and metadata
+2. **Kind-specific schema** - Payload validation
 
-#### Required Fields
-- `name`: PascalCase rule name
-- `version`: Semantic version (auto-managed)
-- `description`: Clear description (10-200 chars)
-- `category`: One of predefined categories
-- `priority`: Integer 1-100
-- `always_apply`: Boolean
-- `extends`: Array of parent rules
-- `objectives`: Array of objectives
-- `guidelines`: Object with guideline groups
-
-#### Example Valid Rule
-```yaml
-name: "ExampleRule"
-version: "1.0.0"
-description: "Example rule demonstrating proper structure"
-category: "core"
-priority: 50
-always_apply: true
-extends: ["CoreBaseline"]
-objectives:
-  - "Demonstrate proper rule structure"
-guidelines:
-  example_section:
-    - "Follow this pattern for all rules"
-    - "Maintain consistency across implementations"
+#### Example Valid Rule (Envelope Format)
+```json
+{
+  "kind": "rule",
+  "metadata": {
+    "name": "example-rule",
+    "version": "1.0.0",
+    "title": "Example Rule", 
+    "description": "Example rule demonstrating envelope structure",
+    "tags": ["system.core", "quality.baseline"],
+    "priority": "high"
+  },
+  "spec": {
+    "always_apply": true,
+    "extends": [],
+    "objectives": ["Demonstrate envelope structure"],
+    "guidelines": {
+      "example_section": [
+        "Follow envelope pattern for all resources",
+        "Use hierarchical tags for categorization"
+      ]
+    }
+  }
+}
 ```
 
-### Agent Specification Validation
+### Tag Validation
 
-All agent specs must follow the schema requirements:
+Tags must follow the pattern: `^[a-z0-9][a-z0-9-\.]*[a-z0-9]$`
 
-#### Required Sections
-- `metadata`: Version, creation date, workstream info
-- `spec`: Name, domain, priority, description
-- `capabilities`: Primary and secondary capabilities
-- `objectives`: Goals with deliverables and validation
-- `tasks`: Default tasks and optional conditional tasks
-- `dependencies`: Required and optional dependencies
-- `reporting`: Frequency, channels, metrics
-- `security`: Sandbox, capabilities, resource limits
-- `behavioral_directives`: Operational focus, error handling, coordination
-- `risk_mitigation`: High priority risks and monitoring
-- `success_criteria`: Phase and final validation criteria
-
-#### Domain-Specific Extensions
-
-GitHub integration agents can include additional sections:
-- `github_integration`: API endpoints, webhook events, permissions, rate limiting
+Valid examples:
+- `system.core`
+- `security.auth.oauth2`
+- `integration.github-api`
+- `process.ci-cd`
 
 ## 🛠️ Development Workflow
 
-### Creating New Rules
+### Creating New Resources
 
-1. **Create the file** following the naming convention:
+1. **Choose the appropriate kind**:
    ```bash
-   touch .cursor/rules/80-new-rule.yaml
+   # Available kinds: agent, rule, tool, plan, event, capability, workflow, policy, metric
    ```
 
-2. **Write the rule** following the schema:
-   ```yaml
-   name: "NewRule"
-   description: "Description of the new rule"
-   category: "appropriate-category"
-   priority: 75
-   # ... other required fields
+2. **Create with envelope structure**:
+   ```json
+   {
+     "kind": "rule",
+     "metadata": {
+       "name": "new-rule",
+       "version": "1.0.0",
+       "title": "New Rule",
+       "description": "Description of the new rule",
+       "tags": ["appropriate.category"],
+       "priority": "medium"
+     },
+     "spec": {
+       // Kind-specific fields
+     }
+   }
    ```
 
 3. **Validate and version**:
    ```bash
-   python .cursor/version-manager.py --file .cursor/rules/80-new-rule.yaml
+   python .cursor/version-manager.py --file path/to/new/resource.json
    ```
 
-### Creating New Agent Specs
+### Updating Existing Resources
 
-1. **Create the directory structure**:
-   ```bash
-   mkdir -p agents/v1.0.0/new-domain
-   ```
-
-2. **Create the specification**:
-   ```bash
-   touch agents/v1.0.0/new-domain/new-agent.yaml
-   ```
-
-3. **Write the specification** following the schema requirements
-
-4. **Validate and version**:
-   ```bash
-   python .cursor/version-manager.py --file agents/v1.0.0/new-domain/new-agent.yaml
-   ```
-
-### Updating Existing Files
-
-1. **Make your changes** to the file
+1. **Make your changes** to the resource
 2. **Run the version manager** to auto-version:
    ```bash
-   python .cursor/version-manager.py --file path/to/changed/file.yaml
+   python .cursor/version-manager.py --file path/to/changed/resource.json
    ```
 3. **Review the version bump** and changelog
 4. **Commit the changes** with appropriate commit message
+
+## 📊 Future Schema Extensions
+
+The envelope architecture supports future resource types:
+
+### Planned Extensions
+- **tool-schema.json**: External tool definitions
+- **capability-schema.json**: Capability definitions and policies  
+- **workflow-schema.json**: Multi-step workflow definitions
+- **policy-schema.json**: Security and governance policies
+- **metric-schema.json**: Monitoring and measurement definitions
+
+### Extension Points
+- **Vendor Extensions**: `x-` prefixed fields for vendor-specific data
+- **New Kinds**: Add to envelope `kind` enum
+- **Tag Hierarchies**: Extend tag patterns for new domains
+- **Capability Types**: New capability map structures
 
 ## 🔍 Validation and Quality Assurance
 
@@ -226,11 +333,11 @@ Add to your git hooks:
 #!/bin/bash
 # .git/hooks/pre-commit
 
-echo "Validating configuration files..."
+echo "Validating envelope-based resources..."
 python .cursor/version-manager.py --all --validate-only
 
 if [ $? -ne 0 ]; then
-    echo "Configuration validation failed!"
+    echo "Resource validation failed!"
     exit 1
 fi
 ```
@@ -239,8 +346,8 @@ fi
 
 Add to your CI pipeline:
 ```yaml
-# .github/workflows/validate-config.yml
-name: Validate Configuration
+# .github/workflows/validate-resources.yml
+name: Validate Resources
 on: [push, pull_request]
 jobs:
   validate:
@@ -253,43 +360,24 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: pip install pyyaml jsonschema semantic-version
-      - name: Validate configuration
+      - name: Validate resources
         run: python .cursor/version-manager.py --all --validate-only
 ```
 
-## 📊 Monitoring and Maintenance
-
-### Version Database Maintenance
-
-The version database should be:
-- **Committed to version control** for team consistency
-- **Backed up regularly** to prevent data loss
-- **Cleaned periodically** to remove obsolete entries
-
-### Schema Evolution
-
-When updating schemas:
-1. **Update the schema file**
-2. **Increment the schema version**
-3. **Update the version manager** to handle new features
-4. **Migrate existing files** if necessary
-5. **Update documentation** and examples
-
 ## 🎯 Best Practices
 
-### Rule Creation
-- **Start with existing rules** and extend them
-- **Use descriptive names** in PascalCase
-- **Set appropriate priorities** based on importance
-- **Group related guidelines** logically
-- **Include validation tests** where applicable
+### Resource Creation
+- **Use descriptive names** in kebab-case format
+- **Choose appropriate tags** with proper hierarchy
+- **Set realistic priorities** based on importance
+- **Follow envelope structure** consistently
+- **Document vendor extensions** clearly
 
-### Agent Specification
-- **Follow naming conventions** (kebab-case for identifiers)
-- **Define clear objectives** with measurable deliverables
-- **Specify realistic resource limits**
-- **Include comprehensive risk mitigation**
-- **Document domain-specific requirements**
+### Tag Strategy
+- **Start specific, generalize up**: `security.auth.oauth2` → `security.auth` → `security`
+- **Use domain prefixes**: `system.*`, `security.*`, `integration.*`
+- **Avoid deep nesting**: Maximum 3-4 levels
+- **Be consistent**: Same patterns across resources
 
 ### Version Management
 - **Run validation regularly** during development
@@ -297,36 +385,29 @@ When updating schemas:
 - **Use semantic commit messages** that reflect changes
 - **Update related documentation** when schemas change
 
-## 🚨 Troubleshooting
+## 🚨 Migration from Legacy Format
 
-### Common Issues
+### Automatic Migration
 
-#### Schema Validation Errors
+All legacy rule files have been automatically migrated to envelope format:
+
 ```bash
-# Check specific validation errors
-python .cursor/version-manager.py --file problematic-file.yaml --validate-only
+# Migration was completed with:
+python .cursor/schemas/migrate-to-envelope.py --all
 ```
 
-#### Version Conflicts
-```bash
-# Reset version if corrupted
-rm .cursor/version_db.json
-python .cursor/version-manager.py --all
-```
+### Migration Changes
 
-#### Missing Dependencies
-```bash
-# Install required Python packages
-pip install pyyaml jsonschema semantic-version
-```
+- **Structure**: Wrapped in universal envelope
+- **Categories**: Converted to hierarchical tags
+- **Priorities**: Numeric → string conversion
+- **Metadata**: Enhanced with additional fields
+- **Versioning**: Major version bump (v2.0.0)
 
-### Getting Help
+### Backward Compatibility
 
-1. **Check the schema files** for field requirements
-2. **Look at existing examples** for proper structure
-3. **Run validation** to see specific error messages
-4. **Review the version database** for historical information
+The version manager maintains backward compatibility for any remaining legacy files while strongly encouraging migration to the envelope format.
 
 ---
 
-This schema-based system ensures consistency and quality across all configuration files while providing automatic versioning and validation. Follow the guidelines above to maintain a clean, well-organized configuration system. 
+This universal envelope-based schema system provides maximum flexibility while maintaining strict validation and consistency. It enables the Toka system to evolve gracefully while ensuring deterministic behavior across all runtime environments. 

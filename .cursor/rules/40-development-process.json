@@ -1,153 +1,43 @@
 {
-  "name": "DevelopmentProcess",
-  "version": "1.0.1",
-  "description": "Development workflow including refactoring, proposals, and date enforcement",
-  "category": "process",
-  "priority": 60,
-  "always_apply": true,
-  "extends": [
-    "CoreBaseline"
-  ],
-  "objectives": [
-    "Ensure systematic and productive refactoring",
-    "Maintain verifiable date accuracy",
-    "Provide structured change proposals"
-  ],
-  "guidelines": {
-    "refactoring": [
-      "Work in small, isolated slices",
-      "Ensure each slice compiles and passes tests",
-      "Respect existing public APIs or provide migration"
+  "kind": "rule",
+  "metadata": {
+    "name": "development-process",
+    "version": "2.0.0",
+    "title": "DevelopmentProcess",
+    "description": "Development workflow including refactoring, proposals, and date enforcement",
+    "tags": [
+      "process.base"
     ],
-    "proposals": [
-      "Draft proposal with template",
-      "Review cycle with GitHub comments",
-      "Update status: DRAFT \u2192 REVIEW \u2192 APPROVED"
-    ],
-    "date_enforcement": [
-      "Use canonical source of 'now'",
-      "Validate dates against git commit timestamps",
-      "Block PRs with future dates or mismatches"
-    ]
+    "priority": "high",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T06:32:26.509104+00:00",
+    "checksum": "90d9abfc8f3bdd7f",
+    "schema_version": "2.0.0"
   },
-  "refactoring_guidelines": {
-    "scope": [
-      "Identify target crate(s) or modules within workspace",
-      "Define clear goals (separation of concerns, improved API, etc.)",
-      "Work within crate boundaries"
+  "spec": {
+    "always_apply": true,
+    "extends": [],
+    "objectives": [
+      "Ensure systematic and productive refactoring",
+      "Maintain verifiable date accuracy",
+      "Provide structured change proposals"
     ],
-    "execution": {
-      "principles": [
+    "guidelines": {
+      "refactoring": [
         "Work in small, isolated slices",
         "Ensure each slice compiles and passes tests",
-        "Respect existing public APIs or provide migration",
-        "Use --workspace only for integration checks"
+        "Respect existing public APIs or provide migration"
       ],
-      "commands": [
-        "cargo check -p <crate>",
-        "cargo test -p <crate>",
-        "cargo test --workspace"
-      ]
-    },
-    "commit_strategy": {
-      "format": "refactor(<scope>): <description>",
-      "requirements": [
-        "Descriptive, atomic commits",
-        "One logical step per commit",
-        "Include brief rationale if non-obvious"
+      "proposals": [
+        "Draft proposal with template",
+        "Review cycle with GitHub comments",
+        "Update status: DRAFT \u2192 REVIEW \u2192 APPROVED"
       ],
-      "examples": [
-        "refactor(auth): extract token verification into submodule",
-        "refactor(config): simplify TOML parsing logic"
+      "date_enforcement": [
+        "Use canonical source of 'now'",
+        "Validate dates against git commit timestamps",
+        "Block PRs with future dates or mismatches"
       ]
     }
-  },
-  "change_proposals": {
-    "when_required": [
-      "Changes spanning multiple crates",
-      "Public API alterations",
-      "New optional subsystems (feature flags)"
-    ],
-    "template_structure": {
-      "required_sections": [
-        "Context: current behavior, pain points, metrics",
-        "Goals: numbered objectives",
-        "Proposed Changes: API diffs, feature flags",
-        "Compatibility: breaking changes and migration",
-        "Implementation Plan: task breakdown"
-      ],
-      "format": "Markdown with Mermaid diagrams for complex flows",
-      "location": "/docs/proposals/YYYY-MM-DD_<slug>.md"
-    },
-    "workflow": [
-      "Draft proposal with template",
-      "Review cycle with GitHub comments",
-      "Update status: DRAFT \u2192 REVIEW \u2192 APPROVED",
-      "Convert implementation plan to GitHub issues"
-    ]
-  },
-  "date_enforcement": {
-    "objectives": [
-      "Eliminate hallucinated or stale dates",
-      "Provide canonical source of 'now'",
-      "Ensure tag dates match git commit timestamps"
-    ],
-    "toolchain": {
-      "date_injection": "TODAY=$(date -u +%Y-%m-%d)",
-      "commit_date": "git log -1 --format=%cd --date=format:%Y-%m-%d",
-      "template_replacement": "./scripts/insert_date.sh"
-    },
-    "validation": {
-      "script": "./scripts/validate_dates.py",
-      "patterns": "Scans for \\d{4}-\\d{2}-\\d{2} date patterns",
-      "rules": [
-        "Must match TODAY \u00b10 days OR",
-        "Equal COMMIT_DATE for release docs OR",
-        "Preceded by DATE:EXEMPT comment"
-      ]
-    },
-    "exemptions": {
-      "format": "<!-- DATE:EXEMPT source=\"reference\" -->",
-      "example": "<!-- DATE:EXEMPT source=\"RFC 2119, published 1997-03-01\" -->",
-      "usage": "For historical references only"
-    },
-    "ci_integration": {
-      "commands": [
-        "pip install -r scripts/requirements.txt",
-        "./scripts/validate_dates.py"
-      ],
-      "enforcement": "Block PRs with future dates or mismatches"
-    }
-  },
-  "versioning_requirements": {
-    "per_crate": {
-      "patch": "Internal refactors, no API changes",
-      "minor": "Additive changes, backward compatible",
-      "major": "Breaking changes, architectural shifts"
-    },
-    "workspace_coordination": [
-      "Update version fields in affected Cargo.toml",
-      "Propagate through workspace dependencies",
-      "Tag versions appropriately (e.g., v0.5.0)"
-    ]
-  },
-  "quality_gates": {
-    "before_merge": [
-      "All crates compile cleanly",
-      "All tests pass workspace-wide",
-      "Documentation updated appropriately",
-      "Version numbers aligned with changes"
-    ],
-    "commit_hygiene": [
-      "Squash trivial commits preserving intent",
-      "Maintain clear history",
-      "Include rationale for significant changes"
-    ]
-  },
-  "metadata": {
-    "created": "2025-07-07",
-    "modified": "2025-07-07T05:22:50.997991+00:00",
-    "schema_version": "1.0.0",
-    "checksum": "3dded98e69930435"
   }
 }

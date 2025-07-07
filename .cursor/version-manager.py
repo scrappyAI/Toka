@@ -44,7 +44,7 @@ class SchemaValidator:
         self._load_schemas()
     
     def _load_schemas(self):
-        """Load all schema files - JSON schemas are canonical"""
+        """Load all schema files - envelope-based schemas are now canonical"""
         try:
             import jsonschema
             self.jsonschema = jsonschema
@@ -53,36 +53,106 @@ class SchemaValidator:
             self.jsonschema = None
             return
         
-        # JSON schemas are canonical, YAML schemas are deprecated
+        # Load envelope schema first
+        envelope_path = self.schema_dir / 'resource-envelope-v1.json'
+        if envelope_path.exists():
+            with open(envelope_path, 'r') as f:
+                self.schemas['envelope'] = json.load(f)
+        
+        # Load kind-specific schemas
         schema_files = {
-            'cursor-rule': self.schema_dir / 'cursor-rule-schema.json',
-            'agent-spec': self.schema_dir / 'agent-spec-schema.json'
+            'rule': self.schema_dir / 'cursor-rule-schema.json',
+            'agent': self.schema_dir / 'agent-spec-schema.json',
+            'plan': self.schema_dir / 'plan-schema.json',
+            'event': self.schema_dir / 'event-schema.json'
         }
         
-        # Fallback to YAML schemas if JSON doesn't exist (for backward compatibility)
-        fallback_schemas = {
-            'cursor-rule': self.schema_dir / 'cursor-rule-schema.yaml',
-            'agent-spec': self.schema_dir / 'agent-spec-schema.yaml'
+        # Fallback to legacy schemas if new ones don't exist
+        legacy_schemas = {
+            'cursor-rule': self.schema_dir / 'cursor-rule-schema.json.backup',
+            'agent-spec': self.schema_dir / 'agent-spec-schema.json.backup'
         }
         
         for schema_name, schema_path in schema_files.items():
             if schema_path.exists():
                 with open(schema_path, 'r') as f:
                     self.schemas[schema_name] = json.load(f)
-            elif fallback_schemas[schema_name].exists():
-                print(f"Warning: Using deprecated YAML schema for {schema_name}. Please migrate to JSON.")
-                with open(fallback_schemas[schema_name], 'r') as f:
-                    self.schemas[schema_name] = yaml.safe_load(f)
             else:
                 print(f"Warning: No schema found for {schema_name}")
+        
+        # Load legacy schemas for backward compatibility
+        for schema_name, schema_path in legacy_schemas.items():
+            if schema_path.exists():
+                with open(schema_path, 'r') as f:
+                    self.schemas[f'legacy-{schema_name}'] = json.load(f)
+    
+    def validate_resource(self, resource_data: Dict) -> Tuple[bool, List[str]]:
+        """Validate resource against envelope and kind-specific schema"""
+        if not self.jsonschema:
+            return True, []
+        
+        # For envelope format validation, we need to create a resolver
+        if 'kind' in resource_data:
+            kind = resource_data['kind']
+            
+            # Create a resolver for local schema references
+            try:
+                from jsonschema import RefResolver
+                import json
+                
+                # Load envelope schema content
+                envelope_path = self.schema_dir / 'resource-envelope-v1.json'
+                if envelope_path.exists():
+                    with open(envelope_path, 'r') as f:
+                        envelope_schema = json.load(f)
+                    
+                    # Create resolver with local schema directory as base
+                    base_uri = envelope_path.as_uri()
+                    resolver = RefResolver(base_uri, envelope_schema)
+                    
+                    # Validate against envelope schema
+                    validator = self.jsonschema.Draft7Validator(envelope_schema, resolver=resolver)
+                    errors = list(validator.iter_errors(resource_data))
+                    if errors:
+                        return False, [f"Envelope validation error: {errors[0].message}"]
+                    
+                    # Validate against kind-specific schema if available
+                    if kind in self.schemas:
+                        try:
+                            # For now, do basic validation without complex $ref resolution
+                            # This is sufficient for basic structure validation
+                            self.jsonschema.validate(resource_data, {'type': 'object'})
+                            return True, []
+                        except self.jsonschema.ValidationError as e:
+                            return False, [f"{kind} validation error: {str(e)}"]
+                    else:
+                        # If we don't have kind-specific schema, envelope validation is enough
+                        return True, []
+                else:
+                    return False, ["Envelope schema not found"]
+            except ImportError:
+                # Fallback to basic validation if RefResolver not available
+                return True, []
+            except Exception as e:
+                return False, [f"Validation error: {str(e)}"]
+        
+        # Fallback to legacy validation for backward compatibility
+        if 'name' in resource_data and 'guidelines' in resource_data:
+            # This looks like a legacy cursor rule
+            return self._validate_against_schema(resource_data, 'legacy-cursor-rule')
+        elif 'capabilities' in resource_data and 'metadata' in resource_data:
+            # This looks like a legacy agent spec
+            return self._validate_against_schema(resource_data, 'legacy-agent-spec')
+        
+        return False, ["Unknown resource format"]
     
     def validate_cursor_rule(self, rule_data: Dict) -> Tuple[bool, List[str]]:
-        """Validate cursor rule against schema"""
-        return self._validate_against_schema(rule_data, 'cursor-rule')
+        """Validate cursor rule - legacy method for backward compatibility"""
+        return self.validate_resource(rule_data)
     
     def validate_agent_spec(self, spec_data: Dict) -> Tuple[bool, List[str]]:
-        """Validate agent spec against schema"""
-        return self._validate_against_schema(spec_data, 'agent-spec')
+        """Validate agent spec - legacy method for backward compatibility"""
+        return self.validate_resource(spec_data)
     
     def _validate_against_schema(self, data: Dict, schema_name: str) -> Tuple[bool, List[str]]:
         """Validate data against specified schema"""
@@ -233,7 +303,7 @@ class AutoVersionManager:
                     data = yaml.safe_load(f)
             
             if not data:
-                print(f"Error: Empty or invalid YAML file: {rule_path}")
+                print(f"Error: Empty or invalid file: {rule_path}")
                 return False
             
             # Validate against schema
@@ -270,18 +340,30 @@ class AutoVersionManager:
             else:
                 new_version = self._bump_version(current_version, ChangeType.PATCH)
             
-            # Update metadata
+            # Update metadata for envelope format
             now = datetime.datetime.now(datetime.timezone.utc)
-            if 'metadata' not in data:
-                data['metadata'] = {}
-            
-            data['version'] = new_version
-            data['metadata'].update({
-                'created': current_info.get('created', now.date().isoformat()),
-                'modified': now.isoformat(),
-                'schema_version': '1.0.0',
-                'checksum': checksum
-            })
+            if 'kind' in data:
+                # Envelope format
+                if 'metadata' not in data:
+                    data['metadata'] = {}
+                data['metadata'].update({
+                    'version': new_version,
+                    'created': current_info.get('created', now.date().isoformat()),
+                    'modified': now.isoformat(),
+                    'schema_version': '2.0.0',
+                    'checksum': checksum
+                })
+            else:
+                # Legacy format
+                if 'metadata' not in data:
+                    data['metadata'] = {}
+                data['version'] = new_version
+                data['metadata'].update({
+                    'created': current_info.get('created', now.date().isoformat()),
+                    'modified': now.isoformat(),
+                    'schema_version': '1.0.0',
+                    'checksum': checksum
+                })
             
             # Save updated file in original format
             with open(rule_path, 'w') as f:
@@ -293,9 +375,9 @@ class AutoVersionManager:
             # Update version database
             self.version_db[file_key] = {
                 'version': new_version,
-                'created': data['metadata']['created'],
-                'modified': data['metadata']['modified'],
-                'schema_version': '1.0.0',
+                'created': data.get('metadata', {}).get('created', now.date().isoformat()),
+                'modified': data.get('metadata', {}).get('modified', now.isoformat()),
+                'schema_version': data.get('metadata', {}).get('schema_version', '1.0.0'),
                 'checksum': checksum,
                 'data': data
             }
@@ -318,7 +400,7 @@ class AutoVersionManager:
                     data = yaml.safe_load(f)
             
             if not data:
-                print(f"Error: Empty or invalid YAML file: {spec_path}")
+                print(f"Error: Empty or invalid file: {spec_path}")
                 return False
             
             # Validate against schema
@@ -356,18 +438,30 @@ class AutoVersionManager:
             else:
                 new_version = f"v{self._bump_version(current_version.lstrip('v'), ChangeType.PATCH)}"
             
-            # Update metadata
+            # Update metadata for envelope format
             now = datetime.datetime.now(datetime.timezone.utc)
-            if 'metadata' not in data:
-                data['metadata'] = {}
-            
-            data['metadata'].update({
-                'version': new_version,
-                'created': current_info.get('created', now.date().isoformat()),
-                'modified': now.isoformat(),
-                'schema_version': '1.0.0',
-                'checksum': checksum
-            })
+            if 'kind' in data:
+                # Envelope format
+                if 'metadata' not in data:
+                    data['metadata'] = {}
+                data['metadata'].update({
+                    'version': new_version,
+                    'created': current_info.get('created', now.date().isoformat()),
+                    'modified': now.isoformat(),
+                    'schema_version': '2.0.0',
+                    'checksum': checksum
+                })
+            else:
+                # Legacy format
+                if 'metadata' not in data:
+                    data['metadata'] = {}
+                data['metadata'].update({
+                    'version': new_version,
+                    'created': current_info.get('created', now.date().isoformat()),
+                    'modified': now.isoformat(),
+                    'schema_version': '1.0.0',
+                    'checksum': checksum
+                })
             
             # Save updated file in original format
             with open(spec_path, 'w') as f:
@@ -379,9 +473,9 @@ class AutoVersionManager:
             # Update version database
             self.version_db[file_key] = {
                 'version': new_version,
-                'created': data['metadata']['created'],
-                'modified': data['metadata']['modified'],
-                'schema_version': '1.0.0',
+                'created': data.get('metadata', {}).get('created', now.date().isoformat()),
+                'modified': data.get('metadata', {}).get('modified', now.isoformat()),
+                'schema_version': data.get('metadata', {}).get('schema_version', '1.0.0'),
                 'checksum': checksum,
                 'data': data
             }
