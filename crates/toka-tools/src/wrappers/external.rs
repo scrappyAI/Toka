@@ -23,6 +23,7 @@ pub struct ExternalToolConfig {
 /// External tool wrapper
 #[derive(Debug)]
 pub struct ExternalToolWrapper {
+    #[allow(dead_code)]
     config: ExternalToolConfig,
 }
 

@@ -62,6 +62,7 @@ pub fn register_handler(tag: impl Into<String>, handler: HandlerFn) -> Result<()
 /// # Security Note
 /// This function allows cleanup of unused handlers to prevent memory accumulation.
 /// Returns true if the handler was found and removed, false otherwise.
+#[allow(dead_code)]
 pub fn unregister_handler(tag: &str) -> Result<bool, String> {
     let removed = REGISTRY.write()
         .map_err(|_| "Registry lock poisoned".to_string())?
@@ -73,6 +74,7 @@ pub fn unregister_handler(tag: &str) -> Result<bool, String> {
 /// Get the current number of registered handlers.
 /// 
 /// This function is useful for monitoring memory usage and registry growth.
+#[allow(dead_code)]
 pub fn registry_size() -> Result<usize, String> {
     Ok(REGISTRY.read()
         .map_err(|_| "Registry lock poisoned".to_string())?
@@ -84,6 +86,7 @@ pub fn registry_size() -> Result<usize, String> {
 /// # Warning
 /// This function removes all registered handlers and should only be used
 /// during shutdown or testing scenarios.
+#[allow(dead_code)]
 pub fn clear_registry() -> Result<(), String> {
     REGISTRY.write()
         .map_err(|_| "Registry lock poisoned".to_string())?
@@ -115,10 +118,11 @@ mod tests {
     
     #[test]
     fn test_registry_cleanup_functionality() {
+        // Ensure test isolation
+        clear_registry().unwrap();
         // This test verifies that the registry cleanup mechanisms work correctly
         
         // Clear registry to start fresh and record initial size
-        clear_registry().expect("Should clear registry");
         let initial_size = registry_size().expect("Should get size");
         
         // Register some handlers

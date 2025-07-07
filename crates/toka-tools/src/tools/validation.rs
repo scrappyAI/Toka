@@ -353,6 +353,10 @@ impl BuildValidator {
     }
 }
 
+impl Default for BuildValidator {
+    fn default() -> Self { Self::new() }
+}
+
 #[async_trait]
 impl Tool for BuildValidator {
     fn name(&self) -> &str {

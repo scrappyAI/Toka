@@ -25,6 +25,7 @@ pub struct PythonToolConfig {
 /// Python tool wrapper
 #[derive(Debug)]
 pub struct PythonToolWrapper {
+    #[allow(dead_code)]
     config: PythonToolConfig,
 }
 

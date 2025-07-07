@@ -102,7 +102,7 @@ impl Kernel {
     /// - Rate limiting (future enhancement)
     pub async fn submit(&self, msg: Message) -> Result<KernelEvent> {
         // SECURITY: Validate message structure first
-        msg.validate().map_err(|e| KernelError::InvalidOperation(e))?;
+        msg.validate().map_err(KernelError::InvalidOperation)?;
 
         // SECURITY: Log authentication attempts for security monitoring
         let auth_start = std::time::Instant::now();
@@ -146,13 +146,13 @@ impl Kernel {
         let evt = match &msg.op {
             // ───────── core system ops ─────────
             Operation::ScheduleAgentTask { agent, task } => {
-                self.handle_schedule_task(agent.clone(), task.clone()).await?
+                self.handle_schedule_task(*agent, task.clone()).await?
             }
             Operation::SpawnSubAgent { parent, spec } => {
-                self.handle_spawn_agent(parent.clone(), spec.clone()).await?
+                self.handle_spawn_agent(*parent, spec.clone()).await?
             }
             Operation::EmitObservation { agent, data } => {
-                self.handle_observation(agent.clone(), data.clone()).await?
+                self.handle_observation(*agent, data.clone()).await?
             }
         };
 
@@ -165,7 +165,7 @@ impl Kernel {
 
     async fn handle_schedule_task(&self, agent: EntityId, task: TaskSpec) -> Result<KernelEvent> {
         // SECURITY: Validate task before processing
-        task.validate().map_err(|e| KernelError::InvalidOperation(e))?;
+        task.validate().map_err(KernelError::InvalidOperation)?;
         
         let mut state = self.state.write().await;
         
@@ -191,7 +191,7 @@ impl Kernel {
 
     async fn handle_spawn_agent(&self, parent: EntityId, spec: AgentSpec) -> Result<KernelEvent> {
         // SECURITY: Validate agent spec before processing
-        spec.validate().map_err(|e| KernelError::InvalidOperation(e))?;
+        spec.validate().map_err(KernelError::InvalidOperation)?;
         
         // SECURITY: Log agent spawning for audit trail
         eprintln!("Agent spawn request: parent={:?}, name={}", parent, spec.name);

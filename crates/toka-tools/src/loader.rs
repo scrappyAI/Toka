@@ -13,3 +13,7 @@ impl Loader {
     /// Create a new no-op loader.
     pub fn new() -> Self { Self }
 }
+
+impl Default for Loader {
+    fn default() -> Self { Self::new() }
+}

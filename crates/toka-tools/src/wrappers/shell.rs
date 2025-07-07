@@ -25,6 +25,7 @@ pub struct ShellToolConfig {
 /// Shell tool wrapper
 #[derive(Debug)]
 pub struct ShellToolWrapper {
+    #[allow(dead_code)]
     config: ShellToolConfig,
 }
 

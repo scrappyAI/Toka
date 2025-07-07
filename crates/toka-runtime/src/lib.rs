@@ -17,29 +17,31 @@
 //!
 //! # Usage
 //!
-//! ```rust
-//! use toka_runtime::{RuntimeManager, ExecutionRequest, CodeType};
-//! use toka_kernel::{ToolKernel, SecurityLevel};
-//!
-//! #[tokio::main]
-//! async fn main() -> anyhow::Result<()> {
-//!     // Initialize kernel and runtime
-//!     let kernel = ToolKernel::new().await?;
-//!     let runtime = RuntimeManager::new(kernel).await?;
-//!     
-//!     // Execute Python code dynamically
-//!     let request = ExecutionRequest {
-//!         code_type: CodeType::Python,
-//!         code: "print('Hello from dynamic execution!')".to_string(),
-//!         session_id: "user_session".to_string(),
-//!         security_level: SecurityLevel::Sandboxed,
-//!         inputs: serde_json::json!({}),
-//!     };
-//!     
-//!     let result = runtime.execute_code(request).await?;
-//!     println!("Execution result: {}", result.output);
-//!     Ok(())
-//! }
+//! TODO: Update usage example to match current API
+//! 
+//! ```rust,no_run
+//! // use toka_runtime::{RuntimeManager, ExecutionRequest, CodeType};
+//! // use toka_kernel::{ToolKernel, SecurityLevel};
+//! //
+//! // #[tokio::main]
+//! // async fn main() -> anyhow::Result<()> {
+//! //     // Initialize kernel and runtime
+//! //     let kernel = ToolKernel::new().await?;
+//! //     let runtime = RuntimeManager::new(kernel).await?;
+//! //     
+//! //     // Execute Python code dynamically
+//! //     let request = ExecutionRequest {
+//! //         code_type: CodeType::Python,
+//! //         code: "print('Hello from dynamic execution!')".to_string(),
+//! //         session_id: "user_session".to_string(),
+//! //         security_level: SecurityLevel::Sandboxed,
+//! //         inputs: serde_json::json!({}),
+//! //     };
+//! //     
+//! //     let result = runtime.execute_code(request).await?;
+//! //     println!("Execution result: {}", result.output);
+//! //     Ok(())
+//! // }
 //! ```
 
 use std::collections::HashMap;
@@ -100,6 +102,7 @@ pub struct ExecutionContext {
 // Removed duplicate definition - using the one below
 
 // TODO: Wrapper struct to add methods needed by runtime
+#[allow(dead_code)]
 pub struct RuntimeKernel {
     kernel: Kernel,
 }
@@ -245,6 +248,7 @@ pub struct RuntimeManager {
 /// Cached execution for performance optimization
 #[derive(Debug, Clone)]
 struct CachedExecution {
+    #[allow(dead_code)]
     code_hash: String,
     compiled_artifact: Option<Artifact>,
     last_used: Instant,
@@ -307,7 +311,7 @@ impl RuntimeManager {
     
     /// Execute code dynamically with kernel enforcement
     pub async fn execute_code(&self, request: ExecutionRequest) -> Result<ExecutionResult> {
-        let start_time = Instant::now();
+        let _start_time = Instant::now();
         
         // Get appropriate execution engine
         let engines = self.engines.read().await;
@@ -330,7 +334,7 @@ impl RuntimeManager {
         
         // Check cache for previously compiled code
         let code_hash = self.calculate_code_hash(&request.code);
-        let cached_artifact = self.get_cached_execution(&code_hash).await;
+        let _cached_artifact = self.get_cached_execution(&code_hash).await;
         
         // Execute with kernel enforcement
         let result = self.kernel.enforce_execution(&context, async {

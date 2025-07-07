@@ -178,6 +178,6 @@ async fn test_external_opcode_handler_intercepts_operation() -> Result<()> {
     // Ensure our handler mutated state.
     let state_arc = kernel.state_ptr();
     let state = state_arc.read().await;
-    assert!(state.agent_tasks.get(&agent).is_some());
+    assert!(state.agent_tasks.contains_key(&agent));
     Ok(())
 }

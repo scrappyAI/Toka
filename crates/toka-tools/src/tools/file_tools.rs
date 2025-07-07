@@ -1,6 +1,5 @@
 //! File operation tools for reading, writing, and listing files
 
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
@@ -19,6 +18,10 @@ impl FileReader {
     pub fn new() -> Self {
         Self
     }
+}
+
+impl Default for FileReader {
+    fn default() -> Self { Self::new() }
 }
 
 #[async_trait]
@@ -78,6 +81,10 @@ impl FileWriter {
     pub fn new() -> Self {
         Self
     }
+}
+
+impl Default for FileWriter {
+    fn default() -> Self { Self::new() }
 }
 
 #[async_trait]
@@ -146,6 +153,10 @@ impl FileLister {
     pub fn new() -> Self {
         Self
     }
+}
+
+impl Default for FileLister {
+    fn default() -> Self { Self::new() }
 }
 
 #[async_trait]
@@ -295,6 +306,7 @@ pub struct FileEntry {
 mod tests {
     use super::*;
     use tempfile::TempDir;
+    use std::collections::HashMap;
     
     #[tokio::test]
     async fn test_file_reader() {

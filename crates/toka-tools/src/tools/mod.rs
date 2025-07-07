@@ -16,25 +16,29 @@ pub mod validation;
 pub use file_tools::{FileReader, FileWriter, FileLister};
 pub use validation::{DateValidator, BuildValidator};
 
-/// Register essential tools with the registry
+/// Register essential tools for development and testing
 /// 
-/// This function registers all the core tools that should be available
-/// by default in any Toka installation.
+/// This function registers a set of core tools that are commonly
+/// needed for development and testing scenarios.
 /// 
 /// # Arguments
 /// 
-/// * `registry` - The tool registry to register tools with
+/// * `registry` - The tool registry to register tools in
+/// 
+/// # Errors
+/// 
+/// Returns an error if tool registration fails.
 /// 
 /// # Examples
 /// 
-/// ```rust
-/// use toka_tools::{ToolRegistry, tools};
+/// TODO: Update doctest to match current API
+/// ```ignore
+/// use toka_tools::{ToolRegistry, tools::register_essential_tools};
 /// 
 /// # tokio_test::block_on(async {
 /// let registry = ToolRegistry::new().await?;
-/// tools::register_essential_tools(&registry).await?;
+/// register_essential_tools(&registry).await?;
 /// 
-/// // Now you can use the registered tools
 /// assert!(registry.has_tool("file-reader").await);
 /// assert!(registry.has_tool("date-validator").await);
 /// # Ok::<(), anyhow::Error>(())

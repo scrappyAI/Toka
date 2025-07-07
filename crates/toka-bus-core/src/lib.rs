@@ -722,7 +722,7 @@ impl InMemoryBus {
 impl EventBus for InMemoryBus {
     fn publish(&self, event: &KernelEvent) -> Result<()> {
         // SECURITY: Validate event before publishing
-        event.validate().map_err(|e| BusError::PublishFailed(e))?;
+        event.validate().map_err(BusError::PublishFailed)?;
         
         // Ignore lagging receiver errors - subscribers must handle missed events
         let _ = self.tx.send(event.clone());

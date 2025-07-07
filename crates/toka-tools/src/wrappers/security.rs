@@ -179,6 +179,10 @@ pub struct CapabilityValidator {
     capabilities: HashMap<String, CapabilityDefinition>,
 }
 
+impl Default for CapabilityValidator {
+    fn default() -> Self { Self::new() }
+}
+
 impl CapabilityValidator {
     /// Create a new capability validator
     pub fn new() -> Self {
@@ -399,7 +403,6 @@ impl SandboxExecutor {
         // Set process group for easier cleanup
         #[cfg(unix)]
         {
-            use std::os::unix::process::CommandExt;
             cmd.process_group(0);
         }
         

@@ -97,7 +97,7 @@ impl Claims {
     pub fn is_expired(&self) -> bool {
         use std::time::{SystemTime, UNIX_EPOCH};
         let now = match SystemTime::now().duration_since(UNIX_EPOCH) {
-            Ok(duration) => duration.as_secs(),
+            Ok(d) => d.as_secs(),
             Err(_) => return true, // Assume expired on time errors
         };
         now >= self.exp
@@ -192,7 +192,7 @@ pub mod hs256 {
                 Err(_) => return false,
             };
             let now = match SystemTime::now().duration_since(UNIX_EPOCH) {
-                Ok(d) => d.as_secs() as u64,
+                Ok(d) => d.as_secs(),
                 Err(_) => return false,
             };
             now < data.claims.exp

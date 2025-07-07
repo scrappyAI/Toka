@@ -6,7 +6,6 @@
 //! for the Toka agent OS.
 
 pub mod external;
-#[cfg(feature = "python")]
 pub mod python;
 pub mod shell;
 pub mod discovery;
@@ -14,7 +13,6 @@ pub mod security;
 
 // Re-export what's actually available from the stub modules
 pub use external::{ExternalToolWrapper, ExternalToolConfig};
-#[cfg(feature = "python")]
 pub use python::{PythonToolWrapper, PythonToolConfig};
 pub use shell::{ShellToolWrapper, ShellToolConfig};
 pub use discovery::{ToolDiscovery, DiscoveryConfig};
@@ -39,6 +37,7 @@ pub struct UnifiedToolRegistry {
     /// Main tool registry
     registry: Arc<RwLock<HashMap<String, Arc<dyn Tool>>>>,
     /// Security validator
+    #[allow(dead_code)]
     security_validator: Arc<CapabilityValidator>,
 }
 

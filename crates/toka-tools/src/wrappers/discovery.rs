@@ -202,8 +202,7 @@ impl ToolDiscovery {
     fn generate_tool_name(&self, path: &Path) -> String {
         if let Some(stem) = path.file_stem() {
             stem.to_string_lossy()
-                .replace('_', "-")
-                .replace(' ', "-")
+                .replace(['_', ' '], "-")
                 .to_lowercase()
         } else {
             "unknown-tool".to_string()
@@ -364,6 +363,10 @@ impl ToolDiscoveryBuilder {
     pub fn build(self) -> ToolDiscovery {
         ToolDiscovery::new(self.config)
     }
+}
+
+impl Default for ToolDiscoveryBuilder {
+    fn default() -> Self { Self::new() }
 }
 
 /// Capability inference rules

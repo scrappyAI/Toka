@@ -150,6 +150,7 @@ pub struct ToolDependencies {
 
 /// Runtime tool registry that integrates with agent system
 pub struct RuntimeToolRegistry {
+    #[allow(dead_code)]
     unified_registry: UnifiedToolRegistry,
     manifest_cache: Arc<RwLock<HashMap<String, UnifiedToolManifest>>>,
     tool_manifests_dir: PathBuf,
