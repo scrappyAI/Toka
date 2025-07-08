@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/toka-ai/toka/.llm/extension.json",
+  "title": "Universal LLM Extension Configuration",
+  "description": "Agnostic extension configuration for universal schema-driven development",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "const": "toka-universal-extension"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "schemaRoot": {
+      "type": "string",
+      "description": "Root directory for all schemas"
+    },
+    "ruleRoot": {
+      "type": "string", 
+      "description": "Root directory for all rules"
+    },
+    "scriptRoot": {
+      "type": "string",
+      "description": "Root directory for all scripts"
+    },
+    "toolRoot": {
+      "type": "string",
+      "description": "Root directory for all tools"
+    },
+    "supportedKinds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Supported resource kinds"
+    },
+    "defaultSchema": {
+      "type": "string",
+      "description": "Default schema to use for validation"
+    },
+    "versionManager": {
+      "type": "object",
+      "properties": {
+        "script": {
+          "type": "string"
+        },
+        "database": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": ["name", "version", "schemaRoot", "ruleRoot", "scriptRoot", "toolRoot", "supportedKinds", "defaultSchema"],
+  "additionalProperties": false
+} 

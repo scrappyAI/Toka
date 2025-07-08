@@ -1,0 +1,30 @@
+{
+  "name": "toka-universal-extension",
+  "version": "1.0.0",
+  "description": "Universal schema-driven development extension for Toka project",
+  "schemaRoot": ".llm/schemas",
+  "ruleRoot": ".llm/rules", 
+  "scriptRoot": ".llm/scripts",
+  "toolRoot": ".llm/tools",
+  "supportedKinds": [
+    "agent",
+    "rule", 
+    "tool",
+    "plan",
+    "event",
+    "capability",
+    "workflow",
+    "policy",
+    "metric"
+  ],
+  "defaultSchema": "resource-envelope-v1.json",
+  "versionManager": {
+    "script": "scripts/version-manager.py",
+    "database": "version_db.json"
+  },
+  "metadata": {
+    "created": "2024-01-01T00:00:00Z",
+    "lastModified": "2024-01-01T00:00:00Z",
+    "maintainer": "Toka AI Team"
+  }
+} 

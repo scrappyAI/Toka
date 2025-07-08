@@ -1,0 +1,120 @@
+{
+  "$schema": "https://github.com/toka-ai/toka/.llm/schemas/resource-envelope-v1.json",
+  "$id": "https://github.com/toka-ai/toka/.llm/tools/schema-validator.json",
+  "kind": "tool",
+  "metadata": {
+    "name": "schema-validator",
+    "version": "1.0.0",
+    "title": "Schema Validator Tool",
+    "description": "Validates JSON files against the universal envelope schema system",
+    "tags": [
+      "validation.schema",
+      "development.tool",
+      "system.core"
+    ],
+    "priority": "critical",
+    "maintainer": "Toka AI Team",
+    "created": "2024-01-01T00:00:00Z",
+    "lastModified": "2024-01-01T00:00:00Z"
+  },
+  "spec": {
+    "toolType": "validation",
+    "capabilities": {
+      "system": {
+        "posix": [
+          "read",
+          "execute"
+        ],
+        "rbac": [
+          "schema:validate",
+          "file:read"
+        ]
+      },
+      "io": {
+        "fs": [
+          "read"
+        ]
+      },
+      "validation": {
+        "schema": [
+          "validate",
+          "report",
+          "fix"
+        ]
+      }
+    },
+    "implementation": {
+      "language": "python",
+      "entryPoint": "scripts/schema-validator.py",
+      "dependencies": [
+        "jsonschema>=4.0.0",
+        "click>=8.0.0"
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "required": true,
+          "description": "Path to JSON file to validate"
+        },
+        {
+          "name": "schema",
+          "type": "string",
+          "required": false,
+          "description": "Schema to validate against (defaults to universal envelope)"
+        },
+        {
+          "name": "strict",
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Enable strict validation mode"
+        }
+      ],
+      "output": {
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "valid": {
+              "type": "boolean"
+            },
+            "errors": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "severity": {
+                    "type": "string",
+                    "enum": ["error", "warning", "info"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "configuration": {
+      "defaultSchema": "resource-envelope-v1.json",
+      "strictMode": true,
+      "reportFormat": "detailed"
+    },
+    "errorHandling": {
+      "strategy": "fail-fast",
+      "logging": "structured",
+      "recovery": "manual"
+    },
+    "performance": {
+      "timeout": "PT2M",
+      "memory": "256MB",
+      "cpu": "0.5"
+    }
+  }
+} 

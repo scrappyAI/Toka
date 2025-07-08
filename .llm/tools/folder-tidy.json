@@ -1,0 +1,184 @@
+{
+  "$schema": "https://github.com/toka-ai/toka/.llm/schemas/resource-envelope-v1.json",
+  "$id": "https://github.com/toka-ai/toka/.llm/tools/folder-tidy.json",
+  "kind": "tool",
+  "metadata": {
+    "name": "folder-tidy",
+    "version": "1.0.0",
+    "title": "Folder Tidy-Up Tool",
+    "description": "General folder tidy-up tool for cleanup and refactoring tasks",
+    "tags": [
+      "maintenance.cleanup",
+      "refactoring.tool",
+      "system.utility"
+    ],
+    "priority": "medium",
+    "maintainer": "Toka AI Team",
+    "created": "{{TODAY}}T00:00:00Z",
+    "lastModified": "{{TODAY}}T00:00:00Z"
+  },
+  "spec": {
+    "toolType": "maintenance",
+    "capabilities": {
+      "system": {
+        "posix": [
+          "read",
+          "write",
+          "execute",
+          "delete"
+        ],
+        "rbac": [
+          "file:manage",
+          "dir:manage",
+          "backup:create",
+          "cleanup:execute"
+        ]
+      },
+      "io": {
+        "fs": [
+          "read",
+          "write",
+          "create",
+          "delete",
+          "move",
+          "copy"
+        ]
+      },
+      "maintenance": {
+        "cleanup": [
+          "duplicates",
+          "stale",
+          "orphaned",
+          "backup"
+        ],
+        "organize": [
+          "structure",
+          "naming",
+          "hierarchy"
+        ]
+      }
+    },
+    "implementation": {
+      "language": "python",
+      "entryPoint": "scripts/folder-tidy.py",
+      "dependencies": [
+        "click>=8.0.0",
+        "pathlib",
+        "shutil",
+        "sqlite3"
+      ],
+      "arguments": [
+        {
+          "name": "command",
+          "type": "string",
+          "required": true,
+          "enum": ["analyze", "clean", "organize", "backup", "restore"],
+          "description": "Command to execute"
+        },
+        {
+          "name": "directory",
+          "type": "string",
+          "required": true,
+          "description": "Directory to process"
+        },
+        {
+          "name": "patterns",
+          "type": "array",
+          "required": false,
+          "description": "File patterns to include/exclude"
+        },
+        {
+          "name": "dry-run",
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Show what would be done without making changes"
+        },
+        {
+          "name": "backup",
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Create backup before making changes"
+        }
+      ],
+      "output": {
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "files_processed": {
+                  "type": "integer"
+                },
+                "files_cleaned": {
+                  "type": "integer"
+                },
+                "files_moved": {
+                  "type": "integer"
+                },
+                "files_deleted": {
+                  "type": "integer"
+                },
+                "backup_created": {
+                  "type": "string"
+                },
+                "issues": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "file": {
+                        "type": "string"
+                      },
+                      "issue": {
+                        "type": "string"
+                      },
+                      "severity": {
+                        "type": "string",
+                        "enum": ["error", "warning", "info"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "configuration": {
+      "backupDirectory": "backups",
+      "logFile": "tidy.log",
+      "maxBackupAge": "30",
+      "excludePatterns": [
+        ".git",
+        "node_modules",
+        "__pycache__",
+        "*.tmp",
+        "*.bak"
+      ],
+      "duplicateDetection": true,
+      "staleFileDetection": true,
+      "orphanedFileDetection": true
+    },
+    "errorHandling": {
+      "strategy": "graceful",
+      "logging": "detailed",
+      "recovery": "automatic"
+    },
+    "performance": {
+      "timeout": "PT30M",
+      "memory": "1GB",
+      "cpu": "1.0"
+    }
+  }
+} 

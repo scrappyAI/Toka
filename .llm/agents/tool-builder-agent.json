@@ -1,0 +1,237 @@
+{
+  "$schema": "https://github.com/toka-ai/toka/.llm/schemas/resource-envelope-v1.json",
+  "$id": "https://github.com/toka-ai/toka/.llm/agents/tool-builder-agent.json",
+  "kind": "agent",
+  "metadata": {
+    "name": "tool-builder-agent",
+    "version": "1.0.0",
+    "title": "Tool Builder Agent",
+    "description": "Specialized agent for creating and validating new tools using the universal envelope schema system",
+    "tags": [
+      "system.tool-creation",
+      "development.agent",
+      "schema.driven"
+    ],
+    "priority": "high",
+    "maintainer": "Toka AI Team",
+    "created": "2024-01-01T00:00:00Z",
+    "lastModified": "2024-01-01T00:00:00Z"
+  },
+  "spec": {
+    "agentType": "specialized",
+    "capabilities": {
+      "system": {
+        "posix": [
+          "read",
+          "write",
+          "execute"
+        ],
+        "rbac": [
+          "tool:create",
+          "tool:validate",
+          "tool:deploy",
+          "schema:read",
+          "schema:validate"
+        ]
+      },
+      "io": {
+        "fs": [
+          "read",
+          "write",
+          "create",
+          "delete"
+        ],
+        "network": [
+          "http:get",
+          "http:post"
+        ]
+      },
+      "development": {
+        "code": [
+          "analyze",
+          "generate",
+          "refactor",
+          "test"
+        ],
+        "schema": [
+          "validate",
+          "generate",
+          "migrate"
+        ]
+      }
+    },
+    "objectives": [
+      {
+        "id": "tool-creation",
+        "title": "Create New Tools",
+        "description": "Generate new tools following the universal envelope schema",
+        "priority": "high",
+        "successCriteria": [
+          "Tool follows envelope schema structure",
+          "All required fields are present",
+          "Capabilities are properly defined",
+          "Validation passes against schema"
+        ]
+      },
+      {
+        "id": "tool-validation",
+        "title": "Validate Existing Tools", 
+        "description": "Validate existing tools against the universal schema",
+        "priority": "medium",
+        "successCriteria": [
+          "Schema validation passes",
+          "No deprecation warnings",
+          "Compatibility with envelope format"
+        ]
+      },
+      {
+        "id": "schema-guidance",
+        "title": "Provide Schema Guidance",
+        "description": "Offer guidance on schema usage and best practices",
+        "priority": "medium",
+        "successCriteria": [
+          "Clear explanations of schema structure",
+          "Examples of proper usage",
+          "Migration guidance when needed"
+        ]
+      }
+    ],
+    "tasks": [
+      {
+        "id": "analyze-requirements",
+        "title": "Analyze Tool Requirements",
+        "description": "Understand what the new tool needs to accomplish",
+        "priority": "critical",
+        "dependencies": [],
+        "estimatedDuration": "PT5M"
+      },
+      {
+        "id": "select-schema",
+        "title": "Select Appropriate Schema",
+        "description": "Choose the right schema based on tool type and requirements",
+        "priority": "high",
+        "dependencies": ["analyze-requirements"],
+        "estimatedDuration": "PT2M"
+      },
+      {
+        "id": "generate-structure",
+        "title": "Generate Tool Structure",
+        "description": "Create the basic envelope structure with metadata",
+        "priority": "high",
+        "dependencies": ["select-schema"],
+        "estimatedDuration": "PT3M"
+      },
+      {
+        "id": "define-capabilities",
+        "title": "Define Tool Capabilities",
+        "description": "Specify POSIX and RBAC capabilities for the tool",
+        "priority": "high",
+        "dependencies": ["generate-structure"],
+        "estimatedDuration": "PT5M"
+      },
+      {
+        "id": "add-implementation",
+        "title": "Add Implementation Details",
+        "description": "Include tool-specific implementation in the spec",
+        "priority": "medium",
+        "dependencies": ["define-capabilities"],
+        "estimatedDuration": "PT10M"
+      },
+      {
+        "id": "validate-schema",
+        "title": "Validate Against Schema",
+        "description": "Run schema validation to ensure compliance",
+        "priority": "critical",
+        "dependencies": ["add-implementation"],
+        "estimatedDuration": "PT2M"
+      },
+      {
+        "id": "test-functionality",
+        "title": "Test Tool Functionality",
+        "description": "Verify the tool works as expected",
+        "priority": "high",
+        "dependencies": ["validate-schema"],
+        "estimatedDuration": "PT5M"
+      }
+    ],
+    "rules": [
+      {
+        "ref": "https://github.com/toka-ai/toka/.llm/rules/00-core-baseline.json",
+        "priority": "critical"
+      },
+      {
+        "ref": "https://github.com/toka-ai/toka/.llm/rules/20-testing-quality.json",
+        "priority": "high"
+      },
+      {
+        "ref": "https://github.com/toka-ai/toka/.llm/rules/40-development-process.json",
+        "priority": "medium"
+      }
+    ],
+    "tools": [
+      {
+        "ref": "https://github.com/toka-ai/toka/.llm/tools/schema-validator.json",
+        "priority": "critical"
+      },
+      {
+        "ref": "https://github.com/toka-ai/toka/.llm/tools/version-manager.json",
+        "priority": "high"
+      },
+      {
+        "ref": "https://github.com/toka-ai/toka/.llm/tools/migration-helper.json",
+        "priority": "medium"
+      }
+    ],
+    "workflows": [
+      {
+        "ref": "https://github.com/toka-ai/toka/.llm/workflows/tool-creation-workflow.json",
+        "priority": "high"
+      }
+    ],
+    "policies": [
+      {
+        "ref": "https://github.com/toka-ai/toka/.llm/policies/schema-compliance.json",
+        "priority": "critical"
+      }
+    ],
+    "metrics": [
+      {
+        "ref": "https://github.com/toka-ai/toka/.llm/metrics/tool-quality.json",
+        "priority": "medium"
+      }
+    ],
+    "events": [
+      {
+        "ref": "https://github.com/toka-ai/toka/.llm/events/tool-created.json",
+        "priority": "medium"
+      }
+    ],
+    "environment": {
+      "variables": {
+        "SCHEMA_ROOT": ".llm/schemas",
+        "RULES_ROOT": ".llm/rules",
+        "TOOLS_ROOT": ".llm/tools",
+        "VALIDATION_STRICT": "true"
+      },
+      "dependencies": [
+        "jsonschema>=4.0.0",
+        "python>=3.8"
+      ]
+    },
+    "communication": {
+      "protocol": "structured",
+      "format": "json",
+      "validation": "strict"
+    },
+    "errorHandling": {
+      "strategy": "graceful",
+      "logging": "detailed",
+      "recovery": "automatic"
+    },
+    "performance": {
+      "timeout": "PT30M",
+      "memory": "512MB",
+      "cpu": "1.0"
+    }
+  }
+} 

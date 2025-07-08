@@ -1,0 +1,119 @@
+{
+  "$schema": "https://github.com/toka-ai/toka/.llm/schemas/resource-envelope-v1.json",
+  "$id": "https://github.com/toka-ai/toka/.llm/tools/version-manager.json",
+  "kind": "tool",
+  "metadata": {
+    "name": "version-manager",
+    "version": "1.0.0",
+    "title": "Version Manager Tool",
+    "description": "Manages versioning and validation of envelope-based resources",
+    "tags": [
+      "versioning.management",
+      "development.tool",
+      "system.core"
+    ],
+    "priority": "high",
+    "maintainer": "Toka AI Team",
+    "created": "2024-01-01T00:00:00Z",
+    "lastModified": "2024-01-01T00:00:00Z"
+  },
+  "spec": {
+    "toolType": "management",
+    "capabilities": {
+      "system": {
+        "posix": [
+          "read",
+          "write",
+          "execute"
+        ],
+        "rbac": [
+          "version:manage",
+          "file:read",
+          "file:write"
+        ]
+      },
+      "io": {
+        "fs": [
+          "read",
+          "write",
+          "create",
+          "delete"
+        ]
+      },
+      "versioning": {
+        "semver": [
+          "parse",
+          "compare",
+          "increment"
+        ],
+        "database": [
+          "read",
+          "write",
+          "query"
+        ]
+      }
+    },
+    "implementation": {
+      "language": "python",
+      "entryPoint": "scripts/version-manager.py",
+      "dependencies": [
+        "jsonschema>=4.0.0",
+        "click>=8.0.0",
+        "semantic-version>=2.8.0"
+      ],
+      "arguments": [
+        {
+          "name": "command",
+          "type": "string",
+          "required": true,
+          "enum": ["validate", "bump", "migrate", "list", "status"],
+          "description": "Command to execute"
+        },
+        {
+          "name": "file",
+          "type": "string",
+          "required": false,
+          "description": "File to operate on"
+        },
+        {
+          "name": "version",
+          "type": "string",
+          "required": false,
+          "description": "Version to set or increment type"
+        }
+      ],
+      "output": {
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            },
+            "data": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "configuration": {
+      "databaseFile": "version_db.json",
+      "schemaRoot": "schemas",
+      "backupEnabled": true
+    },
+    "errorHandling": {
+      "strategy": "graceful",
+      "logging": "detailed",
+      "recovery": "automatic"
+    },
+    "performance": {
+      "timeout": "PT5M",
+      "memory": "512MB",
+      "cpu": "1.0"
+    }
+  }
+} 

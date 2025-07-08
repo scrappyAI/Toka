@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/toka-ai/toka/.cursor/cursor-extension.json",
+  "title": "Cursor Extension Configuration",
+  "description": "Cursor-specific configuration that references the universal extension system",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "const": "toka-cursor-extension"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "universalExtension": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path to the universal extension"
+        },
+        "configFile": {
+          "type": "string",
+          "description": "Configuration file within the universal extension"
+        }
+      },
+      "required": ["path", "configFile"]
+    },
+    "cursorSpecific": {
+      "type": "object",
+      "properties": {
+        "schemaValidation": {
+          "type": "boolean",
+          "default": true
+        },
+        "autoFormat": {
+          "type": "boolean", 
+          "default": true
+        },
+        "linting": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  },
+  "required": ["name", "version", "description", "universalExtension"],
+  "additionalProperties": false
+} 

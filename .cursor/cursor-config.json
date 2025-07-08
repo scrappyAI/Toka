@@ -1,0 +1,19 @@
+{
+  "name": "toka-cursor-extension",
+  "version": "1.0.0",
+  "description": "Cursor integration for Toka universal extension system",
+  "universalExtension": {
+    "path": "../.llm",
+    "configFile": "extension-config.json"
+  },
+  "cursorSpecific": {
+    "schemaValidation": true,
+    "autoFormat": true,
+    "linting": true
+  },
+  "metadata": {
+    "created": "2024-01-01T00:00:00Z",
+    "lastModified": "2024-01-01T00:00:00Z",
+    "maintainer": "Toka AI Team"
+  }
+} 

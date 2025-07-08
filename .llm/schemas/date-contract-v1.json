@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/toka-ai/toka/.llm/schemas/date-contract-v1.json",
+  "title": "Date Contract Schema",
+  "description": "Enforces deterministic, accurate dating through schema contracts",
+  "type": "object",
+  "properties": {
+    "dateContract": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Date contract version"
+        },
+        "enforcement": {
+          "type": "object",
+          "properties": {
+            "strict": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable strict date enforcement"
+            },
+            "canonicalSource": {
+              "type": "string",
+              "enum": ["system_clock", "git_commit", "explicit"],
+              "default": "system_clock",
+              "description": "Canonical source for dates"
+            },
+            "timezone": {
+              "type": "string",
+              "default": "UTC",
+              "description": "Timezone for date operations"
+            },
+            "format": {
+              "type": "string",
+              "default": "%Y-%m-%d",
+              "description": "Date format string"
+            },
+            "datetimeFormat": {
+              "type": "string",
+              "default": "%Y-%m-%dT%H:%M:%SZ",
+              "description": "Datetime format string"
+            }
+          },
+          "required": ["strict", "canonicalSource", "timezone", "format", "datetimeFormat"]
+        },
+        "validation": {
+          "type": "object",
+          "properties": {
+            "allowFutureDates": {
+              "type": "boolean",
+              "default": false,
+              "description": "Allow future dates"
+            },
+            "maxAgeDays": {
+              "type": "integer",
+              "default": 365,
+              "description": "Maximum age in days for dates"
+            },
+            "placeholderPattern": {
+              "type": "string",
+              "default": "2025-07-07",
+              "description": "Pattern for date placeholders"
+            },
+            "exemptionPattern": {
+              "type": "string",
+              "default": "DATE:EXEMPT",
+              "description": "Pattern for date exemptions"
+            },
+            "hardcodedPatterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": ["2024-01-01", "2024-01-01T00:00:00Z"],
+              "description": "Patterns for hardcoded dates"
+            }
+          },
+          "required": ["allowFutureDates", "maxAgeDays", "placeholderPattern", "exemptionPattern"]
+        },
+        "tools": {
+          "type": "object",
+          "properties": {
+            "dateEnforcer": {
+              "type": "string",
+              "description": "Path to date enforcer tool"
+            },
+            "toolRegistry": {
+              "type": "string",
+              "description": "Path to tool registry"
+            },
+            "validationScript": {
+              "type": "string",
+              "description": "Path to validation script"
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "created": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Contract creation date"
+            },
+            "lastModified": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Last modification date"
+            },
+            "maintainer": {
+              "type": "string",
+              "description": "Contract maintainer"
+            },
+            "description": {
+              "type": "string",
+              "description": "Contract description"
+            }
+          },
+          "required": ["created", "lastModified", "maintainer"]
+        }
+      },
+      "required": ["version", "enforcement", "validation", "metadata"]
+    }
+  },
+  "required": ["dateContract"],
+  "additionalProperties": false
+} 
