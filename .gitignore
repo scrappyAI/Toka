@@ -98,3 +98,24 @@ $RECYCLE.BIN/
 *.msm
 *.msp
 *.lnk 
+
+#python specific
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+
+#python venv
+.venv/
+.venv
+
+
+
+
+
+
+
+
+

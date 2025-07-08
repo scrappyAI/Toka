@@ -1,0 +1,9 @@
+---
+description: Toka Universal Integration Mapper
+globs:
+alwaysApply: true
+---
+
+<Rule>
+use .llm index for all agent / tool / resource compostion.
+<Rule>

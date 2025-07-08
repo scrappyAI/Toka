@@ -2,6 +2,7 @@
   "name": "toka-cursor-extension",
   "version": "1.0.0",
   "description": "Cursor integration for Toka universal extension system",
+  "alwaysApply": true,
   "universalExtension": {
     "path": "../.llm",
     "configFile": "extension-config.json"
