@@ -1,0 +1,33 @@
+[package]
+name = "emergence-runtime"
+version = "0.1.0"
+edition = "2021"
+description = "Dynamic behavior composition and execution engine for EMERGENCE"
+license = "Apache-2.0"
+repository = "https://github.com/toka-ai/toka"
+
+[dependencies]
+# Core EMERGENCE crates
+emergence-physics = { path = "../emergence-physics" }
+emergence-nervous-system = { path = "../emergence-nervous-system" }
+emergence-memory = { path = "../emergence-memory" }
+
+# Core async runtime
+tokio = { workspace = true, features = ["full"] }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Serialization for schemas
+serde = { workspace = true, features = ["derive"] }
+serde_yaml = "0.9"
+serde_json = { workspace = true }
+
+# Schema validation
+jsonschema = "0.17"
+
+# Time handling
+chrono = { workspace = true, features = ["serde"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+# Tracing
+tracing = { workspace = true }

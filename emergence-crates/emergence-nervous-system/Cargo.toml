@@ -1,0 +1,31 @@
+[package]
+name = "emergence-nervous-system"
+version = "0.1.0"
+edition = "2021"
+description = "Event-driven nervous system for EMERGENCE living agent communication"
+license = "Apache-2.0"
+repository = "https://github.com/toka-ai/toka"
+
+[dependencies]
+# Physics constraints
+emergence-physics = { path = "../emergence-physics" }
+
+# Core async runtime
+tokio = { workspace = true, features = ["full"] }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_yaml = "0.9"
+
+# Event broadcasting
+tokio-stream = "0.1"
+futures = { workspace = true }
+
+# Time handling
+chrono = { workspace = true, features = ["serde"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+# Tracing
+tracing = { workspace = true }

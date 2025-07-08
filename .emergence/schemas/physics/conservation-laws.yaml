@@ -1,0 +1,67 @@
+# EMERGENCE Physics: Conservation Laws
+# These are immutable constraints enforced by the Rust substrate
+
+energy_conservation:
+  total_system_energy: 1.0  # Normalized total computational energy
+  
+  allocation_rules:
+    - name: "no_energy_creation"
+      law: "sum(all_agent_energy) <= total_system_energy"
+      enforcement: "strict"
+    
+    - name: "energy_decay"
+      law: "idle_agents lose 0.01 energy per second"
+      enforcement: "automatic"
+    
+    - name: "energy_transfer"
+      law: "agents can share energy with max_transfer=0.1/second"
+      enforcement: "rate_limited"
+
+resource_limits:
+  memory:
+    max_working_memory_mb: 512
+    max_long_term_memory_mb: 2048
+    max_associative_connections: 10000
+    
+  computation:
+    max_cpu_percent: 80
+    max_concurrent_thoughts: 3
+    max_inference_time_ms: 5000
+    
+  communication:
+    max_message_size_kb: 64
+    max_messages_per_second: 10
+    max_broadcast_fanout: 50
+
+causality_constraints:
+  temporal_ordering:
+    - "no agent can respond to future events"
+    - "all events must have causal parent chains"
+    - "time travel paradoxes trigger immediate termination"
+  
+  information_flow:
+    - "agents cannot access information they haven't observed"
+    - "memory formation requires conscious attention (energy > 0.3)"
+    - "forgotten memories cannot be directly recovered"
+
+security_boundaries:
+  capability_gates:
+    - "agents can only use declared capabilities"
+    - "capability evolution requires proof of competence"
+    - "capability revocation is immediate and irreversible"
+  
+  isolation_rules:
+    - "agent memory spaces are isolated by default" 
+    - "shared memory requires explicit collaboration protocol"
+    - "no agent can directly modify another's internal state"
+
+emergence_principles:
+  composition_rules:
+    - "complex behaviors emerge from primitive operation sequences"
+    - "no hardcoded behavior patterns in Rust code"
+    - "all agent logic must be schema-definable"
+  
+  learning_constraints:
+    - "learning requires energy expenditure"
+    - "teaching transfers energy from teacher to student"
+    - "collaborative discovery creates net positive energy"

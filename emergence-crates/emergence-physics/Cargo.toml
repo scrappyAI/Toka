@@ -1,0 +1,47 @@
+[package]
+name = "emergence-physics"
+version = "0.1.0"
+edition = "2021"
+description = "Core physics laws and enforcement for EMERGENCE living agent system"
+license = "Apache-2.0"
+repository = "https://github.com/toka-ai/toka"
+keywords = ["emergence", "physics", "constraints", "security"]
+categories = ["development-tools", "science"]
+
+[dependencies]
+# Core async runtime
+tokio = { workspace = true, features = ["full"] }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Serialization for schema validation
+serde = { workspace = true, features = ["derive"] }
+serde_yaml = "0.9"
+
+# Cryptography for capability validation
+blake3 = "1.5"
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+# Time handling
+chrono = { workspace = true, features = ["serde"] }
+
+# Metrics and monitoring
+prometheus = { version = "0.13", optional = true }
+tracing = { workspace = true }
+
+# Numerical computations for energy/resource calculations
+ordered-float = "4.2"
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3.8"
+
+[features]
+default = []
+metrics = ["prometheus"]
+testing = []
+
+[[bin]]
+name = "physics-validator"
+path = "src/bin/validator.rs"
+required-features = []
