@@ -1,0 +1,163 @@
+{
+  "$schema": "https://github.com/toka-ai/toka/.llm/schemas/resource-envelope-v1.json",
+  "$id": "https://github.com/toka-ai/toka/.llm/tools/tool-registry.json",
+  "kind": "tool",
+  "metadata": {
+    "name": "tool-registry",
+    "version": "1.0.0",
+    "title": "Tool Registry",
+    "description": "Manages registered tools securely in a database with validation and tracking",
+    "tags": [
+      "registry.tools",
+      "system.core",
+      "database.secure"
+    ],
+    "priority": "high",
+    "maintainer": "Toka AI Team",
+    "created": "2025-07-07T00:00:00Z",
+    "lastModified": "2025-07-07T00:00:00Z"
+  },
+  "spec": {
+    "toolType": "registry",
+    "capabilities": {
+      "system": {
+        "posix": [
+          "read",
+          "write",
+          "execute"
+        ],
+        "rbac": [
+          "tool:register",
+          "tool:validate",
+          "tool:list",
+          "tool:update",
+          "db:read",
+          "db:write"
+        ]
+      },
+      "io": {
+        "fs": [
+          "read",
+          "write",
+          "create"
+        ]
+      },
+      "database": {
+        "sqlite": [
+          "create",
+          "read",
+          "write",
+          "query"
+        ]
+      },
+      "validation": {
+        "schema": [
+          "validate",
+          "verify"
+        ],
+        "date": [
+          "enforce",
+          "audit"
+        ]
+      }
+    },
+    "implementation": {
+      "language": "python",
+      "entryPoint": "scripts/tool-registry.py",
+      "dependencies": [
+        "click>=8.0.0",
+        "sqlite3",
+        "jsonschema>=4.0.0"
+      ],
+      "arguments": [
+        {
+          "name": "command",
+          "type": "string",
+          "required": true,
+          "enum": ["register", "list", "validate", "update", "audit", "export"],
+          "description": "Command to execute"
+        },
+        {
+          "name": "tool-path",
+          "type": "string",
+          "required": false,
+          "description": "Path to tool specification file"
+        },
+        {
+          "name": "tool-name",
+          "type": "string",
+          "required": false,
+          "description": "Tool name for operations"
+        },
+        {
+          "name": "output-format",
+          "type": "string",
+          "required": false,
+          "default": "json",
+          "enum": ["json", "text", "csv"],
+          "description": "Output format"
+        }
+      ],
+      "output": {
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            },
+            "data": {
+              "type": "object"
+            },
+            "tools": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "tool_name": {
+                    "type": "string"
+                  },
+                  "tool_path": {
+                    "type": "string"
+                  },
+                  "schema_version": {
+                    "type": "string"
+                  },
+                  "registration_date": {
+                    "type": "string"
+                  },
+                  "validation_status": {
+                    "type": "string"
+                  },
+                  "last_validated": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "configuration": {
+      "databaseFile": "tool_registry.db",
+      "schemaRoot": "schemas",
+      "validationStrict": true,
+      "autoValidate": true,
+      "backupEnabled": true
+    },
+    "errorHandling": {
+      "strategy": "graceful",
+      "logging": "detailed",
+      "recovery": "automatic"
+    },
+    "performance": {
+      "timeout": "PT10M",
+      "memory": "512MB",
+      "cpu": "1.0"
+    }
+  }
+} 

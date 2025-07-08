@@ -1,0 +1,179 @@
+{
+  "$schema": "https://github.com/toka-ai/toka/.llm/schemas/resource-envelope-v1.json",
+  "$id": "https://github.com/toka-ai/toka/.llm/schemas/tools/date-enforcer-tool.json",
+  "kind": "tool",
+  "metadata": {
+    "name": "date-enforcer",
+    "version": "1.0.0",
+    "title": "Date Enforcement Tool",
+    "description": "Enforces deterministic, accurate dating through schema contracts and prevents date hallucination",
+    "tags": [
+      "date.enforcement",
+      "system.core",
+      "validation"
+    ],
+    "priority": "high",
+    "maintainer": "Toka AI Team",
+    "created": "2025-07-07T00:00:00Z",
+    "lastModified": "2025-07-07T00:00:00Z"
+  },
+  "spec": {
+    "toolType": "enforcement",
+    "capabilities": {
+      "system": {
+        "posix": [
+          "read",
+          "write",
+          "execute"
+        ],
+        "rbac": [
+          "date:enforce",
+          "date:validate",
+          "date:audit",
+          "file:read",
+          "file:write"
+        ]
+      },
+      "io": {
+        "fs": [
+          "read",
+          "write",
+          "create"
+        ]
+      },
+      "database": {
+        "sqlite": [
+          "create",
+          "read",
+          "write",
+          "query"
+        ]
+      },
+      "validation": {
+        "date": [
+          "enforce",
+          "audit",
+          "correct"
+        ],
+        "schema": [
+          "validate",
+          "verify"
+        ]
+      }
+    },
+    "implementation": {
+      "language": "python",
+      "entryPoint": "scripts/date-enforcer.py",
+      "dependencies": [
+        "click>=8.0.0",
+        "sqlite3",
+        "dateutil>=2.8.0",
+        "gitpython>=3.1.0"
+      ],
+      "arguments": [
+        {
+          "name": "command",
+          "type": "string",
+          "required": true,
+          "enum": ["validate", "enforce", "audit", "correct", "register"],
+          "description": "Command to execute"
+        },
+        {
+          "name": "target",
+          "type": "string",
+          "required": false,
+          "description": "Target file or directory to process"
+        },
+        {
+          "name": "auto-correct",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "Automatically correct date issues"
+        },
+        {
+          "name": "strict-mode",
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Enable strict date validation"
+        }
+      ],
+      "output": {
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "issues": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string"
+                  },
+                  "line": {
+                    "type": "integer"
+                  },
+                  "issue": {
+                    "type": "string"
+                  },
+                  "severity": {
+                    "type": "string"
+                  },
+                  "suggestion": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "corrected": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string"
+                  },
+                  "line": {
+                    "type": "integer"
+                  },
+                  "old": {
+                    "type": "string"
+                  },
+                  "new": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "configuration": {
+      "databaseFile": "date_audit.db",
+      "dateFormat": "%Y-%m-%d",
+      "timeFormat": "%Y-%m-%dT%H:%M:%SZ",
+      "placeholderPattern": "2025-07-07",
+      "exemptionPattern": "DATE:EXEMPT",
+      "strictMode": true,
+      "autoCorrect": false,
+      "maxAgeDays": 365,
+      "allowFutureDates": false
+    },
+    "errorHandling": {
+      "strategy": "graceful",
+      "logging": "detailed",
+      "recovery": "automatic"
+    },
+    "performance": {
+      "timeout": "PT5M",
+      "memory": "256MB",
+      "cpu": "0.5"
+    }
+  }
+} 

@@ -1,0 +1,225 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/toka-ai/toka/.llm/schemas/agent.json",
+  "title": "Agent Schema",
+  "description": "General schema defining the structure any agent must follow",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["metadata", "spec"],
+  "properties": {
+    "metadata": {
+      "$ref": "#/definitions/metadata"
+    },
+    "spec": {
+      "type": "object",
+      "required": ["capabilities", "objectives", "constraints"],
+      "properties": {
+        "capabilities": {
+          "$ref": "#/definitions/capabilities"
+        },
+        "objectives": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 200
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Clear objectives this agent aims to achieve"
+        },
+        "constraints": {
+          "$ref": "#/definitions/constraints"
+        },
+        "dependencies": {
+          "$ref": "#/definitions/dependencies"
+        },
+        "reporting": {
+          "$ref": "#/definitions/reporting"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "metadata": {
+      "type": "object",
+      "required": ["name", "version", "description"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$",
+          "minLength": 3,
+          "maxLength": 50,
+          "description": "Agent name in kebab-case"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Semantic version"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500,
+          "description": "Clear description of agent purpose"
+        },
+        "author": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Agent author"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp in ISO 8601 format"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]*[a-z0-9]$"
+          },
+          "maxItems": 10,
+          "description": "Agent tags for categorization"
+        }
+      },
+      "additionalProperties": false
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "file-read",
+          "file-write",
+          "command-execution",
+          "http-requests",
+          "text-processing",
+          "code-generation",
+          "schema-validation",
+          "data-analysis",
+          "system-monitoring",
+          "database-read",
+          "database-write",
+          "json-processing",
+          "yaml-processing",
+          "markdown-processing"
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 10,
+      "uniqueItems": true,
+      "description": "Required capabilities for this agent"
+    },
+    "constraints": {
+      "type": "object",
+      "required": ["security", "resources"],
+      "properties": {
+        "security": {
+          "type": "string",
+          "enum": ["sandbox", "restricted", "elevated"],
+          "description": "Security level for agent execution"
+        },
+        "resources": {
+          "type": "object",
+          "required": ["memory", "timeout"],
+          "properties": {
+            "memory": {
+              "type": "string",
+              "pattern": "^\\d+[KMGT]?B$",
+              "description": "Maximum memory usage (e.g., 512MB, 1GB)"
+            },
+            "timeout": {
+              "type": "string",
+              "pattern": "^\\d+[smh]$",
+              "description": "Maximum execution time (e.g., 30s, 5m, 1h)"
+            },
+            "cpu": {
+              "type": "string",
+              "pattern": "^\\d+%$",
+              "description": "Maximum CPU usage percentage"
+            }
+          },
+          "additionalProperties": false
+        },
+        "network": {
+          "type": "object",
+          "properties": {
+            "allowed_domains": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "hostname"
+              },
+              "maxItems": 10,
+              "description": "Allowed domains for network access"
+            },
+            "blocked_ports": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+              },
+              "description": "Blocked ports for network access"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "dependencies": {
+      "type": "object",
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$"
+          },
+          "maxItems": 5,
+          "description": "Required agent dependencies"
+        },
+        "optional": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$"
+          },
+          "maxItems": 5,
+          "description": "Optional agent dependencies"
+        }
+      },
+      "additionalProperties": false
+    },
+    "reporting": {
+      "type": "object",
+      "properties": {
+        "frequency": {
+          "type": "string",
+          "enum": ["real-time", "hourly", "daily", "on-completion"],
+          "description": "Reporting frequency"
+        },
+        "format": {
+          "type": "string",
+          "enum": ["json", "text", "structured"],
+          "default": "json",
+          "description": "Report format"
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["execution-time", "memory-usage", "success-rate", "error-count"]
+          },
+          "maxItems": 10,
+          "description": "Metrics to track"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+} 

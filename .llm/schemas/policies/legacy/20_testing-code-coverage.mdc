@@ -1,0 +1,64 @@
+<ProjectRule name="EnhanceTestCoverage">
+<Extends>Baseline</Extends>
+
+<Description>
+Guidelines for writing additional tests to increase meaningful code coverage across the project, ensuring correctness, maintainability, and long-term resilience.
+</Description>
+
+<Objective>
+- Improve test coverage in a targeted, maintainable, and high-signal way.
+- Focus on under-tested modules, edge cases, and high-risk logic.
+- Avoid superficial or redundant test cases that bloat the suite without adding value.
+</Objective>
+
+<Instructions>
+
+1. <IdentifyGaps>
+   - Use available tools (e.g., `cargo tarpaulin`, `grcov`) to locate low-coverage areas.
+   - Prioritize core logic, public APIs, error handling, and branching logic with decision complexity.
+</IdentifyGaps>
+
+2. <WriteTests>
+   - Write **unit tests** for small, deterministic logic (pure functions, data transformations, etc.).
+   - Use **integration tests** for crate-level behavior or cross-module flows.
+   - Cover:
+     - Success cases (happy paths)
+     - Boundary conditions (e.g., empty, max values)
+     - Expected failures and panics (use `should_panic` or result assertions)
+   - Use meaningful names and structure (`test_<functionality>_<condition>`).
+
+</WriteTests>
+
+3. <DesignTestsWell>
+   - Keep tests **isolated** and **repeatable**. No hidden state or side effects.
+   - Use fixtures or test helpers to reduce duplication.
+   - Assert **intent**, not just exact values — aim to catch future regressions, not implementation details.
+   - Prefer clarity over cleverness. Tests should explain what matters.
+
+</DesignTestsWell>
+
+4. <TrackProgress>
+   - Ensure all new tests pass (`cargo test`) and lint cleanly (`cargo clippy`).
+   - Generate updated coverage reports and verify improved coverage.
+   - Document added coverage (e.g., "added tests for `parse_config()` edge cases, 92% → 100% coverage").
+
+</TrackProgress>
+
+5. <Commits>
+   - Use precise, meaningful commit messages:
+     - Example: `test(parser): add edge case tests for empty config`
+     - Example: `test(auth): cover expired token validation`
+   - Group related test additions per commit. Avoid mixing with unrelated code changes.
+
+</Commits>
+
+6. <Maintainability>
+   - Don't add flaky or brittle tests.
+   - Remove or refactor redundant legacy tests if superseded.
+   - Ensure test code reflects the same quality standards as production code (docs, clarity, structure).
+
+</Maintainability>
+
+</Instructions>
+
+</ProjectRule>

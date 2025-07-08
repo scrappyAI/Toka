@@ -1,0 +1,61 @@
+{
+  "agent_generation": {
+    "max_capabilities": 10,
+    "required_fields": ["metadata", "spec"],
+    "forbidden_capabilities": [
+      "root-access",
+      "network-unrestricted", 
+      "system-admin",
+      "kernel-access",
+      "hardware-control"
+    ],
+    "max_memory": "2GB",
+    "max_timeout": "1h",
+    "security_levels": ["sandbox", "restricted"],
+    "max_dependencies": 5
+  },
+  "tool_generation": {
+    "max_memory": "1GB",
+    "max_timeout": "10m",
+    "required_security": ["sandbox"],
+    "forbidden_capabilities": [
+      "root-access",
+      "network-unrestricted",
+      "system-admin"
+    ],
+    "max_parameters": 20,
+    "allowed_implementations": ["rust", "python", "javascript", "shell", "wasm"],
+    "max_dependencies": 20
+  },
+  "policy_generation": {
+    "max_rules": 50,
+    "priority_range": {
+      "min": 0,
+      "max": 100
+    },
+    "required_fields": ["metadata", "spec"],
+    "max_conditions": 10
+  },
+  "contract_generation": {
+    "max_obligations": 20,
+    "max_conditions": 15,
+    "required_fields": ["metadata", "spec"],
+    "enforcement_levels": ["advisory", "warning", "blocking"]
+  },
+  "date_validation": {
+    "current_year": 2025,
+    "placeholder_date": "2025-07-07",
+    "allowed_date_formats": [
+      "YYYY-MM-DD",
+      "YYYY-MM-DDTHH:mm:ssZ"
+    ],
+    "warn_on_past_years": true
+  },
+  "general_constraints": {
+    "max_name_length": 50,
+    "max_description_length": 500,
+    "max_tags": 10,
+    "naming_pattern": "^[a-z][a-z0-9-]*[a-z0-9]$",
+    "version_pattern": "^\\d+\\.\\d+\\.\\d+$"
+  }
+} 

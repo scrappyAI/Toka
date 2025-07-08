@@ -1,0 +1,66 @@
+{
+  "kind": "rule",
+  "metadata": {
+    "name": "architecture-research",
+    "version": "2.0.0",
+    "title": "ArchitectureResearch",
+    "description": "Architecture documentation, diagram generation, and codebase research protocols",
+    "tags": [
+      "system.architecture"
+    ],
+    "priority": "medium",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T06:32:26.505040+00:00",
+    "checksum": "786818e6e35973a4",
+    "schema_version": "2.0.0"
+  },
+  "spec": {
+    "always_apply": false,
+    "extends": [],
+    "objectives": [
+      "Generate code-accurate architectural diagrams",
+      "Conduct comprehensive codebase analysis",
+      "Maintain current architectural documentation",
+      "Support protocol adherence (A2A, MCP)"
+    ],
+    "guidelines": {
+      "diagram_generation": [
+        "Reflect current codebase (HEAD) in every diagram",
+        "Store artifacts with deterministic filenames",
+        "Keep architecture.md up-to-date with latest diagrams"
+      ],
+      "codebase_research": [
+        "Deep-dive analysis of entire Rust workspace",
+        "Generate comprehensive reports with findings",
+        "Use data-driven profiling, not intuition"
+      ],
+      "protocol_adherence": [
+        "Support A2A and MCP protocols",
+        "Implement proper security and validation",
+        "Document protocol versions in rustdoc"
+      ]
+    },
+    "commit_conventions": {
+      "architecture": {
+        "format": "arch: <description>",
+        "example": "arch: regen diagrams @ abc1234 (2025-06-28)"
+      },
+      "research": {
+        "format": "research: <description>",
+        "example": "research: complete workspace analysis for Q1"
+      },
+      "protocol": {
+        "format": "proto(<protocol>): <description>",
+        "examples": [
+          "proto(a2a): implement agent_card endpoint",
+          "proto(mcp): add tool registration capability"
+        ]
+      },
+      "performance": {
+        "format": "perf(<scope>): <description>",
+        "requirements": "Include before/after metrics in commit body",
+        "example": "perf(core): halve allocation count in parser"
+      }
+    }
+  }
+}

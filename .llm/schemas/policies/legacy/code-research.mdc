@@ -1,0 +1,121 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+<ProjectRule name="CodebaseResearch">
+
+<Description>
+A self-contained protocol for **deep-dive analysis** of the entire Rust workspace.  
+The agent iterates through every crate, surface, and artifact—collecting structural,
+behavioral, and quality data—then emits a **Research Report** that captures findings,
+open questions, and actionable next steps.<br/>
+The rule is intentionally extensible: add or chain extra rules under the
+`<Extensions>` tag without modifying the baseline flow.
+</Description>
+
+<!--────────── BASELINE GOALS ──────────-->
+<Goals>
+- Map **crate topology**, public APIs, and internal dependencies.
+- Trace **data & execution flows**, highlighting critical paths and side effects.
+- Detect unused code, unsafe blocks, missing docs, and performance hot-spots.
+- Produce an artifact: `/docs/research/<date>_workspace_report.md`
+  (or a canvas doc) summarizing insights and recommendations.
+</Goals>
+
+<!--────────── BASELINE TOOLS ──────────-->
+<Tools>
+- `cargo metadata --format-version=1` → raw dependency graph (JSON)
+- `cargo tree -e features` → human tree view
+- `cargo deps --no-deps --filter '*' --dot-output target/deps.dot`
+- `cargo udeps`, `cargo geiger`, `cargo clippy -- -D warnings`
+- `cargo tarpaulin --out Html` → test & doc-test coverage
+- `cargo flamegraph`, `cargo bloat` → perf & size
+- `rg` / `grep -R` for TODO / FIXME / `unsafe`
+- `graphviz` for DOT → SVG
+- `scripts/render_mermaid.rs` (custom helper) to embed Mermaid diagrams in report
+</Tools>
+
+<!--────────── WORKFLOW ──────────-->
+<Instructions>
+
+1. <Preparation>
+   - Confirm full build:  
+     `cargo check --workspace --all-features`
+   - Create a scratch dir `target/research/<timestamp>/` for generated assets.
+</Preparation>
+
+2. <StructuralSurvey>
+   - Run:  
+     ```bash
+     cargo metadata --format-version=1 > target/research/meta.json
+     cargo tree -e features > target/research/tree.txt
+     cargo deps --no-deps --dot-output target/research/deps.dot
+     dot -Tsvg target/research/deps.dot -o target/research/deps.svg
+     ```
+   - Convert `deps.svg` to an embedded Mermaid diagram (optional helper).  
+   - Highlight crates with **>1k LOC** or **>5 direct deps** in notes.
+</StructuralSurvey>
+
+3. <StaticAnalysis>
+   - Lint & safety:  
+     ```bash
+     cargo clippy --workspace --all-targets -- -D warnings
+     cargo geiger --all-features > target/research/unsafe.txt
+     cargo udeps --workspace > target/research/unused.txt
+     ```
+   - Parse outputs; capture counts of warnings, unsafe blocks, and dead code.
+</StaticAnalysis>
+
+4. <DynamicAnalysis>
+   - Coverage:  
+     `cargo tarpaulin --workspace --out Html --output-dir target/research/coverage`
+   - Perf sample (focus on binaries / benches with `perf_target` label):  
+     `cargo flamegraph --bin perf_target -o target/research/flame.svg`
+   - Binary size:  
+     `cargo bloat --workspace -n 20 > target/research/bloat.txt`
+</DynamicAnalysis>
+
+5. <DataFlowTrace>
+   - For critical async pipelines or event flows, generate a Mermaid `sequenceDiagram`
+     using traces or manual inspection; store in `target/research/*.mmd`.
+   - Example stub:  
+     ```mermaid
+     sequenceDiagram
+       participant API
+       participant Core
+       participant DB
+       API->>Core: update()
+       Core->>DB: INSERT
+       DB-->>Core: id
+       Core-->>API: 200 OK
+     ```
+</DataFlowTrace>
+
+6. <ArtifactGeneration>
+   - Assemble `/docs/research/<date>_workspace_report.md` with:
+     - **Executive summary** (1–2 paragraphs)
+     - **Crate matrix** (name, LOC, deps, Pub API count)
+     - SVG or Mermaid diagrams inline
+     - Tables for coverage %, unsafe counts, bloat winners
+     - **Findings & Recommendations** categorized by *Bug*, *Perf*, *Cleanup*, *Docs*
+   - Include a **Next Steps** checklist referencing other rules
+     (e.g., `MaintainDocs`, `OptimizationHardening`).
+</ArtifactGeneration>
+
+7. <ReviewGate>
+   - CI must upload research artifacts as build outputs (`actions/upload-artifact`).
+   - A maintainer reviews and either *approves* or *pushes questions* via comments.
+</ReviewGate>
+
+</Instructions>
+
+<!--────────── PLACEHOLDER FOR ADD-ONS ──────────-->
+<Extensions>
+  <!-- Add <RuleRef name="OptimizationHardening"/> or other chained rules here -->
+  <!-- Example:
+       <RuleRef name="MaintainDocs" triggers="after:ArtifactGeneration"/>
+  -->
+</Extensions>
+
+</ProjectRule>

@@ -1,0 +1,194 @@
+{
+  "$schema": "https://github.com/toka-ai/toka/.llm/schemas/resource-envelope-v1.json",
+  "$id": "https://github.com/toka-ai/toka/.llm/tools/python-env.json",
+  "kind": "tool",
+  "metadata": {
+    "name": "python-env",
+    "version": "1.0.0",
+    "title": "Python Environment Management Tool",
+    "description": "Python Environment Management Tool for virtual environments, dependencies, and cleanup",
+    "tags": [
+      "development.python",
+      "environment.venv",
+      "dependencies.management",
+      "system.utility"
+    ],
+    "priority": "high",
+    "maintainer": "Universal Extension System",
+    "created": "{{TODAY}}T00:00:00Z",
+    "lastModified": "{{TODAY}}T00:00:00Z"
+  },
+  "spec": {
+    "toolType": "development",
+    "capabilities": {
+      "system": {
+        "posix": [
+          "read",
+          "write",
+          "execute",
+          "delete"
+        ],
+        "rbac": [
+          "venv:manage",
+          "deps:install",
+          "env:check",
+          "script:execute"
+        ]
+      },
+      "io": {
+        "fs": [
+          "read",
+          "write",
+          "create",
+          "delete",
+          "execute"
+        ]
+      },
+      "development": {
+        "python": [
+          "venv:create",
+          "venv:cleanup",
+          "deps:install",
+          "deps:check",
+          "script:run"
+        ],
+        "environment": [
+          "status:check",
+          "activate:get",
+          "config:manage"
+        ]
+      }
+    },
+    "implementation": {
+      "language": "python",
+      "entryPoint": "scripts/python-env.py",
+      "dependencies": [
+        "pathlib",
+        "subprocess",
+        "venv",
+        "shutil"
+      ],
+      "arguments": [
+        {
+          "name": "command",
+          "type": "string",
+          "required": true,
+          "enum": ["create", "install", "cleanup", "activate", "check", "run"],
+          "description": "Command to execute"
+        },
+        {
+          "name": "force",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "Force recreation of virtual environment"
+        },
+        {
+          "name": "script",
+          "type": "string",
+          "required": false,
+          "description": "Script to run (for run command)"
+        },
+        {
+          "name": "args",
+          "type": "array",
+          "required": false,
+          "description": "Arguments for script"
+        },
+        {
+          "name": "output",
+          "type": "string",
+          "required": false,
+          "enum": ["json", "text"],
+          "default": "json",
+          "description": "Output format"
+        }
+      ],
+      "output": {
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "venv_path": {
+                  "type": "string"
+                },
+                "python_path": {
+                  "type": "string"
+                },
+                "pip_path": {
+                  "type": "string"
+                },
+                "activate_command": {
+                  "type": "string"
+                },
+                "exists": {
+                  "type": "boolean"
+                },
+                "python_exists": {
+                  "type": "boolean"
+                },
+                "pip_exists": {
+                  "type": "boolean"
+                },
+                "python_version": {
+                  "type": "string"
+                },
+                "installed_packages": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "package": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "returncode": {
+                  "type": "integer"
+                },
+                "stdout": {
+                  "type": "string"
+                },
+                "stderr": {
+                  "type": "string"
+                },
+                "command": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "configuration": {
+      "venvDirectory": "venv",
+      "requirementsFile": "requirements.txt",
+      "pythonVersion": "3.8",
+      "autoCleanup": true
+    },
+    "errorHandling": {
+      "strategy": "graceful",
+      "logging": "detailed",
+      "recovery": "automatic"
+    },
+    "performance": {
+      "timeout": "PT10M",
+      "memory": "512MB",
+      "cpu": "0.5"
+    }
+  }
+} 

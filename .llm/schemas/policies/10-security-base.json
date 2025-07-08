@@ -1,0 +1,43 @@
+{
+  "kind": "rule",
+  "metadata": {
+    "name": "security-base",
+    "version": "2.0.0",
+    "title": "SecurityBase",
+    "description": "Core security hardening guidelines for all components",
+    "tags": [
+      "security.base"
+    ],
+    "priority": "critical",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T06:32:26.511258+00:00",
+    "checksum": "f24d4ed75053880e",
+    "schema_version": "2.0.0"
+  },
+  "spec": {
+    "always_apply": true,
+    "extends": [],
+    "objectives": [
+      "Detect and mitigate common security weaknesses",
+      "Enforce secure-by-default architecture",
+      "Provide clear audit trails"
+    ],
+    "guidelines": {
+      "security_checks": [
+        "Scan for insecure dependencies",
+        "Detect unsafe block usage",
+        "Check for injection risks"
+      ],
+      "code_practices": [
+        "Replace unsafe code with safe patterns",
+        "Validate inputs at system boundaries",
+        "Encrypt secrets at rest"
+      ],
+      "monitoring": [
+        "Add structured logging for auth failures",
+        "Log anomalous input patterns",
+        "Use fuzz testing for parsing logic"
+      ]
+    }
+  }
+}

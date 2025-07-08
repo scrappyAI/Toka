@@ -171,7 +171,7 @@ class ToolRegistry:
                 issues.append(f"Contains placeholder date: {placeholder_pattern}")
             
             # Check for hardcoded dates
-            hardcoded_dates = ['2024-01-01', '2024-01-01T00:00:00Z']
+            hardcoded_dates = ['2025-01-01', '2025-01-01T00:00:00Z']
             for date in hardcoded_dates:
                 if date in content:
                     issues.append(f"Contains hardcoded date: {date}")

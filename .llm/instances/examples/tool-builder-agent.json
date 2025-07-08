@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "name": "tool-builder-agent",
+    "version": "1.0.0",
+    "description": "Builds and validates tools according to schema specifications, ensuring they integrate cleanly with toka-tools",
+    "author": "Toka System",
+    "created": "2025-01-27T00:00:00Z",
+    "tags": ["tool-generation", "validation", "integration"]
+  },
+  "spec": {
+    "capabilities": [
+      "schema-validation",
+      "code-generation", 
+      "file-write",
+      "command-execution"
+    ],
+    "objectives": [
+      "Generate valid tool schemas from specifications",
+      "Validate tool implementations against security requirements",
+      "Sync validated tools to toka-tools crate for production use",
+      "Ensure all generated tools pass compilation and basic tests"
+    ],
+    "constraints": {
+      "security": "sandbox",
+      "resources": {
+        "memory": "512MB",
+        "timeout": "5m",
+        "cpu": "75%"
+      },
+      "network": {
+        "allowed_domains": ["github.com"],
+        "blocked_ports": [22, 23, 3389]
+      }
+    },
+    "dependencies": {
+      "required": ["schema-validator"],
+      "optional": ["rust-compiler"]
+    },
+    "reporting": {
+      "frequency": "on-completion",
+      "format": "json",
+      "metrics": ["execution-time", "success-rate", "error-count"]
+    }
+  }
+} 

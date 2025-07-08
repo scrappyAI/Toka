@@ -1,0 +1,43 @@
+{
+  "kind": "rule",
+  "metadata": {
+    "name": "development-process",
+    "version": "2.0.0",
+    "title": "DevelopmentProcess",
+    "description": "Development workflow including refactoring, proposals, and date enforcement",
+    "tags": [
+      "process.base"
+    ],
+    "priority": "high",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T06:32:26.509104+00:00",
+    "checksum": "90d9abfc8f3bdd7f",
+    "schema_version": "2.0.0"
+  },
+  "spec": {
+    "always_apply": true,
+    "extends": [],
+    "objectives": [
+      "Ensure systematic and productive refactoring",
+      "Maintain verifiable date accuracy",
+      "Provide structured change proposals"
+    ],
+    "guidelines": {
+      "refactoring": [
+        "Work in small, isolated slices",
+        "Ensure each slice compiles and passes tests",
+        "Respect existing public APIs or provide migration"
+      ],
+      "proposals": [
+        "Draft proposal with template",
+        "Review cycle with GitHub comments",
+        "Update status: DRAFT \u2192 REVIEW \u2192 APPROVED"
+      ],
+      "date_enforcement": [
+        "Use canonical source of 'now'",
+        "Validate dates against git commit timestamps",
+        "Block PRs with future dates or mismatches"
+      ]
+    }
+  }
+}

@@ -140,8 +140,8 @@ class DateEnforcer:
             # Placeholder patterns
             (re.escape(self.placeholder_pattern), 'placeholder'),
             # Hardcoded date patterns
-            (r'2024-01-01', 'hardcoded_date'),
-            (r'2024-01-01T00:00:00Z', 'hardcoded_datetime'),
+            (r'2025-01-01', 'hardcoded_date'),
+            (r'2025-01-01T00:00:00Z', 'hardcoded_datetime'),
         ]
         
         results = []

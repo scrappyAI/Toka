@@ -1,0 +1,106 @@
+---
+description: Date Accuracy Enforcment for agent tasks. 
+globs:
+alwaysApply: True
+---
+
+---
+description: |
+  Guarantees **date integrity** in every auto-generated or human-written
+  code comment, doc, changelog, proposal, or commit message.  
+  The agent must never hallucinate or hard-code dates—use canonical sources
+  (system clock ↔ UTC, git commit timestamp, or explicit historical citation)
+  and pass CI validation.
+globs:
+  - "**/*.rs"
+  - "docs/**/*.md"
+  - "CHANGELOG.md"
+  - "docs/proposals/*.md"
+alwaysApply: false
+---
+<ProjectRule name="DateAccuracyEnforcement">
+
+<Description>
+Hard rule that all dates embedded in the repository are **verifiably correct**:
+* “today” ≡ the run-time UTC date,  
+* release / tag dates ≡ the associated commit timestamp,  
+* historical dates require citation.  
+A linter in CI blocks any future-dated, mismatching, or malformed entries.
+</Description>
+
+<!--────────── OBJECTIVES ──────────-->
+<Goals>
+- Eliminate “hallucinated” or stale dates in templates and generated files.
+- Provide one canonical source of “now”: `date -u +%Y-%m-%d`.
+- Ensure tag & release docs echo the actual git commit date.
+- Offer escape hatch for intentional historical references with `DATE:EXEMPT` tag.
+</Goals>
+
+<!--────────── TOOLCHAIN ──────────-->
+<Tools>
+- `date -u +%Y-%m-%d` → current UTC day (export `TODAY`)
+- `git log -1 --format=%cd --date=format:%Y-%m-%d` → `COMMIT_DATE`
+- `scripts/insert_date.sh` – replace `{{today}}` in templates with `$TODAY`
+- `scripts/validate_dates.py` – lints repo for date patterns
+</Tools>
+
+<!--────────── WORKFLOW ──────────-->
+<Instructions>
+
+1. <DateInjection>
+   - All templates (**StructuredChangeProposal**, **VersionBumpClassification**, etc.)
+     must use the `{{today}}` placeholder—never hard-code.
+   - Invoke helper: `./scripts/insert_date.sh <file>` which:
+     ```bash
+     TODAY=$(date -u +%Y-%m-%d)
+     sed -i "s/{{today}}/${TODAY}/g" "$1"
+     ```
+
+2. <CommitMetadata>
+   - When generating release notes or tagging:
+     ```bash
+     COMMIT_DATE=$(git log -1 --format=%cd --date=format:%Y-%m-%d)
+     sed -i "s/{{commit_date}}/${COMMIT_DATE}/g" docs/release/v${VER}.md
+     ```
+
+3. <HistoricalDates>
+   - For past events, append `<!-- DATE:EXEMPT source="link-or-ref" -->`
+     on the **preceding line** to bypass linter.
+   - Example:  
+     ```markdown
+     <!-- DATE:EXEMPT source="RFC 2119, published 1997-03-01" -->
+     RFC 2119 was finalized on 1997-03-01.
+     ```
+
+4. <Validation>  <!-- excerpt of linter logic (persists for devs) -->
+   - `validate_dates.py` scans diffs for `\d{4}-\d{2}-\d{2}`:
+     1. Must match `TODAY` ±0 days **or**
+     2. Equal to `COMMIT_DATE` for release docs **or**
+     3. Preceded by `DATE:EXEMPT`.
+   - Flags:
+     - **Future date** (> TODAY) → error.
+     - **Mismatch** (e.g., `Version: 0.1 – 3025-01-01`) → error.
+
+5. <CIIntegration>
+   - `.github/workflows/ci.yml`:
+     ```yaml
+     - run: pip install -r scripts/requirements.txt  # contains dateutil, regex
+     - run: ./scripts/validate_dates.py
+     ```
+
+6. <ReviewChecklist>
+   - Reviewer confirms no manual date edits without exemption tag.
+   - Check proposal headers: `Version: <semver> – <TODAY>`.
+   - Ensure Git tag date in `CHANGELOG.md` equals actual commit date.
+
+</Instructions>
+
+<!--────────── EXTENSIONS ──────────-->
+<Extensions>
+  <!-- Enforce before merges that include docs or changelog -->
+  <RuleRef name="StructuredChangeProposal" triggers="before:PRMerge"/>
+</Extensions>
+
+</ProjectRule>
+
+

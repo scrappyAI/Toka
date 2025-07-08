@@ -1,0 +1,190 @@
+{
+  "$schema": "https://github.com/toka-ai/toka/.llm/schemas/resource-envelope-v1.json",
+  "$id": "https://github.com/toka-ai/toka/.llm/tools/date-enforcer.json",
+  "kind": "tool",
+  "metadata": {
+    "name": "date-enforcer",
+    "version": "1.0.0",
+    "title": "Date Enforcement Tool",
+    "description": "Enforces deterministic, accurate dating through schema contracts and prevents date hallucination",
+    "tags": [
+      "validation.date",
+      "system.core",
+      "deterministic"
+    ],
+    "priority": "critical",
+    "maintainer": "Toka AI Team",
+    "created": "2025-07-07T00:00:00Z",
+    "lastModified": "2025-07-07T00:00:00Z"
+  },
+  "spec": {
+    "toolType": "validation",
+    "capabilities": {
+      "system": {
+        "posix": [
+          "read",
+          "write",
+          "execute"
+        ],
+        "rbac": [
+          "date:validate",
+          "date:enforce",
+          "file:read",
+          "file:write"
+        ]
+      },
+      "io": {
+        "fs": [
+          "read",
+          "write",
+          "create"
+        ]
+      },
+      "validation": {
+        "date": [
+          "validate",
+          "enforce",
+          "correct",
+          "audit"
+        ]
+      },
+      "time": {
+        "utc": [
+          "current",
+          "format",
+          "parse"
+        ],
+        "git": [
+          "commit_date",
+          "tag_date"
+        ]
+      }
+    },
+    "implementation": {
+      "language": "python",
+      "entryPoint": "scripts/date-enforcer.py",
+      "dependencies": [
+        "click>=8.0.0",
+        "python-dateutil>=2.8.0",
+        "gitpython>=3.1.0"
+      ],
+      "arguments": [
+        {
+          "name": "command",
+          "type": "string",
+          "required": true,
+          "enum": ["validate", "enforce", "correct", "audit", "register"],
+          "description": "Command to execute"
+        },
+        {
+          "name": "file",
+          "type": "string",
+          "required": false,
+          "description": "File to process"
+        },
+        {
+          "name": "directory",
+          "type": "string",
+          "required": false,
+          "description": "Directory to scan"
+        },
+        {
+          "name": "strict",
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Enable strict validation mode"
+        },
+        {
+          "name": "auto-correct",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "Automatically correct date issues"
+        }
+      ],
+      "output": {
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "valid": {
+              "type": "boolean"
+            },
+            "issues": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string"
+                  },
+                  "line": {
+                    "type": "integer"
+                  },
+                  "issue": {
+                    "type": "string"
+                  },
+                  "severity": {
+                    "type": "string",
+                    "enum": ["error", "warning", "info"]
+                  },
+                  "suggestion": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "corrected": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string"
+                  },
+                  "changes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "line": {
+                          "type": "integer"
+                        },
+                        "old": {
+                          "type": "string"
+                        },
+                        "new": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "configuration": {
+      "dateFormat": "%Y-%m-%d",
+      "timeFormat": "%Y-%m-%dT%H:%M:%SZ",
+      "placeholderPattern": "2025-07-07",
+      "exemptionPattern": "DATE:EXEMPT",
+      "strictMode": true,
+      "autoCorrect": false,
+      "databaseFile": "date_audit.db"
+    },
+    "errorHandling": {
+      "strategy": "fail-fast",
+      "logging": "detailed",
+      "recovery": "manual"
+    },
+    "performance": {
+      "timeout": "PT5M",
+      "memory": "256MB",
+      "cpu": "0.5"
+    }
+  }
+} 

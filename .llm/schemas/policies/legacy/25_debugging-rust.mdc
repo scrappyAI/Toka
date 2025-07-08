@@ -1,0 +1,85 @@
+<ProjectRule name="DebugRustErrors">
+<Extends>Baseline</Extends>
+
+<Description>
+Structured debugging protocol for identifying, diagnosing, and resolving errors in Rust codebases. Ensures fixes are principled, regression-resistant, and rooted in understanding, not guesswork.
+</Description>
+
+<Objective>
+- Make debugging traceable, minimal, and knowledge-preserving.
+- Avoid panic-driven, trial-and-error fixes.
+- Capture context, root cause, and regression tests for each resolved issue.
+</Objective>
+
+<Instructions>
+
+1. <ReproduceFirst>
+   - Before fixing, reliably reproduce the issue:
+     - Add a minimal failing test if possible.
+     - Capture relevant inputs, environment, and steps to trigger the error.
+   - If intermittent, log additional context (e.g., seed, time, platform).
+
+</ReproduceFirst>
+
+2. <LocalizeRootCause>
+   - Use `RUST_BACKTRACE=1` or `RUST_LOG=debug` to trace failure origin.
+   - Step through using `gdb`, `lldb`, or IDE debuggers.
+   - Use targeted `dbg!()`, `tracing`, or structured logging.
+   - Validate all assumptions via contracts (`assert!`, `expect`, `invariant` macros).
+
+</LocalizeRootCause>
+
+3. <UnderstandErrorSemantics>
+   - Know the difference between:
+     - `panic!()` — unrecoverable logic failure
+     - `Result<T, E>` — recoverable error
+     - `Option<T>` — presence/absence
+   - Refactor ambiguous logic into clearly fallible paths (Result/Option chaining).
+   - Avoid `unwrap()` or `expect()` unless proven impossible to fail.
+
+</UnderstandErrorSemantics>
+
+4. <FixWithJustification>
+   - Fix the **root cause**, not just the symptom.
+   - Include a comment or doc update that answers:  
+     "**Why** did this fail, and **why** is it safe now?"
+   - Avoid speculative fixes without test-backed confidence.
+
+</FixWithJustification>
+
+5. <AddRegressionTests>
+   - Lock in the fix:
+     - Add a minimal regression test that would've caught the original issue.
+     - Cover related edge cases or variants.
+     - Use `#[should_panic]`, `matches!`, or `assert_err!` where appropriate.
+
+</AddRegressionTests>
+
+6. <Error Propagation Hygiene>
+   - Propagate errors transparently with context:
+     - Use `anyhow::Context`, `thiserror`, or custom `enum Error` types.
+     - Prefer `?` operator over nested `match` unless branching logic is required.
+     - Include enough info in logs or errors to reproduce without re-debugging.
+
+</ErrorPropagationHygiene>
+
+7. <Committing Fixes>
+   - Commit messages must:
+     - Reference the failure cause
+     - Include test ID if applicable
+     - Avoid "fixes bug" without explanation
+   - Example: `fix(config): handle missing TOML key with fallback + test`
+
+</CommittingFixes>
+
+8. <Postmortem Reflection>
+   - For critical errors:
+     - Add notes to the project changelog or issue tracker
+     - Document how similar bugs can be prevented structurally
+     - Update onboarding or architecture docs if relevant
+
+</PostmortemReflection>
+
+</Instructions>
+
+</ProjectRule>

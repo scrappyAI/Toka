@@ -73,7 +73,7 @@
               "items": {
                 "type": "string"
               },
-              "default": ["2024-01-01", "2024-01-01T00:00:00Z"],
+              "default": ["2025-01-01", "2025-01-01T00:00:00Z"],
               "description": "Patterns for hardcoded dates"
             }
           },

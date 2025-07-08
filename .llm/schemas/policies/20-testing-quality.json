@@ -1,0 +1,60 @@
+{
+  "kind": "rule",
+  "metadata": {
+    "name": "testing-quality",
+    "version": "2.0.0",
+    "title": "TestingQuality",
+    "description": "Testing guidelines and code coverage requirements",
+    "tags": [
+      "quality.testing"
+    ],
+    "priority": "critical",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T06:32:26.506395+00:00",
+    "checksum": "57f2e29f78566f2a",
+    "schema_version": "2.0.0"
+  },
+  "spec": {
+    "always_apply": true,
+    "extends": [],
+    "objectives": [
+      "Improve test coverage meaningfully",
+      "Focus on under-tested modules and edge cases",
+      "Avoid superficial tests that add no value"
+    ],
+    "guidelines": {
+      "coverage_strategy": [
+        "Focus on core logic and public APIs",
+        "Target error handling and branching logic",
+        "Prioritize high-risk modules with decision complexity"
+      ],
+      "test_design": [
+        "Keep tests isolated and repeatable",
+        "No hidden state or side effects",
+        "Assert intent, not implementation details"
+      ],
+      "quality_gates": [
+        "Maintain minimum 80% coverage threshold",
+        "Generate reports and verify improvements",
+        "Document coverage gains in commit messages"
+      ]
+    },
+    "commit_conventions": {
+      "testing": {
+        "format": "test(<scope>): <description>",
+        "examples": [
+          "test(parser): add edge case tests for empty config",
+          "test(auth): cover expired token validation"
+        ]
+      },
+      "debugging": {
+        "format": "fix(<scope>): <description> + test",
+        "requirements": [
+          "Reference failure cause",
+          "Include test ID if applicable",
+          "Cite before/after metrics in body"
+        ]
+      }
+    }
+  }
+}

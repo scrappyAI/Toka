@@ -1,10 +1,10 @@
-# Toka LLM System
+# Toka LLM System Organization
 
-This directory contains the **Toka LLM System** - a comprehensive framework for AI agent configuration, tool management, and policy enforcement. The system is organized around a unified schema-based architecture that provides deterministic, reproducible behavior for AI agents and tools.
+This document describes the reorganized `.llm` folder structure and how to use the new schema-based system.
 
-## 🏗️ Architecture Overview
+## 🏗️ New Architecture
 
-The system follows a **schema-first approach** with clear categorization:
+The system has been reorganized around a **unified schema-based architecture** with clear categorization:
 
 ```
 .llm/
@@ -24,18 +24,34 @@ The system follows a **schema-first approach** with clear categorization:
 ### **Agents** (`schemas/agents/`)
 AI agent specifications with capabilities, behaviors, and constraints.
 
+**Examples:**
+- `tool-builder-agent.json` - Agent for building and validating tools
+
 ### **Tools** (`schemas/tools/`)
 Tool definitions that wrap Python scripts with standardized interfaces, capabilities, and validation.
+
+**Examples:**
+- `date-enforcer-tool.json` → `scripts/date-enforcer.py`
+- `folder-tidy-tool.json` → `scripts/folder-tidy.py`
+- `tool-registry-tool.json` → `scripts/tool-registry.py`
 
 ### **Policies** (`schemas/policies/`)
 Policy definitions that guide behavior and enforce standards (converted from rules).
 
+**Examples:**
+- `00-core-baseline.json` - Foundational guidelines
+- `10-security-base.json` - Security hardening
+- `20-testing-quality.json` - Testing standards
+
 ### **Contracts** (`schemas/contracts/`)
 Enforcement contracts that define obligations, compliance requirements, and remediation procedures.
 
+**Examples:**
+- `date-enforcement-contract.json` - Date validation and correction
+
 ## 🔧 Core Tools
 
-### Date Enforcement
+### Date Enforcement System
 - **Tool**: `date-enforcer-tool.json` → `scripts/date-enforcer.py`
 - **Contract**: `date-enforcement-contract.json`
 - **Purpose**: Prevents date hallucination and enforces deterministic dating
@@ -45,28 +61,30 @@ Enforcement contracts that define obligations, compliance requirements, and reme
 - **Purpose**: Organizes folder structures according to defined policies
 
 ### Tool Registry
-- **Tool**: `tool-registry.json` → `scripts/tool-registry.py`
+- **Tool**: `tool-registry-tool.json` → `scripts/tool-registry.py`
 - **Purpose**: Manages registered tools with validation and tracking
 
-## 📅 Date Enforcement System
+## 📅 Date Enforcement
 
-The system includes a comprehensive date enforcement mechanism to prevent LLM date hallucination:
-
-### **Contract**: `schemas/contracts/date-enforcement-contract.json`
-- Defines canonical date sources (system clock)
-- Specifies validation rules and exemptions
-- Establishes compliance requirements
-
-### **Tool**: `schemas/tools/date-enforcer-tool.json`
-- Wraps `scripts/date-enforcer.py`
-- Provides automated date validation and correction
-- Maintains audit trail in `date_audit.db`
+The system includes comprehensive date enforcement to prevent LLM date hallucination:
 
 ### **Validation Patterns**
 - **Canonical Format**: `2025-07-07` (YYYY-MM-DD)
 - **Datetime Format**: `2025-07-07T00:00:00Z`
 - **Placeholder**: `2025-07-07` (for development)
 - **Exemption**: `DATE:EXEMPT source="reason"`
+
+### **Usage**
+```bash
+# Validate dates in the codebase
+python3 scripts/date-enforcer.py validate .
+
+# Enforce date corrections
+python3 scripts/date-enforcer.py enforce . --auto-correct
+
+# Fix all 2024 references to 2025
+python3 scripts/fix-dates.py
+```
 
 ## 🛠️ Tool Abstraction
 
@@ -97,12 +115,12 @@ This provides:
 
 Policies (formerly rules) are organized by category and priority:
 
-- **Core Policies**: Foundational guidelines for all projects
-- **Security Policies**: Hardening and access control
-- **Quality Policies**: Testing and documentation standards
-- **Process Policies**: Development workflows and change management
+- **Core Policies** (100): Foundational guidelines for all projects
+- **Security Policies** (85-90): Hardening and access control
+- **Quality Policies** (80): Testing and documentation standards
+- **Process Policies** (60): Development workflows and change management
 
-## 🔄 Migration Status
+## 🔄 Migration Summary
 
 ### ✅ **Completed**
 - [x] Schema-based organization structure
@@ -110,16 +128,14 @@ Policies (formerly rules) are organized by category and priority:
 - [x] Date enforcement contract and tool
 - [x] Policy categorization (from rules)
 - [x] Contract definitions for enforcement
+- [x] Fixed all 2024 date references to 2025 (22 changes)
 
-### 🔄 **In Progress**
-- [ ] Update all date references to 2025
-- [ ] Migrate remaining tools to schema format
-- [ ] Create comprehensive policy documentation
-
-### 📋 **Planned**
-- [ ] Automated compliance checking
-- [ ] Policy composition and validation tools
-- [ ] Integration with CI/CD pipelines
+### 📊 **Migration Results**
+- **Files processed**: 56
+- **Date fixes applied**: 22
+- **New tool schemas created**: 6
+- **Policies migrated**: 8
+- **Contracts created**: 1
 
 ## 🎯 Usage Guidelines
 
@@ -137,28 +153,19 @@ Policies (formerly rules) are organized by category and priority:
 
 ## 🔧 Configuration
 
-### Date Enforcement
-```bash
-# Validate dates in the codebase
-python scripts/date-enforcer.py validate .
-
-# Enforce date corrections
-python scripts/date-enforcer.py enforce . --auto-correct
-```
-
 ### Tool Registry
 ```bash
 # Register a new tool
-python scripts/tool-registry.py register path/to/tool.json
+python3 scripts/tool-registry.py register path/to/tool.json
 
 # List registered tools
-python scripts/tool-registry.py list
+python3 scripts/tool-registry.py list
 ```
 
 ### Folder Organization
 ```bash
 # Organize folder structure
-python scripts/folder-tidy.py organize . --dry-run
+python3 scripts/folder-tidy.py organize . --dry-run
 ```
 
 ## 📊 Audit and Compliance
@@ -169,7 +176,29 @@ The system maintains comprehensive audit trails:
 - **Tool Registry**: `tool_registry.db` - Registered tools and validation status
 - **Tidy Audit**: `tidy_audit.db` - Folder organization changes
 
-## 🚀 Future Enhancements
+## 🚀 Benefits
+
+### **Deterministic Behavior**
+- Canonical date sources prevent hallucination
+- Schema validation ensures consistency
+- Contract enforcement provides guarantees
+
+### **Clear Organization**
+- Schema-based categorization
+- Tool abstraction unifies interfaces
+- Policy system guides behavior
+
+### **Reproducible Results**
+- Standardized tool interfaces
+- Automated validation and correction
+- Comprehensive audit trails
+
+### **Agent-Friendly**
+- Structured schemas for easy parsing
+- Clear capability definitions
+- Standardized error handling
+
+## 🔮 Future Enhancements
 
 - **Automated Policy Composition**: Tools to combine policies for specific contexts
 - **Schema Validation**: Automated validation of all schema files
@@ -179,4 +208,4 @@ The system maintains comprehensive audit trails:
 
 ---
 
-**Note**: This system provides a deterministic, reproducible foundation for AI agent behavior while maintaining flexibility for specific use cases through the policy and contract system. 
+**Note**: This reorganization provides a deterministic, reproducible foundation for AI agent behavior while maintaining flexibility for specific use cases through the policy and contract system. 

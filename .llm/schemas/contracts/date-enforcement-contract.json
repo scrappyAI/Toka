@@ -1,0 +1,116 @@
+{
+  "$schema": "https://github.com/toka-ai/toka/.llm/schemas/resource-envelope-v1.json",
+  "$id": "https://github.com/toka-ai/toka/.llm/schemas/contracts/date-enforcement-contract.json",
+  "kind": "contract",
+  "metadata": {
+    "name": "date-enforcement-contract",
+    "version": "1.0.0",
+    "title": "Date Enforcement Contract",
+    "description": "Contract defining deterministic date enforcement policies to prevent hallucination",
+    "tags": [
+      "date.enforcement",
+      "system.core",
+      "validation"
+    ],
+    "priority": "critical",
+    "maintainer": "Toka AI Team",
+    "created": "2025-07-07T00:00:00Z",
+    "lastModified": "2025-07-07T00:00:00Z"
+  },
+  "spec": {
+    "contractType": "enforcement",
+    "scope": {
+      "files": [
+        "**/*.json",
+        "**/*.md",
+        "**/*.py",
+        "**/*.rs",
+        "**/*.toml"
+      ],
+      "exclusions": [
+        "**/node_modules/**",
+        "**/.git/**",
+        "**/target/**",
+        "**/__pycache__/**"
+      ]
+    },
+    "policies": {
+      "canonicalSource": {
+        "type": "system_clock",
+        "timezone": "UTC",
+        "format": "%Y-%m-%d",
+        "datetimeFormat": "%Y-%m-%dT%H:%M:%SZ"
+      },
+      "validation": {
+        "allowFutureDates": false,
+        "maxAgeDays": 365,
+        "placeholderPattern": "2025-07-07",
+        "exemptionPattern": "DATE:EXEMPT",
+        "hardcodedPatterns": [
+          "2025-01-01",
+          "2025-01-01T00:00:00Z"
+        ]
+      },
+      "enforcement": {
+        "strict": true,
+        "autoCorrect": false,
+        "requireExemption": true,
+        "auditTrail": true
+      }
+    },
+    "obligations": {
+      "system": {
+        "must": [
+          "Use canonical date sources only",
+          "Validate all date references",
+          "Maintain audit trail",
+          "Prevent future dates"
+        ],
+        "must_not": [
+          "Use hardcoded dates without context",
+          "Allow future dates without exemption",
+          "Ignore date validation errors"
+        ]
+      },
+      "agents": {
+        "must": [
+          "Use current date from system clock",
+          "Validate dates before committing",
+          "Document date exemptions",
+          "Follow date format standards"
+        ],
+        "must_not": [
+          "Hallucinate dates",
+          "Use placeholder dates in production",
+          "Ignore date contract violations"
+        ]
+      }
+    },
+    "compliance": {
+      "validation": {
+        "automated": true,
+        "frequency": "on_commit",
+        "tools": [
+          "scripts/date-enforcer.py",
+          "scripts/validate-dates.py"
+        ]
+      },
+      "reporting": {
+        "format": "json",
+        "location": "date_audit.db",
+        "retention": "1_year"
+      }
+    },
+    "remediation": {
+      "autoCorrect": {
+        "enabled": false,
+        "requireApproval": true,
+        "backupOriginal": true
+      },
+      "manual": {
+        "process": "Create exemption with source documentation",
+        "approval": "Maintainer review required"
+      }
+    }
+  }
+} 

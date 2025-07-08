@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "name": "file-processor-tool",
+    "version": "1.0.0", 
+    "description": "Processes text files with validation, transformation, and analysis capabilities",
+    "category": "file-operations",
+    "author": "Toka System",
+    "created": "2025-01-27T00:00:00Z",
+    "tags": ["file-processing", "text-analysis", "validation"]
+  },
+  "spec": {
+    "capabilities": [
+      "file-read",
+      "file-write",
+      "text-processing",
+      "json-processing",
+      "schema-validation"
+    ],
+    "implementation": {
+      "type": "rust",
+      "entry_point": "src/generated/file_processor_tool.rs",
+      "dependencies": [
+        "serde_json",
+        "tokio",
+        "anyhow"
+      ],
+      "working_directory": "."
+    },
+    "interface": {
+      "inputs": [
+        {
+          "name": "input_path",
+          "type": "string",
+          "required": true,
+          "description": "Path to input file to process",
+          "validation": {
+            "pattern": "^[a-zA-Z0-9_/.-]+\\.(txt|json|yaml)$"
+          }
+        },
+        {
+          "name": "output_path", 
+          "type": "string",
+          "required": false,
+          "description": "Path for output file (optional)",
+          "default": "output.txt"
+        },
+        {
+          "name": "operation",
+          "type": "string",
+          "required": true,
+          "description": "Processing operation to perform",
+          "validation": {
+            "enum": ["validate", "transform", "analyze", "format"]
+          }
+        },
+        {
+          "name": "options",
+          "type": "object",
+          "required": false,
+          "description": "Additional processing options",
+          "default": {}
+        }
+      ],
+      "outputs": {
+        "format": "json",
+        "encoding": "utf-8",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {"type": "boolean"},
+            "processed_lines": {"type": "integer"},
+            "output_file": {"type": "string"},
+            "warnings": {"type": "array"}
+          }
+        }
+      },
+      "error_handling": {
+        "strategy": "graceful",
+        "max_retries": 1
+      }
+    },
+    "security": {
+      "level": "sandbox",
+      "sandbox": {
+        "network_access": false,
+        "file_system_access": "restricted",
+        "allowed_paths": ["/tmp", "./data", "./output"]
+      }
+    },
+    "performance": {
+      "timeout": "30s",
+      "memory_limit": "256MB",
+      "cpu_limit": "50%"
+    }
+  }
+} 

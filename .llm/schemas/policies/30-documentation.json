@@ -1,0 +1,52 @@
+{
+  "kind": "rule",
+  "metadata": {
+    "name": "documentation",
+    "version": "2.0.0",
+    "title": "Documentation",
+    "description": "Comprehensive documentation generation and maintenance guidelines",
+    "tags": [
+      "process.documentation"
+    ],
+    "priority": "high",
+    "created": "2025-07-07",
+    "modified": "2025-07-07T06:32:26.502114+00:00",
+    "checksum": "44d50a4504cd83f9",
+    "schema_version": "2.0.0"
+  },
+  "spec": {
+    "always_apply": true,
+    "extends": [],
+    "objectives": [
+      "Achieve zero missing_docs warnings",
+      "Keep docs aligned with current code",
+      "Provide architectural diagrams using Mermaid",
+      "Ensure reliable doc builds across platforms"
+    ],
+    "guidelines": {
+      "documentation_requirements": [
+        "Document every pub struct, enum, trait, function, macro with ///",
+        "Include concise, example-driven descriptions",
+        "Add #![deny(missing_docs)] for new code"
+      ],
+      "quality_checks": [
+        "Enforce #![deny(missing_docs)]",
+        "Run cargo test --doc --workspace",
+        "CI must fail on new missing_docs warnings"
+      ],
+      "maintenance": [
+        "Verify examples compile correctly",
+        "Confirm Mermaid diagrams render on GitHub",
+        "Check all missing_docs warnings resolved"
+      ]
+    },
+    "commit_conventions": {
+      "format": "docs(<scope>): <description>",
+      "examples": [
+        "docs(core): regen README.md via cargo-readme",
+        "docs(book): add mermaid sequence diagram for payment flow",
+        "docs(auth): fix missing_docs warnings on token structs"
+      ]
+    }
+  }
+}

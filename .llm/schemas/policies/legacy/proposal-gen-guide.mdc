@@ -1,0 +1,108 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+<ProjectRule name="StructuredChangeProposal">
+
+<Description>
+Template-driven rule for drafting **clear, self-contained proposals** that introduce,
+refactor, or remove code in the Rust workspace.  
+Every proposal produced under this rule follows a uniform Markdown skeleton—mirroring the
+“Tool Loader – WASM Transport Design Proposal” example—so reviewers can rapidly
+understand context, impact, and implementation slices.
+</Description>
+
+<Goals>
+- Capture **why** the change is needed, **what** will be done, and **how** success is measured.
+- Surface API diffs, feature flags, compatibility notes, and open questions in one place.
+- Provide a ready-to-track task list that maps directly into incremental PRs.
+</Goals>
+
+<!--────────── TEMPLATE ──────────-->
+<ProposalTemplate markdown="true">
+```markdown
+# <Title of Proposal>
+
+> Version: <0.1> – <YYYY-MM-DD>  
+> Author: <agent or contributor>  
+> Status: DRAFT \| REVIEW \| APPROVED
+
+## Context
+<Explain current behaviour, pain points, links to code • refs to issues • metrics>
+
+### Goals
+1. <Goal #1>
+2. <Goal #2>
+3. …
+
+## Proposed Changes
+### Public API
+```rust
+// Crate / path: <crate>::<module>
+<before/after code blocks or new enum/struct>
+
+Feature Flags
+	•	<feature-a> – <why & deps>
+	•	<feature-b> – …
+
+Behaviour / Flow
+
+<Mermaid diagram or flow bullets that reflect actual code paths>
+
+Compatibility
+	•	Unchanged: 
+	•	Breaking: <semver impact & migration guide>
+
+Open Questions
+	1.	<Question + decision owner>
+	2.	…
+
+Implementation Plan
+	•	Task 1 – 
+	•	Task 2
+
+</ProposalTemplate>
+
+<!--────────── WORKFLOW ──────────-->
+<Instructions>
+
+1. <Trigger>
+   - Invoke this rule whenever a change
+     - spans multiple crates or
+     - alters a public API or
+     - introduces an optional subsystem (feature flag).
+</Trigger>
+
+2. <CollectEvidence>
+   - Run `git grep`, `cargo public-api`, and `cargo tree` to pinpoint affected code.
+   - Paste relevant snippets in **Context** or link to lines via permalink.
+</CollectEvidence>
+
+3. <DraftProposal>
+   - Populate all template placeholders, maintaining **present-tense clarity**.
+   - Insert **rustdoc-accurate** code blocks—copy directly from a spike branch or
+     playground to avoid drift.
+   - Add at least one measurable acceptance criterion (test, benchmark, or lint).
+</DraftProposal>
+
+4. <ReviewCycle>
+   - Post proposal in `/docs/proposals/<YYYY-MM-DD>_<slug>.md`.
+   - Tag reviewers; discussions happen as GitHub comments.
+   - Update **Status** header (`REVIEW` ➜ `APPROVED`) once consensus reached.
+</ReviewCycle>
+
+5. <Follow-Up>
+   - Convert **Implementation Plan** checklist items into GitHub issues or PRs
+     prefixed `impl(<slug>)`.
+   - Reference proposal doc in each PR description for traceability.
+</FollowUp>
+
+</Instructions>
+
+<!--────────── EXTENSIONS ──────────-->
+<Extensions>
+  <!-- Example: <RuleRef name="VersionBumpClassification" triggers="after:Approval"/> -->
+</Extensions>
+
+</ProjectRule>

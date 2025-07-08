@@ -5,30 +5,30 @@
       "title": "Event Schema",
       "version": "1.0.0",
       "description": "Schema for runtime events with DAG pointers, vector clocks, and traceability",
-      "$id": "https://github.com/scrappyAI/Toka/blob/main/.cursor/schemas/event-schema.json"
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/event-schema.json"
     },
     "agent-spec-schema": {
       "file": "agent-spec-schema.json",
       "title": "Agent Specification Schema",
       "version": "2.0.0",
       "description": "Schema for AI agent specifications using universal envelope format",
-      "$id": "https://github.com/scrappyAI/Toka/blob/main/.cursor/schemas/agent-spec-schema.json"
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/agent-spec-schema.json"
     },
     "resource-envelope-v1": {
       "file": "resource-envelope-v1.json",
       "title": "Universal Resource Envelope Schema",
       "version": "1.0.0",
-      "description": "Universal meta-schema for all Toka resources (agents, rules, tools, plans, events)",
-      "$id": "https://github.com/scrappyAI/Toka/blob/main/.cursor/schemas/resource-envelope-v1.json",
+      "description": "Universal meta-schema for all Toka resources (agents, policies, tools, plans, events)",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/resource-envelope-v1.json",
       "kinds": [
         "agent",
-        "rule",
+        "policy",
+        "contract",
         "tool",
         "plan",
         "event",
         "capability",
         "workflow",
-        "policy",
         "metric"
       ]
     },
@@ -37,27 +37,162 @@
       "title": "Cursor Rule Schema",
       "version": "2.0.0",
       "description": "Schema for Cursor IDE rules using universal envelope format",
-      "$id": "https://github.com/scrappyAI/Toka/blob/main/.cursor/schemas/cursor-rule-schema.json"
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/cursor-rule-schema.json"
     },
     "plan-schema": {
       "file": "plan-schema.json",
       "title": "Plan Schema",
       "version": "1.0.0",
       "description": "Schema for execution plans with ordered steps, guard conditions, and rollback procedures",
-      "$id": "https://github.com/scrappyAI/Toka/blob/main/.cursor/schemas/plan-schema.json"
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/plan-schema.json"
+    }
+  },
+  "tools": {
+    "date-enforcer-tool": {
+      "file": "tools/date-enforcer-tool.json",
+      "title": "Date Enforcement Tool",
+      "version": "1.0.0",
+      "description": "Enforces deterministic, accurate dating through schema contracts",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/tools/date-enforcer-tool.json",
+      "implementation": "scripts/date-enforcer.py"
+    },
+    "folder-tidy-tool": {
+      "file": "tools/folder-tidy-tool.json",
+      "title": "Folder Tidy Tool",
+      "version": "1.0.0",
+      "description": "Organizes and tidies folder structures according to defined policies",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/tools/folder-tidy-tool.json",
+      "implementation": "scripts/folder-tidy.py"
+    },
+    "tool-registry-tool": {
+      "file": "tools/tool-registry-tool.json",
+      "title": "Tool Registry",
+      "version": "1.0.0",
+      "description": "Manages registered tools securely in a database with validation and tracking",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/tools/tool-registry-tool.json",
+      "implementation": "scripts/tool-registry.py"
+    },
+    "python-env-tool": {
+      "file": "tools/python-env.json",
+      "title": "Python Environment Tool",
+      "version": "1.0.0",
+      "description": "Manages Python environment dependencies and virtual environments",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/tools/python-env.json",
+      "implementation": "scripts/python-env.py"
+    },
+    "version-manager-tool": {
+      "file": "tools/version-manager.json",
+      "title": "Version Manager",
+      "version": "1.0.0",
+      "description": "Manages versioning and migrations for schema resources",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/tools/version-manager.json",
+      "implementation": "scripts/version-manager.py"
+    },
+    "schema-validator-tool": {
+      "file": "tools/schema-validator.json",
+      "title": "Schema Validator",
+      "version": "1.0.0",
+      "description": "Validates schema files against defined schemas",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/tools/schema-validator.json",
+      "implementation": "scripts/schema-helper.py"
+    }
+  },
+  "policies": {
+    "core-baseline": {
+      "file": "policies/00-core-baseline.json",
+      "title": "Core Baseline Policy",
+      "version": "1.0.0",
+      "description": "Foundational guidelines for all Rust projects",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/policies/00-core-baseline.json",
+      "priority": 100
+    },
+    "security-base": {
+      "file": "policies/10-security-base.json",
+      "title": "Security Base Policy",
+      "version": "1.0.0",
+      "description": "Core security hardening and best practices",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/policies/10-security-base.json",
+      "priority": 90
+    },
+    "security-agents": {
+      "file": "policies/11-security-agents.json",
+      "title": "Security Agents Policy",
+      "version": "1.0.0",
+      "description": "AI agent-specific security constraints",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/policies/11-security-agents.json",
+      "priority": 85
+    },
+    "testing-quality": {
+      "file": "policies/20-testing-quality.json",
+      "title": "Testing Quality Policy",
+      "version": "1.0.0",
+      "description": "Testing guidelines and coverage requirements",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/policies/20-testing-quality.json",
+      "priority": 80
+    },
+    "documentation": {
+      "file": "policies/30-documentation.json",
+      "title": "Documentation Policy",
+      "version": "1.0.0",
+      "description": "Documentation generation and maintenance",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/policies/30-documentation.json",
+      "priority": 70
+    },
+    "development-process": {
+      "file": "policies/40-development-process.json",
+      "title": "Development Process Policy",
+      "version": "1.0.0",
+      "description": "Development workflows and change management",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/policies/40-development-process.json",
+      "priority": 60
+    },
+    "architecture-research": {
+      "file": "policies/50-architecture-research.json",
+      "title": "Architecture Research Policy",
+      "version": "1.0.0",
+      "description": "Architecture docs and codebase research",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/policies/50-architecture-research.json",
+      "priority": 50
+    },
+    "github-integration": {
+      "file": "policies/70-github-integration.json",
+      "title": "GitHub Integration Policy",
+      "version": "1.0.0",
+      "description": "GitHub workflow and integration guidelines",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/policies/70-github-integration.json",
+      "priority": 30
+    }
+  },
+  "contracts": {
+    "date-enforcement-contract": {
+      "file": "contracts/date-enforcement-contract.json",
+      "title": "Date Enforcement Contract",
+      "version": "1.0.0",
+      "description": "Contract defining deterministic date enforcement policies to prevent hallucination",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/contracts/date-enforcement-contract.json",
+      "priority": "critical"
+    }
+  },
+  "agents": {
+    "tool-builder-agent": {
+      "file": "agents/tool-builder-agent.json",
+      "title": "Tool Builder Agent",
+      "version": "1.0.0",
+      "description": "AI agent for building and validating tools",
+      "$id": "https://github.com/toka-ai/toka/.llm/schemas/agents/tool-builder-agent.json"
     }
   },
   "kinds": [
     "agent",
-    "rule",
+    "policy",
+    "contract", 
     "tool",
     "plan",
     "event",
     "capability",
     "workflow",
-    "policy",
     "metric"
   ],
   "version": "1.0.0",
-  "generated": "auto"
+  "generated": "2025-07-07T00:00:00Z"
 }
