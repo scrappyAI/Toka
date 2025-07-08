@@ -1,7 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-    # Core crates (trimmed to essentials)
+    # EMERGENCE: Minimal Rust substrate (4 core crates)
+    "emergence-crates/emergence-physics",
+    "emergence-crates/emergence-nervous-system", 
+    "emergence-crates/emergence-memory",
+    "emergence-crates/emergence-runtime",
+    
+    # Legacy crates (trimmed to essentials) - will be gradually replaced
     "crates/toka-types",
     "crates/toka-auth",
     "crates/toka-kernel",

@@ -1,0 +1,36 @@
+[package]
+name = "emergence-memory"
+version = "0.1.0"
+edition = "2021"
+description = "Multi-layered memory substrate for EMERGENCE living agents"
+license = "Apache-2.0"
+repository = "https://github.com/toka-ai/toka"
+
+[dependencies]
+# Physics constraints
+emergence-physics = { path = "../emergence-physics" }
+
+# Core async runtime
+tokio = { workspace = true, features = ["full"] }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_yaml = "0.9"
+
+# Storage backends
+sled = { version = "0.34", optional = true }
+sqlx = { workspace = true, optional = true }
+
+# Time handling
+chrono = { workspace = true, features = ["serde"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+# Cryptography for integrity
+blake3 = "1.5"
+
+[features]
+default = []
+sled-backend = ["sled"]
+sqlite-backend = ["sqlx"]
