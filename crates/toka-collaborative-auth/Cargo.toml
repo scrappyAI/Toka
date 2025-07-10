@@ -7,6 +7,10 @@ license = "Apache-2.0"
 description = "GitHub OAuth abstraction and role assignment for collaborative Toka workspace"
 documentation = "https://docs.rs/toka-collaborative-auth"
 
+[[bin]]
+name = "toka-auth-service"
+path = "src/main.rs"
+
 [dependencies]
 # Core dependencies
 anyhow = "1.0"
@@ -17,6 +21,7 @@ serde_json = "1.0"
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 tracing = "0.1"
+tracing-subscriber = "0.3"
 
 # Web framework
 axum = { version = "0.7", features = ["macros", "tokio"] }
