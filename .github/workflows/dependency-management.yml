@@ -1,9 +1,10 @@
 name: Dependency Management
 
 on:
-  # Daily dependency checks
+  # Scheduled dependency checks
   schedule:
     - cron: '0 6 * * *'  # 6 AM UTC daily
+    - cron: '0 3 * * 1'  # 3 AM UTC on Mondays (comprehensive audit)
   
   # On any Cargo.toml changes
   push:
@@ -11,10 +12,6 @@ on:
       - '**/Cargo.toml'
       - '**/Cargo.lock'
       - '.github/workflows/dependency-management.yml'
-  
-  # Weekly comprehensive audit
-  schedule:
-    - cron: '0 3 * * 1'  # 3 AM UTC on Mondays
   
   # Manual trigger
   workflow_dispatch:
