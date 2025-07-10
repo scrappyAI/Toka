@@ -1,0 +1,49 @@
+[package]
+name = "toka-collaborative-auth"
+version = "0.1.0"
+edition = "2021"
+authors = ["Toka Contributors"]
+license = "Apache-2.0"
+description = "GitHub OAuth abstraction and role assignment for collaborative Toka workspace"
+documentation = "https://docs.rs/toka-collaborative-auth"
+
+[dependencies]
+# Core dependencies
+anyhow = "1.0"
+thiserror = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+
+# Web framework
+axum = { version = "0.7", features = ["macros", "tokio"] }
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# OAuth and HTTP
+oauth2 = "4.4"
+reqwest = { version = "0.11", features = ["json"] }
+url = "2.4"
+
+# Security and validation
+jsonwebtoken = "9.2"
+rand = "0.8"
+async-trait = "0.1"
+
+# Database (optional for session storage)
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "sqlite", "chrono", "uuid"], optional = true }
+
+# Toka dependencies (to be added later)
+# toka-capability-core = { path = "../security/toka-capability-core" }
+# toka-capability-jwt-hs256 = { path = "../security/toka-capability-jwt-hs256" }
+# toka-types = { path = "../toka-types" }
+
+[features]
+default = ["sqlite-storage"]
+sqlite-storage = ["sqlx"]
+
+[dev-dependencies]
+tokio-test = "0.4" 
