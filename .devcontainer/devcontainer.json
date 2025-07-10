@@ -1,4 +1,8 @@
 {
+    // Toka Rust Development Environment
+    // Compatible with both Cursor and VS Code
+    // - Cursor: Native dev container support, no extensions needed
+    // - VS Code: Requires Dev Containers extension
     "name": "Toka Rust Development Environment",
     "build": {
         "dockerfile": "Dockerfile",
@@ -15,7 +19,14 @@
         "CARGO_NET_RETRY": "10",
         "CARGO_NET_TIMEOUT": "60",
         "RUST_LOG": "info",
-        "CARGO_TARGET_DIR": "/tmp/target"
+        "CARGO_TARGET_DIR": "/tmp/target",
+        "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
+        "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+        "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
+        "LLM_PROVIDER": "${localEnv:LLM_PROVIDER:anthropic}",
+        "LLM_MODEL": "${localEnv:LLM_MODEL:claude-3-5-sonnet-20241022}",
+        "TOKA_DEV_MODE": "true",
+        "TOKA_WORKSPACE_AUTH": "github"
     },
     "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",
@@ -45,7 +56,8 @@
                 "dustypomerleau.rust-syntax",
                 "ms-vscode.test-adapter-converter",
                 "hbenl.vscode-test-explorer",
-                "swellaby.vscode-rust-test-adapter"
+                "swellaby.vscode-rust-test-adapter",
+                "GitHub.vscode-pull-request-github"
             ]
         }
     },

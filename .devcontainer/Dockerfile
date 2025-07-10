@@ -25,6 +25,10 @@ RUN apt-get update \
        ripgrep \
        bat \
        exa \
+       sudo \
+       python3 \
+       python3-pip \
+       python3-venv \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Rust components and tools
@@ -33,9 +37,10 @@ RUN rustup component add clippy rustfmt rust-analyzer rust-src \
     && cargo install cargo-edit cargo-watch cargo-expand cargo-audit cargo-outdated cargo-tree \
     && cargo install --locked cargo-deny cargo-nextest
 
-# Create non-root user
+# Create non-root user with sudo privileges
 RUN groupadd --gid 1000 vscode \
     && useradd --uid 1000 --gid vscode --shell /bin/bash --create-home vscode \
+    && echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
     && mkdir -p /home/vscode/.cargo \
     && chown -R vscode:vscode /home/vscode
 
