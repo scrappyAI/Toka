@@ -1,282 +1,49 @@
 {
-  "agentCanUpdateSnapshot": true,
-  "dockerCompose": {
-    "build": {
-      "context": "..",
-      "dockerfile": ".cursor/Dockerfile"
-    },
-    "environment": {
-      "RUST_VERSION": "1.86",
-      "CARGO_HOME": "/usr/local/cargo",
-      "RUSTUP_HOME": "/usr/local/rustup",
-      "PATH": "/usr/local/cargo/bin:$PATH",
-      "RUST_BACKTRACE": "1",
-      "CARGO_INCREMENTAL": "1",
-      "CARGO_NET_RETRY": "10",
-      "RUSTFLAGS": "-D warnings",
-      "TERM": "xterm-256color",
-      "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY:-}",
-      "OPENAI_API_KEY": "${OPENAI_API_KEY:-}",
-      "LLM_PROVIDER": "${LLM_PROVIDER:-anthropic}",
-      "DATABASE_URL": "sqlite:///app/data/toka.db",
-      "TOKA_ENV": "development",
-      "TOKA_LOG_LEVEL": "debug"
-    },
-    "volumes": [
-      "..:/app",
-      "cargo-cache:/usr/local/cargo/registry",
-      "target-cache:/app/target",
-      "rustup-cache:/usr/local/rustup",
-      "cursor-data:/app/data",
-      "cursor-logs:/app/logs"
-    ],
-    "ports": [
-      "8080:8080",
-      "9000:9000", 
-      "9001:9001",
-      "3000:3000"
-    ],
-    "working_dir": "/app",
-    "command": "/app/.cursor/scripts/cursor-agent-init.sh"
+  "build": {
+    "context": ".",
+    "dockerfile": "Dockerfile"
   },
-  "devContainer": {
-    "name": "toka-development",
-    "image": "toka-cursor-dev:latest",
-    "features": {
-      "rust": {
-        "version": "1.86",
-        "profile": "default"
-      },
-      "docker-in-docker": {
-        "version": "latest",
-        "moby": true
-      },
-      "git": {
-        "version": "latest",
-        "ppa": true
-      }
+  "install": "/usr/local/bin/cursor-scripts/auto-setup.sh",
+  "start": "/usr/local/bin/cursor-scripts/cursor-agent-init.sh",
+  "user": "vscode",
+  "terminals": [
+    {
+      "name": "Toka CLI",
+      "description": "Interactive Toka CLI for project management",
+      "command": "cd /home/vscode && if [ -f 'Cargo.toml' ]; then cargo run --bin toka-cli -- interactive; else echo 'Waiting for project clone...'; bash; fi"
     },
-    "customizations": {
-      "vscode": {
-        "extensions": [
-          "rust-lang.rust-analyzer",
-          "vadimcn.vscode-lldb",
-          "serayuzgur.crates",
-          "tamasfe.even-better-toml",
-          "ms-vscode.test-adapter-converter",
-          "hbenl.vscode-test-explorer",
-          "streetsidesoftware.code-spell-checker",
-          "ms-azuretools.vscode-docker",
-          "github.vscode-pull-request-github",
-          "ms-vscode.vscode-json"
-        ],
-        "settings": {
-          "rust-analyzer.cargo.features": "all",
-          "rust-analyzer.check.command": "clippy",
-          "rust-analyzer.procMacro.enable": true,
-          "rust-analyzer.imports.granularity.group": "module",
-          "rust-analyzer.completion.addCallParenthesis": true,
-          "rust-analyzer.completion.addCallArgumentSnippets": true,
-          "editor.formatOnSave": true,
-          "editor.codeActionsOnSave": {
-            "source.fixAll.rust-analyzer": true
-          },
-          "files.watcherExclude": {
-            "**/target/**": true,
-            "**/.git/**": true
-          }
-        }
-      }
+    {
+      "name": "Development",
+      "description": "Main development terminal with auto-setup",
+      "command": "cd /home/vscode && /usr/local/bin/cursor-scripts/dev-setup.sh && bash"
     },
-    "postCreateCommand": "/app/.cursor/scripts/cursor-agent-init.sh",
-    "remoteUser": "vscode"
-  },
-  "tools": {
-    "rust": {
-      "version": "1.86",
-      "components": [
-        "clippy",
-        "rustfmt",
-        "rust-analyzer", 
-        "rust-src",
-        "rust-docs"
-      ],
-      "targets": [
-        "x86_64-unknown-linux-gnu",
-        "aarch64-unknown-linux-gnu"
-      ]
+    {
+      "name": "Testing", 
+      "description": "Automated testing and validation",
+      "command": "cd /home/vscode && if [ -f 'Cargo.toml' ]; then cargo nextest run --workspace; else echo 'Project not ready for testing'; bash; fi"
     },
-    "cargo": {
-      "tools": [
-        "cargo-edit",
-        "cargo-watch", 
-        "cargo-audit",
-        "cargo-deny",
-        "cargo-tarpaulin",
-        "cargo-fuzz",
-        "cargo-nextest",
-        "cargo-udeps",
-        "cargo-expand",
-        "cargo-tree",
-        "cargo-machete",
-        "cargo-outdated",
-        "cargo-bloat",
-        "cargo-deps",
-        "cargo-criterion",
-        "cargo-flamegraph",
-        "cargo-llvm-cov"
-      ]
-    },
-    "system": {
-      "packages": [
-        "build-essential",
-        "pkg-config",
-        "libssl-dev",
-        "libsqlite3-dev",
-        "postgresql-client",
-        "sqlite3",
-        "curl",
-        "wget",
-        "git",
-        "jq",
-        "ripgrep",
-        "fd-find",
-        "bat",
-        "exa",
-        "htop",
-        "tmux",
-        "vim",
-        "docker.io",
-        "docker-compose",
-        "python3",
-        "python3-pip",
-        "nodejs",
-        "npm",
-        "valgrind",
-        "gdb",
-        "lldb",
-        "strace",
-        "ltrace",
-        "perf-tools-unstable"
-      ]
-    },
-    "security": {
-      "scanners": [
-        "cargo-audit",
-        "cargo-deny", 
-        "semgrep",
-        "bandit",
-        "safety"
-      ],
-      "fuzzing": [
-        "cargo-fuzz",
-        "afl",
-        "honggfuzz"
-      ]
-    },
-    "testing": {
-      "frameworks": [
-        "cargo-test",
-        "cargo-nextest",
-        "cargo-tarpaulin",
-        "cargo-llvm-cov"
-      ],
-      "coverage": {
-        "tool": "cargo-tarpaulin",
-        "threshold": 80,
-        "output": ["Html", "Json", "Lcov"]
-      }
-    },
-    "monitoring": {
-      "tools": [
-        "cargo-flamegraph",
-        "heaptrack",
-        "massif-visualizer",
-        "prometheus",
-        "grafana"
-      ]
-    },
-    "databases": {
-      "sqlite": {
-        "version": "latest",
-        "tools": ["sqlite3", "sqlitebrowser"]
-      },
-      "postgresql": {
-        "version": "15",
-        "tools": ["psql", "pg_dump", "pg_restore"]
-      }
+    {
+      "name": "Monitoring",
+      "description": "Performance monitoring and metrics",
+      "command": "cd /home/vscode && htop"
     }
-  },
-  "scripts": {
-    "setup": ".cursor/scripts/cursor-agent-init.sh",
-    "health": ".cursor/scripts/cursor-health-check.sh",
-    "build": "cargo build --workspace",
-    "test": "cargo test --workspace",
-    "lint": "cargo clippy --workspace --all-targets -- -D warnings",
-    "format": "cargo fmt --all",
-    "audit": "cargo audit && cargo deny check",
-    "fuzz": "cargo fuzz list && cargo fuzz run",
-    "coverage": "cargo tarpaulin --workspace --out Html --out Json",
-    "benchmark": "cargo bench --workspace",
-    "clean": "cargo clean",
-    "update": "cargo update",
-    "tree": "cargo tree",
-    "outdated": "cargo outdated",
-    "bloat": "cargo bloat --release",
-    "expand": "cargo expand",
-    "check": "cargo check --workspace --all-targets",
-    "doc": "cargo doc --workspace --no-deps --document-private-items",
-    "install-tools": "cargo install cargo-edit cargo-watch cargo-audit cargo-deny cargo-tarpaulin cargo-fuzz cargo-nextest cargo-udeps cargo-expand cargo-tree cargo-machete cargo-outdated cargo-bloat cargo-deps cargo-criterion cargo-flamegraph cargo-llvm-cov"
-  },
-  "workflows": {
-    "development": {
-      "commands": [
-        "cargo check --workspace",
-        "cargo test --workspace",
-        "cargo clippy --workspace --all-targets",
-        "cargo fmt --all --check"
-      ]
+  ],
+  "ports": [
+    {
+      "name": "Web Server",
+      "port": 8080
     },
-    "ci": {
-      "commands": [
-        "cargo audit",
-        "cargo deny check",
-        "cargo test --workspace --release",
-        "cargo tarpaulin --workspace --out Json --out Html"
-      ]
+    {
+      "name": "API Server", 
+      "port": 9000
     },
-    "security": {
-      "commands": [
-        "cargo audit",
-        "cargo deny check",
-        "cargo fuzz list",
-        "semgrep --config=auto ."
-      ]
+    {
+      "name": "Metrics",
+      "port": 9001
+    },
+    {
+      "name": "Development",
+      "port": 3000
     }
-  },
-  "monitoring": {
-    "healthChecks": [
-      "cargo check --workspace",
-      "sqlite3 data/toka.db 'SELECT 1;'",
-      "curl -f http://localhost:8080/health || true"
-    ],
-    "metrics": {
-      "build_time": "cargo build --workspace --timings",
-      "test_time": "cargo test --workspace --timings",
-      "binary_size": "cargo bloat --release",
-      "dependencies": "cargo tree"
-    }
-  },
-  "gitHooks": {
-    "preCommit": [
-      "cargo fmt --all --check",
-      "cargo clippy --workspace --all-targets -- -D warnings",
-      "cargo test --workspace"
-    ],
-    "prePush": [
-      "cargo audit",
-      "cargo deny check",
-      "cargo test --workspace --release"
-    ]
-  }
+  ]
 }

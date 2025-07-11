@@ -4,13 +4,14 @@
 
 set -euo pipefail
 
-# Configuration
-CURSOR_CONFIG_DIR="/app/config"
-CURSOR_DATA_DIR="/app/data"
-CURSOR_LOG_DIR="/app/logs"
-CURSOR_SCRIPT_DIR="/app/scripts"
-CURSOR_LOCK_DIR="/app/data/locks"
-CURSOR_OWNER_ID="${USER:-toka}-$$-$(date +%s)"
+# Configuration - Use environment variables for flexibility
+TOKA_WORKSPACE="${TOKA_WORKSPACE:-/home/vscode}"
+CURSOR_CONFIG_DIR="${CURSOR_CONFIG_DIR:-$TOKA_WORKSPACE/config}"
+CURSOR_DATA_DIR="${CURSOR_DATA_DIR:-$TOKA_WORKSPACE/data}"
+CURSOR_LOG_DIR="${CURSOR_LOG_DIR:-$TOKA_WORKSPACE/logs}"
+CURSOR_SCRIPT_DIR="/usr/local/bin/cursor-scripts"
+CURSOR_LOCK_DIR="$CURSOR_DATA_DIR/locks"
+CURSOR_OWNER_ID="${USER:-vscode}-$$-$(date +%s)"
 
 # Colors for output
 RED='\033[0;31m'
@@ -119,9 +120,29 @@ check_prerequisites() {
         exit 1
     fi
     
-    # Check binaries
-    if [[ ! -x "/app/bin/toka-cli" ]]; then
-        log "ERROR" "Toka CLI binary not found or not executable"
+    # Check if we're in a Toka project and can build binaries
+    cd "$TOKA_WORKSPACE"
+    if [[ -f "Cargo.toml" ]]; then
+        log "INFO" "Toka project detected, ensuring binaries are available..."
+        if ! command -v cargo >/dev/null 2>&1; then
+            log "ERROR" "Cargo not found in PATH"
+            exit 1
+        fi
+        
+        # Build toka-cli if it doesn't exist or is outdated
+        if [[ ! -f "target/release/toka-cli" ]] || [[ "Cargo.toml" -nt "target/release/toka-cli" ]]; then
+            log "INFO" "Building toka-cli..."
+            cargo build --release --bin toka-cli
+        fi
+        
+        # Build toka-config-cli if needed
+        if [[ ! -f "target/release/toka-config-cli" ]] || [[ "Cargo.toml" -nt "target/release/toka-config-cli" ]]; then
+            log "INFO" "Building toka-config-cli..."
+            cargo build --release --bin toka-config-cli
+        fi
+    else
+        log "ERROR" "No Toka project found in workspace: $TOKA_WORKSPACE"
+        log "ERROR" "Please ensure the project is cloned first"
         exit 1
     fi
     
@@ -140,7 +161,7 @@ initialize_environment() {
     # Set up database with single-owner mode
     if [[ ! -f "$CURSOR_DATA_DIR/cursor-agents.db" ]]; then
         log "INFO" "Initializing cursor agent database..."
-        /app/bin/toka-config-cli init-db \
+        "$TOKA_WORKSPACE/target/release/toka-config-cli" init-db \
             --cursor-mode \
             --single-owner \
             --owner-id "$CURSOR_OWNER_ID" \
@@ -148,7 +169,7 @@ initialize_environment() {
     else
         # Validate database ownership
         log "INFO" "Validating database ownership..."
-        /app/bin/toka-config-cli validate-ownership \
+        "$TOKA_WORKSPACE/target/release/toka-config-cli" validate-ownership \
             --cursor-mode \
             --owner-id "$CURSOR_OWNER_ID" \
             --db-path "$CURSOR_DATA_DIR/cursor-agents.db" || {
@@ -163,8 +184,8 @@ initialize_environment() {
     mkdir -p "$CURSOR_DATA_DIR/context"
     mkdir -p "$CURSOR_LOCK_DIR"
     
-    # Set ownership permissions
-    chown -R toka:toka "$CURSOR_DATA_DIR" "$CURSOR_LOG_DIR"
+    # Set ownership permissions (use vscode user in containers)
+    chown -R vscode:vscode "$CURSOR_DATA_DIR" "$CURSOR_LOG_DIR" 2>/dev/null || true
     
     log "INFO" "Environment initialization complete"
 }
@@ -173,7 +194,7 @@ initialize_environment() {
 validate_configuration() {
     log "INFO" "Validating cursor agent configuration..."
     
-    /app/bin/toka-config-cli validate \
+    "$TOKA_WORKSPACE/target/release/toka-config-cli" validate \
         --config "$CURSOR_CONFIG_DIR/cursor-agents.toml" \
         --cursor-mode \
         --single-owner \
@@ -192,7 +213,7 @@ start_cursor_agents() {
     log "INFO" "Starting cursor agents with owner ID: $CURSOR_OWNER_ID"
     
     # Start the main orchestrator with ownership settings
-    exec /app/bin/toka-cli orchestrate \
+    exec "$TOKA_WORKSPACE/target/release/toka-cli" orchestrate \
         --config "$CURSOR_CONFIG_DIR/cursor-agents.toml" \
         --cursor-mode \
         --single-owner \

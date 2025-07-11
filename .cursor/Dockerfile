@@ -135,18 +135,18 @@ RUN curl -fsSL https://github.com/sharkdp/fd/releases/download/v8.7.0/fd_8.7.0_a
     && dpkg -i fd.deb \
     && rm fd.deb
 
-# Set up directories
-RUN mkdir -p /app/data /app/logs /app/target \
-    && chown -R vscode:vscode /app
+# Set up directories for development
+RUN mkdir -p /home/vscode/data /home/vscode/logs \
+    && chown -R vscode:vscode /home/vscode
 
-# Copy scripts
-COPY .cursor/scripts/ /app/.cursor/scripts/
-RUN chmod +x /app/.cursor/scripts/*
+# Copy essential container scripts only (not project code)
+COPY .cursor/scripts/ /usr/local/bin/cursor-scripts/
+RUN chmod +x /usr/local/bin/cursor-scripts/*
 
 # Set up git configuration for the container
 RUN git config --global init.defaultBranch main \
     && git config --global pull.rebase false \
-    && git config --global safe.directory /app
+    && git config --global safe.directory '*'
 
 # Create cargo config for better caching
 RUN mkdir -p /usr/local/cargo/config \
@@ -154,13 +154,13 @@ RUN mkdir -p /usr/local/cargo/config \
 
 # Set up healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD /app/.cursor/scripts/cursor-health-check.sh || exit 1
-
-# Set working directory
-WORKDIR /app
+    CMD /usr/local/bin/cursor-scripts/cursor-health-check.sh || exit 1
 
 # Switch to non-root user
 USER vscode
+
+# Set working directory to user home (best practice)
+WORKDIR /home/vscode
 
 # Set up user cargo config
 RUN mkdir -p /home/vscode/.cargo \
@@ -170,7 +170,7 @@ RUN mkdir -p /home/vscode/.cargo \
 EXPOSE 8080 9000 9001 3000
 
 # Set default entrypoint
-ENTRYPOINT ["/app/.cursor/scripts/cursor-agent-init.sh"]
+ENTRYPOINT ["/usr/local/bin/cursor-scripts/cursor-agent-init.sh"]
 
 # Default command
 CMD ["bash"] 
