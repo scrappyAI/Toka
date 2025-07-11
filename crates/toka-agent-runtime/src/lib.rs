@@ -10,9 +10,10 @@
 //! - **AgentExecutor**: Core agent execution loop that interprets agent configurations
 //! - **TaskExecutor**: LLM-integrated task execution with security validation
 //! - **AgentProcessManager**: Process lifecycle management for spawned agents
-//! - **Progress Reporting**: Real-time progress updates to orchestration system
+//! - **Progress Reporting**: Real-time progress updates to orchestration system via kernel events
 //! - **Resource Management**: CPU, memory, and timeout enforcement
 //! - **Capability Validation**: Runtime permission checking against declared capabilities
+//! - **Orchestration Integration**: Full integration with toka-orchestration for coordinated execution
 //!
 //! ## Architecture
 //!
@@ -21,27 +22,44 @@
 //! ```text
 //! Orchestration Engine → Agent Runtime → Task Execution → LLM Integration
 //!                                    ↓
-//!                               Progress Reporting
+//!                               Progress Reporting (via Kernel Events)
+//!                                    ↓
+//!                               Runtime Message Submission
 //! ```
+//!
+//! ## Phase 2 Real Integration
+//!
+//! This runtime now includes full real integration with Toka services:
+//!
+//! - **Real LLM Gateway**: Uses toka-llm-gateway with environment-based configuration
+//! - **Real Runtime Manager**: Uses toka-runtime with kernel enforcement
+//! - **Real Progress Reporting**: Submits actual messages through runtime to orchestration
+//! - **Real Capability Validation**: Enforces security through kernel integration
 //!
 //! ## Usage
 //!
+//! ### Basic Agent Execution
+//!
 //! ```rust,ignore
 //! use toka_agent_runtime::{AgentExecutor, AgentProcessManager};
-//! use toka_types::AgentConfig;
-//! use toka_types::EntityId;
+//! use toka_llm_gateway::{LlmGateway, Config as LlmConfig};
+//! use toka_runtime::{RuntimeManager, ToolKernel};
+//! use toka_types::{AgentConfig, EntityId};
 //! use std::sync::Arc;
 //!
 //! # #[tokio::main]
 //! # async fn main() -> anyhow::Result<()> {
-//! # // Mock runtime and LLM gateway for example
-//! # let runtime: Arc<toka_runtime::Runtime> = unimplemented!();
-//! # let llm_gateway: Arc<toka_llm_gateway::LlmGateway> = unimplemented!();
+//! // Initialize real services
+//! let llm_config = LlmConfig::from_env()?;
+//! let llm_gateway = Arc::new(LlmGateway::new(llm_config).await?);
+//! 
+//! let kernel = toka_kernel::Kernel::new();
+//! let runtime = Arc::new(RuntimeManager::new(ToolKernel::new(kernel)).await?);
 //! 
 //! // Load agent configuration (example)
 //! # let config: AgentConfig = unimplemented!();
 //! 
-//! // Create agent executor
+//! // Create agent executor with real integrations
 //! let executor = AgentExecutor::new(
 //!     config,
 //!     EntityId(42),
@@ -49,8 +67,34 @@
 //!     llm_gateway,
 //! ).await?;
 //!
-//! // Run agent execution loop
+//! // Run agent execution loop with real services
 //! executor.run().await?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ### Orchestration Integration
+//!
+//! ```rust,ignore
+//! use toka_agent_runtime::orchestration_integration::{
+//!     OrchestrationIntegration, OrchestrationEngineExt
+//! };
+//! use toka_orchestration::OrchestrationEngine;
+//!
+//! # #[tokio::main]
+//! # async fn main() -> anyhow::Result<()> {
+//! # let orchestration_engine = Arc::new(unimplemented!());
+//! # let runtime_manager = Arc::new(unimplemented!());
+//! # let llm_gateway = Arc::new(unimplemented!());
+//!
+//! // Create orchestration integration
+//! let integration = orchestration_engine
+//!     .with_agent_runtime_integration(runtime_manager, llm_gateway)
+//!     .await?;
+//!
+//! // Start orchestrated execution
+//! let session = integration.start_orchestrated_execution().await?;
+//! session.wait_for_completion().await?;
 //! # Ok(())
 //! # }
 //! ```
@@ -60,10 +104,11 @@
 //! The agent runtime enforces security at multiple levels:
 //!
 //! - **Capability Validation**: All operations validated against declared capabilities
-//! - **Resource Limits**: CPU, memory, and timeout enforcement
+//! - **Resource Limits**: CPU, memory, and timeout enforcement through kernel
 //! - **Sandboxing**: Process isolation and restricted system access
 //! - **Audit Logging**: All agent actions logged for security monitoring
-//! - **LLM Safety**: Request sanitization and response validation
+//! - **LLM Safety**: Request sanitization and response validation through gateway
+//! - **Message Authentication**: All runtime submissions include capability tokens
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -90,6 +135,7 @@ pub mod task;
 pub mod capability;
 pub mod resource;
 pub mod progress;
+pub mod orchestration_integration;
 
 pub use executor::AgentExecutor;
 pub use process::AgentProcessManager;
@@ -97,6 +143,10 @@ pub use task::TaskExecutor;
 pub use capability::CapabilityValidator;
 pub use resource::ResourceManager;
 pub use progress::{ProgressReporter, AgentProgress, TaskResult};
+pub use orchestration_integration::{
+    OrchestrationIntegration, OrchestrationEngineExt, ProgressUpdate, 
+    ActiveAgentInfo, IntegrationMetrics
+};
 
 /// Maximum time to wait for agent startup
 pub const AGENT_STARTUP_TIMEOUT: Duration = Duration::from_secs(30);
@@ -374,5 +424,25 @@ mod tests {
         assert_eq!(config.max_concurrent_tasks, 3);
         assert_eq!(config.default_task_timeout, DEFAULT_TASK_TIMEOUT);
         assert!(!config.verbose_logging);
+    }
+
+    #[test]
+    fn test_agent_runtime_error_display() {
+        let error = AgentRuntimeError::CapabilityDenied {
+            capability: "filesystem-write".to_string(),
+            operation: "write file".to_string(),
+        };
+        
+        let error_string = format!("{}", error);
+        assert!(error_string.contains("capability not authorized"));
+        assert!(error_string.contains("filesystem-write"));
+    }
+
+    #[test]
+    fn test_runtime_stats_default() {
+        let stats = RuntimeStats::default();
+        assert_eq!(stats.active_agents, 0);
+        assert_eq!(stats.total_agents_started, 0);
+        assert_eq!(stats.uptime, Duration::ZERO);
     }
 }

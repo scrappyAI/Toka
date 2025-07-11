@@ -510,7 +510,7 @@ mod tests {
             metadata: AgentMetadata {
                 name: "test-agent".to_string(),
                 version: "v1.0".to_string(),
-                created: "2025-01-27".to_string(),
+                created: "2025-07-11".to_string(),
                 workstream: "test".to_string(),
                 branch: "main".to_string(),
             },
