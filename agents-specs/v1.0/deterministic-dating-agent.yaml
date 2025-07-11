@@ -218,7 +218,7 @@ deterministic_dating_configuration:
   hallucination_detection:
     patterns:
       - "impossible_dates": "Dates before 1970-01-01 or after current date"
-      - "common_hallucinations": "2025-01-01, 2024-12-31, 2025-01-28"
+      - "common_hallucinations": "2025-07-11, 2025-07-11, 2025-07-11"
       - "inconsistent_sequences": "Modification dates before creation dates"
       - "unrealistic_timestamps": "Multiple operations on same microsecond"
       
