@@ -1,0 +1,327 @@
+metadata:
+  name: "deterministic-dating-agent"
+  version: "v1.0.0"
+  created: "2025-07-11"
+  workstream: "Deterministic Dating & LLM Hallucination Prevention"
+  branch: "feature/deterministic-dating-agent"
+  schema_version: "1.0.0"
+  
+spec:
+  name: "Deterministic Dating & LLM Hallucination Prevention Agent"
+  domain: "quality-assurance"
+  priority: "critical"
+  
+capabilities:
+  primary:
+    - "deterministic-date-generation"
+    - "llm-hallucination-detection"
+    - "temporal-consistency-validation"
+    - "git-timestamp-integration"
+    - "automated-date-correction"
+    - "context-window-optimization"
+  secondary:
+    - "semantic-date-relationships"
+    - "historical-reference-validation"
+    - "ci-cd-integration"
+    - "audit-trail-generation"
+    - "performance-optimization"
+    - "secure-deployment-staging"
+    
+objectives:
+  - description: "Eliminate LLM date hallucination through deterministic date sources"
+    deliverable: "Zero-tolerance date validation system with automatic correction"
+    validation: "No future dates, fabricated timestamps, or inconsistent dating detected"
+    
+  - description: "Establish canonical time sources for all agent-generated content"
+    deliverable: "Integrated toolchain providing deterministic dates from system and git"
+    validation: "All dates traceable to verifiable sources (UTC system time, git commits)"
+    
+  - description: "Optimize context window usage for efficient codebase navigation"
+    deliverable: "Context-aware agent that minimizes token usage while maintaining accuracy"
+    validation: "Agent operates within context limits while gathering comprehensive information"
+    
+  - description: "Implement secure staged deployment with IAC integration"
+    deliverable: "Agent deployment pipeline using standard IAC tools with security controls"
+    validation: "Agent deploys securely with proper isolation and rollback capabilities"
+    
+  - description: "Create semantic dating system linking temporal and logical relationships"
+    deliverable: "Dating system that understands dependency relationships and change causality"
+    validation: "Date relationships reflect actual dependency and modification patterns"
+    
+tasks:
+  default:
+    - description: "Audit existing codebase for date hallucination patterns"
+      priority: "critical"
+      estimated_time: "2h"
+      tools_required: ["filesystem-scan", "regex-analysis"]
+      
+    - description: "Implement deterministic date generation from canonical sources"
+      priority: "critical"
+      estimated_time: "4h"
+      tools_required: ["system-time-access", "git-integration"]
+      
+    - description: "Create context-efficient codebase navigation strategy"
+      priority: "high"
+      estimated_time: "6h"
+      tools_required: ["semantic-search", "dependency-analysis"]
+      
+    - description: "Build LLM hallucination detection and prevention system"
+      priority: "high"
+      estimated_time: "8h"
+      tools_required: ["pattern-matching", "validation-rules"]
+      
+    - description: "Integrate with existing CI/CD pipeline for continuous validation"
+      priority: "high"
+      estimated_time: "4h"
+      tools_required: ["ci-cd-hooks", "automated-testing"]
+      
+    - description: "Implement secure staged deployment with IAC tools"
+      priority: "medium"
+      estimated_time: "10h"
+      tools_required: ["iac-integration", "security-controls"]
+      
+    - description: "Create semantic dating relationships for dependency tracking"
+      priority: "medium"
+      estimated_time: "6h"
+      tools_required: ["dependency-graph", "semantic-analysis"]
+      
+    - description: "Optimize performance for large-scale codebase analysis"
+      priority: "low"
+      estimated_time: "8h"
+      tools_required: ["performance-profiling", "caching-strategies"]
+      
+dependencies:
+  required:
+    - "build-system-stabilization": "Stable build system required for safe deployment"
+    - "testing-infrastructure": "Testing framework needed for validation"
+  optional:
+    - "github-cicd-issues-resolution": "CI/CD improvements enhance automated validation"
+    - "document-organization": "Document structure provides context for dating relationships"
+    
+reporting:
+  frequency: "real-time"
+  channels:
+    - "main-agent"
+    - "quality-assurance"
+    - "temporal-validation"
+    - "hallucination-detection"
+  metrics:
+    - "date-accuracy-rate": "Percentage of dates validated as deterministic and accurate"
+    - "hallucination-detection-rate": "Rate of LLM date hallucination detection and correction"
+    - "context-efficiency-score": "Token usage efficiency while maintaining accuracy"
+    - "deployment-security-score": "Security posture of staged deployments"
+    - "semantic-relationship-coverage": "Coverage of temporal-logical relationships"
+    - "validation-performance": "Speed and accuracy of date validation processes"
+    
+security:
+  sandbox: true
+  capabilities_required:
+    - "filesystem-read"
+    - "filesystem-write"
+    - "git-access"
+    - "system-time-access"
+    - "ci-cd-integration"
+    - "deployment-automation"
+    - "security-scanning"
+  resource_limits:
+    max_memory: "256MB"
+    max_cpu: "40%"
+    timeout: "2h"
+    
+behavioral_directives:
+  operational_focus:
+    - "Always verify dates against canonical sources before using or generating them"
+    - "Optimize context window usage through intelligent codebase navigation"
+    - "Implement incremental validation to catch hallucinations early"
+    - "Use standard IAC tools for secure, reproducible deployments"
+    - "Maintain audit trails for all date-related operations"
+    
+  error_handling:
+    - "Fail fast when deterministic date sources are unavailable"
+    - "Provide clear error messages for date validation failures"
+    - "Implement automatic rollback for incorrect date corrections"
+    - "Log all hallucination detection events with context"
+    - "Gracefully handle partial system failures without compromising accuracy"
+    
+  coordination:
+    - "Integrate with existing date enforcement rules and tooling"
+    - "Coordinate with CI/CD systems for automated validation"
+    - "Support other agents by providing deterministic date services"
+    - "Maintain compatibility with existing documentation workflows"
+    - "Provide feedback to improve overall system temporal consistency"
+
+risk_mitigation:
+  high_priority_risks:
+    - risk: "Agent generates hallucinated dates due to insufficient validation"
+      mitigation: "Multiple validation layers with canonical source verification"
+    - risk: "Context window limitations prevent comprehensive codebase analysis"
+      mitigation: "Intelligent navigation strategies with incremental context building"
+    - risk: "Deployment security vulnerabilities in staged rollouts"
+      mitigation: "Standard IAC tools with security scanning and isolation"
+    - risk: "Performance degradation with large-scale date validation"
+      mitigation: "Optimized algorithms with caching and incremental processing"
+      
+  monitoring:
+    - "Continuous monitoring of date accuracy and hallucination prevention"
+    - "Performance metrics for context window optimization"
+    - "Security posture monitoring for deployment pipeline"
+    - "Audit trail analysis for temporal consistency validation"
+
+success_criteria:
+  phase_1:
+    - "Zero date hallucination in agent-generated content"
+    - "Deterministic date generation from canonical sources operational"
+    - "Context-efficient codebase navigation strategies implemented"
+    - "Basic CI/CD integration with automated validation"
+    
+  phase_2:
+    - "Semantic dating relationships established for dependency tracking"
+    - "Secure staged deployment pipeline using standard IAC tools"
+    - "Performance optimizations for large-scale analysis"
+    - "Comprehensive audit trail and monitoring system"
+    
+  final_validation:
+    - "100% date accuracy with no hallucination incidents"
+    - "Efficient context window usage enabling comprehensive analysis"
+    - "Secure deployment pipeline with proper isolation and controls"
+    - "Semantic dating system enhancing overall codebase understanding"
+
+deterministic_dating_configuration:
+  canonical_sources:
+    system_time:
+      command: "date -u +%Y-%m-%d"
+      format: "YYYY-MM-DD"
+      timezone: "UTC"
+      validation: "must_not_be_future"
+      
+    git_timestamps:
+      creation_date: "git log --reverse --format=%cd --date=format:%Y-%m-%d -- <file> | head -1"
+      modification_date: "git log -1 --format=%cd --date=format:%Y-%m-%d -- <file>"
+      commit_date: "git log -1 --format=%cd --date=format:%Y-%m-%d"
+      validation: "must_match_actual_commits"
+      
+    historical_references:
+      format: "<!-- DATE:EXEMPT source=\"reference\" -->"
+      validation: "must_include_source_citation"
+      exemption_types: ["rfc", "specification", "historical_event", "publication"]
+      
+  validation_rules:
+    strict_mode: true
+    auto_correction: true
+    rules:
+      - "no_future_dates": "Dates cannot be in the future relative to system time"
+      - "consistent_chronology": "Creation dates must precede modification dates"
+      - "git_accuracy": "Git-sourced dates must match actual commit timestamps"
+      - "citation_required": "Historical dates must include source citations"
+      - "format_consistency": "All dates must use YYYY-MM-DD format"
+      
+  hallucination_detection:
+    patterns:
+      - "impossible_dates": "Dates before 1970-01-01 or after current date"
+      - "common_hallucinations": "2025-01-01, 2024-12-31, 2025-01-28"
+      - "inconsistent_sequences": "Modification dates before creation dates"
+      - "unrealistic_timestamps": "Multiple operations on same microsecond"
+      
+    prevention_strategies:
+      - "template_based_generation": "Use {{today}} templates with script replacement"
+      - "canonical_source_verification": "Always verify against system/git sources"
+      - "incremental_validation": "Validate dates as they are generated"
+      - "context_awareness": "Consider temporal context in validation"
+
+context_optimization:
+  navigation_strategies:
+    semantic_search:
+      priority: "high"
+      description: "Use semantic search to find relevant code sections efficiently"
+      token_efficiency: "high"
+      
+    dependency_traversal:
+      priority: "high"
+      description: "Follow dependency relationships to understand context"
+      token_efficiency: "medium"
+      
+    incremental_analysis:
+      priority: "medium"
+      description: "Build context incrementally rather than loading everything"
+      token_efficiency: "high"
+      
+    intelligent_filtering:
+      priority: "medium"
+      description: "Filter out irrelevant code sections early"
+      token_efficiency: "high"
+      
+  context_window_management:
+    max_context_size: "128k_tokens"
+    context_reservation: "10k_tokens" # Reserve space for generation
+    chunking_strategy: "semantic_boundaries"
+    compression_techniques: ["summarization", "key_extraction", "reference_linking"]
+    
+  performance_optimization:
+    caching: true
+    incremental_processing: true
+    parallel_analysis: true
+    lazy_loading: true
+
+iac_integration:
+  deployment_strategy:
+    tool: "terraform" # Standard IAC tool
+    staging_approach: "progressive"
+    security_controls: "comprehensive"
+    
+  infrastructure_components:
+    container_runtime: "podman" # Security-focused container runtime
+    orchestration: "kubernetes" # Standard orchestration
+    monitoring: "prometheus" # Standard monitoring
+    logging: "fluentd" # Standard logging
+    
+  security_measures:
+    isolation: "namespace_based"
+    network_policies: "zero_trust"
+    secrets_management: "vault_integration"
+    vulnerability_scanning: "continuous"
+    
+  deployment_stages:
+    - stage: "development"
+      resources: "minimal"
+      security: "basic"
+      monitoring: "basic"
+      
+    - stage: "staging"
+      resources: "production_like"
+      security: "enhanced"
+      monitoring: "comprehensive"
+      
+    - stage: "production"
+      resources: "full"
+      security: "maximum"
+      monitoring: "real_time"
+
+implementation_details:
+  crate_location: "crates/toka-deterministic-dating-agent"
+  integration_points:
+    - "toka-agent-runtime"
+    - "toka-orchestration"
+    - "existing_date_enforcement_rules"
+    - "ci_cd_pipeline"
+    - "iac_deployment_system"
+    
+  external_dependencies:
+    - "chrono for date/time handling"
+    - "git2 for git integration"
+    - "regex for pattern matching"
+    - "serde for configuration"
+    - "tokio for async operations"
+    - "terraform for IAC deployment"
+    
+  configuration_files:
+    - "config/deterministic-dating.yaml"
+    - "config/hallucination-patterns.yaml"
+    - "config/context-optimization.yaml"
+    - "iac/deployment-stages.tf"
+    
+  output_artifacts:
+    - "date-validation-report.md"
+    - "hallucination-detection-log.json"
+    - "context-usage-metrics.json"
+    - "deployment-security-audit.md"
+    - "semantic-dating-graph.json"
