@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, info, instrument};
 
 use toka_runtime::RuntimeManager;
+use toka_types::{Message, Operation, EntityId};
 
 use crate::{AgentContext, AgentMetrics};
 
@@ -141,7 +142,7 @@ impl ProgressReporter {
             agent_id: self.agent_context.agent_id,
             agent_name: self.agent_context.config.metadata.name.clone(),
             progress,
-            message,
+            message: message.clone(),
             state: self.agent_context.state.clone(),
             timestamp: self.last_report,
             metrics: self.metrics.clone(),
@@ -151,8 +152,36 @@ impl ProgressReporter {
                (progress * 100.0) as u32, 
                self.agent_context.config.metadata.name);
 
-        // TODO: Send progress report to orchestration system via runtime
-        // For now, just log the progress
+        // Serialize progress report as observation data
+        let observation_data = serde_json::to_vec(&progress_report)?;
+        
+        // Create progress observation message
+        let progress_message = Message::new(
+            self.agent_context.agent_id,
+            format!("progress-reporting-{}", self.agent_context.config.metadata.workstream),
+            Operation::EmitObservation {
+                agent: self.agent_context.agent_id,
+                data: observation_data,
+            },
+        ).map_err(|e| anyhow::anyhow!("Failed to create progress message: {}", e))?;
+
+        // Submit progress observation to runtime
+        match self.runtime.submit(progress_message).await {
+            Ok(_kernel_event) => {
+                debug!("Progress reported successfully for agent: {}", 
+                      self.agent_context.config.metadata.name);
+            }
+            Err(e) => {
+                // Log error but don't fail the operation - progress reporting shouldn't block agent execution
+                tracing::warn!(
+                    "Failed to submit progress report for agent {}: {}",
+                    self.agent_context.config.metadata.name,
+                    e
+                );
+            }
+        }
+
+        // Also log progress for immediate visibility
         info!("Agent {} progress: {}%{}", 
               self.agent_context.config.metadata.name,
               (progress * 100.0) as u32,
@@ -181,7 +210,34 @@ impl ProgressReporter {
             self.metrics.llm_requests += 1;
         }
 
-        // TODO: Send task completion to orchestration system via runtime
+        // Serialize task completion as observation data
+        let observation_data = serde_json::to_vec(&task_result)?;
+        
+        // Create task completion observation message
+        let completion_message = Message::new(
+            self.agent_context.agent_id,
+            format!("task-completion-{}", self.agent_context.config.metadata.workstream),
+            Operation::EmitObservation {
+                agent: self.agent_context.agent_id,
+                data: observation_data,
+            },
+        ).map_err(|e| anyhow::anyhow!("Failed to create task completion message: {}", e))?;
+
+        // Submit task completion observation to runtime
+        match self.runtime.submit(completion_message).await {
+            Ok(_kernel_event) => {
+                debug!("Task completion reported successfully for agent: {}", 
+                      self.agent_context.config.metadata.name);
+            }
+            Err(e) => {
+                // Log error but don't fail the operation
+                tracing::warn!(
+                    "Failed to submit task completion report for agent {}: {}",
+                    self.agent_context.config.metadata.name,
+                    e
+                );
+            }
+        }
         
         Ok(())
     }
@@ -195,7 +251,48 @@ impl ProgressReporter {
     ) -> Result<()> {
         let final_progress = if success { 1.0 } else { self.current_progress };
         
-        self.report_progress(final_progress, message).await?;
+        // Report final progress
+        self.report_progress(final_progress, message.clone()).await?;
+        
+        // Create completion summary
+        let completion_data = serde_json::json!({
+            "type": "agent_completion",
+            "agent_id": self.agent_context.agent_id.0,
+            "agent_name": self.agent_context.config.metadata.name,
+            "workstream": self.agent_context.config.metadata.workstream,
+            "success": success,
+            "final_metrics": self.metrics,
+            "completed_at": Utc::now(),
+            "message": message,
+        });
+
+        let completion_observation = serde_json::to_vec(&completion_data)?;
+        
+        // Create agent completion observation message
+        let completion_message = Message::new(
+            self.agent_context.agent_id,
+            format!("agent-completion-{}", self.agent_context.config.metadata.workstream),
+            Operation::EmitObservation {
+                agent: self.agent_context.agent_id,
+                data: completion_observation,
+            },
+        ).map_err(|e| anyhow::anyhow!("Failed to create completion message: {}", e))?;
+
+        // Submit completion observation to runtime
+        match self.runtime.submit(completion_message).await {
+            Ok(_kernel_event) => {
+                debug!("Agent completion reported successfully: {}", 
+                      self.agent_context.config.metadata.name);
+            }
+            Err(e) => {
+                // Log error but don't fail the operation
+                tracing::warn!(
+                    "Failed to submit agent completion report for {}: {}",
+                    self.agent_context.config.metadata.name,
+                    e
+                );
+            }
+        }
         
         info!("Agent {} completed with {} (final progress: {}%)",
               self.agent_context.config.metadata.name,
@@ -320,10 +417,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_progress_clamping() {
-        // This test would require a mock RuntimeManager
-        // For now, we test the basic logic
-        let mut metrics = AgentMetrics::default();
-        
         // Test that progress is properly clamped
         let test_values = vec![-0.5, 0.0, 0.5, 1.0, 1.5];
         let expected = vec![0.0, 0.0, 0.5, 1.0, 1.0];
@@ -332,5 +425,25 @@ mod tests {
             let clamped = input.clamp(0.0, 1.0);
             assert_eq!(clamped, *expected);
         }
+    }
+
+    #[test]
+    fn test_agent_progress_serialization() {
+        let progress = AgentProgress {
+            agent_id: EntityId(456),
+            agent_name: "test-agent".to_string(),
+            progress: 0.75,
+            message: Some("Test message".to_string()),
+            state: AgentExecutionState::Ready,
+            timestamp: Utc::now(),
+            metrics: AgentMetrics::default(),
+        };
+
+        let serialized = serde_json::to_string(&progress).unwrap();
+        let deserialized: AgentProgress = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(progress.agent_id, deserialized.agent_id);
+        assert_eq!(progress.progress, deserialized.progress);
+        assert_eq!(progress.agent_name, deserialized.agent_name);
     }
 }
