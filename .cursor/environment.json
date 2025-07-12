@@ -1,7 +1,7 @@
 {
   "build": {
-    "context": "..",
-    "dockerfile": ".cursor/Dockerfile"
+    "context": ".",
+    "dockerfile": "Dockerfile"
   },
   "install": "/usr/local/bin/cursor-scripts/auto-setup.sh",
   "start": "/usr/local/bin/cursor-scripts/cursor-agent-init.sh",
