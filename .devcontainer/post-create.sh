@@ -5,6 +5,15 @@ set -e
 
 echo "🦀 Setting up Toka Rust development environment..."
 
+# Configure network resilience
+echo "🌐 Configuring network resilience..."
+# Ensure DNS resolution works
+if ! nslookup index.crates.io > /dev/null 2>&1; then
+    echo "⚠️  DNS resolution issues detected, configuring alternative DNS..."
+    echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf > /dev/null
+    echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf > /dev/null
+fi
+
 # Update package lists (packages are already installed in Dockerfile)
 echo "🔧 Updating package lists..."
 sudo apt update
@@ -27,6 +36,18 @@ rustc --version
 cargo --version
 rustfmt --version
 clippy-driver --version
+
+# Test cargo tools installation
+echo "🔧 Testing cargo tools installation..."
+if ! command -v cargo-outdated > /dev/null 2>&1 || ! command -v cargo-tree > /dev/null 2>&1; then
+    echo "⚠️  Some cargo tools missing, running fallback installation..."
+    if [ -f ".devcontainer/install-cargo-tools.sh" ]; then
+        chmod +x .devcontainer/install-cargo-tools.sh
+        bash .devcontainer/install-cargo-tools.sh
+    else
+        echo "⚠️  Fallback installation script not found"
+    fi
+fi
 
 # Install Python dependencies if requirements.txt exists
 if [ -f "requirements.txt" ]; then
@@ -142,7 +163,16 @@ fi
 
 # Pre-fetch dependencies for faster first build
 echo "⚡ Pre-fetching workspace dependencies..."
-cargo fetch --locked || echo "Warning: Could not pre-fetch dependencies"
+# Retry mechanism for cargo operations
+for i in {1..3}; do
+    if cargo fetch --locked; then
+        echo "✅ Dependencies fetched successfully"
+        break
+    else
+        echo "⚠️  Attempt $i failed, retrying..."
+        sleep 5
+    fi
+done || echo "Warning: Could not pre-fetch dependencies after 3 attempts"
 
 # Set up git if not already configured (GitHub auth might have done this)
 if ! git config --global user.name > /dev/null 2>&1; then

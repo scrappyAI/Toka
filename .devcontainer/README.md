@@ -199,6 +199,70 @@ CUSTOM_SETTING=value
 
 To add additional tools or configurations:
 
+### 🔧 Troubleshooting
+
+#### Network Connectivity Issues
+
+If you encounter network-related errors during container setup:
+
+1. **Test network connectivity:**
+   ```bash
+   bash .devcontainer/test-network.sh
+   ```
+
+2. **Manual DNS fix:**
+   ```bash
+   echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+   echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf
+   ```
+
+3. **Retry cargo tool installation:**
+   ```bash
+   bash .devcontainer/install-cargo-tools.sh
+   ```
+
+#### Cargo Tool Installation Failures
+
+If specific cargo tools fail to install:
+
+1. **Check network connectivity first:**
+   ```bash
+   bash .devcontainer/test-network.sh
+   ```
+
+2. **Install tools individually:**
+   ```bash
+   cargo install --locked cargo-outdated
+   cargo install --locked cargo-tree
+   ```
+
+3. **Use the fallback installer:**
+   ```bash
+   bash .devcontainer/install-cargo-tools.sh
+   ```
+
+#### Common Error Messages
+
+- **"Could not resolve hostname"**: DNS resolution issue - run network test script
+- **"download of config.json failed"**: Network connectivity issue - check firewall/proxy settings
+- **"Failed to install cargo-*"**: Individual tool installation failed - use fallback installer
+
+#### Container Build Failures
+
+If the container fails to build:
+
+1. **Check Docker resources:**
+   - Ensure Docker has enough memory (4GB+ recommended)
+   - Check available disk space
+
+2. **Clear Docker cache:**
+   ```bash
+   docker system prune -a
+   ```
+
+3. **Rebuild without cache:**
+   - In your IDE, use "Dev Containers: Rebuild Container"
+
 1. Modify `.devcontainer/Dockerfile` for system-level changes
 2. Modify `.devcontainer/post-create.sh` for setup scripts
 3. Modify `.devcontainer/devcontainer.json` for IDE configuration

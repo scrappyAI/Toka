@@ -1,5 +1,9 @@
 FROM rust:1.86-slim
 
+# Configure DNS and network resilience
+RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
+    echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+
 # Install build essentials and development tools
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -31,10 +35,15 @@ RUN apt-get update \
        python3-venv \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Rust components and tools
+# Configure cargo for better network resilience
+RUN mkdir -p /usr/local/cargo && \
+    echo '[net]\ngit-fetch-with-cli = true\nretry = 3\ntimeout = 60\n[build]\njobs = 4\nrustflags = ["-C", "link-arg=-fuse-ld=lld"]' > /usr/local/cargo/config.toml
+
+# Install Rust components and tools with retry logic
 RUN rustup component add clippy rustfmt rust-analyzer rust-src \
     && rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu \
-    && cargo install cargo-edit cargo-watch cargo-expand cargo-audit cargo-outdated cargo-tree \
+    && cargo install --locked cargo-edit cargo-watch cargo-expand cargo-audit \
+    && cargo install --locked cargo-outdated cargo-tree \
     && cargo install --locked cargo-deny cargo-nextest
 
 # Create non-root user with sudo privileges
