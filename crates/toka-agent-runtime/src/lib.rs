@@ -135,7 +135,8 @@ pub mod task;
 pub mod capability;
 pub mod resource;
 pub mod progress;
-pub mod orchestration_integration;
+// NOTE: orchestration_integration removed to break circular dependency
+// Integration will be handled at the orchestration layer
 
 pub use executor::AgentExecutor;
 pub use process::AgentProcessManager;
@@ -143,10 +144,6 @@ pub use task::TaskExecutor;
 pub use capability::CapabilityValidator;
 pub use resource::ResourceManager;
 pub use progress::{ProgressReporter, AgentProgress, TaskResult};
-pub use orchestration_integration::{
-    OrchestrationIntegration, OrchestrationEngineExt, ProgressUpdate, 
-    ActiveAgentInfo, IntegrationMetrics
-};
 
 /// Maximum time to wait for agent startup
 pub const AGENT_STARTUP_TIMEOUT: Duration = Duration::from_secs(30);
@@ -157,6 +154,8 @@ pub const DEFAULT_TASK_TIMEOUT: Duration = Duration::from_secs(300); // 5 minute
 /// Current execution state of an agent
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum AgentExecutionState {
+    /// Agent is being spawned
+    Spawning,
     /// Agent is initializing
     Initializing,
     /// Agent is ready to execute tasks

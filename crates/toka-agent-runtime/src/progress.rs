@@ -134,7 +134,13 @@ impl ProgressReporter {
         message: Option<String>
     ) -> Result<()> {
         // Clamp progress to valid range
-        let progress = progress.clamp(0.0, 1.0);
+        let progress = if progress < 0.0 {
+            0.0
+        } else if progress > 1.0 {
+            1.0
+        } else {
+            progress
+        };
         self.current_progress = progress;
         self.last_report = Utc::now();
 
@@ -422,7 +428,13 @@ mod tests {
         let expected = vec![0.0, 0.0, 0.5, 1.0, 1.0];
         
         for (input, expected) in test_values.iter().zip(expected.iter()) {
-            let clamped = input.clamp(0.0, 1.0);
+            let clamped = if *input < 0.0 {
+                0.0
+            } else if *input > 1.0 {
+                1.0
+            } else {
+                *input
+            };
             assert_eq!(clamped, *expected);
         }
     }
