@@ -195,10 +195,17 @@ Your Toka OS has **exceptional infrastructure** - the hardest parts are done:
 
 ## 📚 Documentation Links
 
-- **Complete Testing Guide**: `TOKA_TESTING_SETUP_GUIDE.md`
+- **Complete Testing Guide**: [TOKA_TESTING_SETUP_GUIDE.md](TOKA_TESTING_SETUP_GUIDE.md)
 - **System Report**: `target/toka-system-report.md` (after running tests)
-- **Agent Research**: `toka_agent_implementation_research_and_proposal.md`
-- **Implementation Guide**: `AGENT_RUNTIME_IMPLEMENTATION_GUIDE.md`
+- **Agent Research**: [toka_agent_implementation_research_and_proposal.md](../research/toka_agent_implementation_research_and_proposal.md)
+- **Implementation Guide**: [AGENT_RUNTIME_IMPLEMENTATION_GUIDE.md](AGENT_RUNTIME_IMPLEMENTATION_GUIDE.md)
+
+## 🔗 Related Documentation
+
+- **Architecture**: [Architecture Overview](../architecture/README.md)
+- **Development**: [Development Guide](../development/README.md)
+- **Operations**: [Operations Guide](../operations/README.md)
+- **Main Documentation**: [Documentation Index](../README.md)
 
 ---
 

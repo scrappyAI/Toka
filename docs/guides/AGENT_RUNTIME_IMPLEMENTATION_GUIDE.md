@@ -204,7 +204,7 @@ The runtime works with existing agent configurations from `agents/v0.3.0/workstr
 metadata:
   name: "build-system-agent"
   version: "v0.3.0"
-  created: "2025-07-11"
+  created: "2025-07-12"
   workstream: "build-system-stabilization"
   branch: "feature/build-system-stabilization"
 
@@ -419,3 +419,17 @@ println!("Average execution time: {:?}", stats.avg_agent_execution_time);
 ```
 
 This implementation provides a complete agent execution runtime that transforms Toka from a coordination system into a fully functional agent execution platform.
+
+## 🔗 Related Documentation
+
+- **Quick Start**: [QUICK_START_TESTING.md](QUICK_START_TESTING.md)
+- **Testing Guide**: [TOKA_TESTING_SETUP_GUIDE.md](TOKA_TESTING_SETUP_GUIDE.md)
+- **Architecture**: [Architecture Overview](../architecture/README.md)
+- **Main Documentation**: [Documentation Index](../README.md)
+
+## 📚 See Also
+
+- **Agent Research**: [Agent Implementation Research](../research/toka_agent_implementation_research_and_proposal.md)
+- **Production Readiness**: [Production Readiness Report](../research/20250127_toka_production_readiness_report.md)
+- **Implementation Roadmap**: [Implementation Roadmap](../reports/IMPLEMENTATION_ROADMAP.md)
+- **Development Guide**: [Development Documentation](../development/README.md)

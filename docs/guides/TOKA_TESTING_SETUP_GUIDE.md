@@ -1,5 +1,5 @@
 # Toka OS Testing Setup Guide
-**Date:** 2025-07-11  
+**Date:** 2025-07-12  
 **Status:** Environment Configuration & Testing Guide  
 **Scope:** Safe environment setup and testing procedures for Toka OS v0.3.0
 
@@ -340,6 +340,21 @@ Your Toka OS has **exceptional infrastructure** and is 90% complete! The missing
 - **Production-ready system** for complex AI workflows
 
 **Ready to test?** Start with the steps above and you'll see the sophisticated orchestration system in action. The foundation is solid - now it's time to bring the agents to life!
+
+---
+
+## 🔗 Related Documentation
+
+- **Implementation Guide**: [AGENT_RUNTIME_IMPLEMENTATION_GUIDE.md](AGENT_RUNTIME_IMPLEMENTATION_GUIDE.md)
+- **Quick Start**: [QUICK_START_TESTING.md](QUICK_START_TESTING.md)
+- **Architecture**: [Architecture Overview](../architecture/README.md)
+- **Main Documentation**: [Documentation Index](../README.md)
+
+## 📚 See Also
+
+- **Agent Research**: [Agent Implementation Research](../research/toka_agent_implementation_research_and_proposal.md)
+- **Production Readiness**: [Production Readiness Report](../research/20250127_toka_production_readiness_report.md)
+- **Development Guide**: [Development Documentation](../development/README.md)
 
 ---
 
