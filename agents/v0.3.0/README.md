@@ -1,194 +1,107 @@
-# Toka OS v0.3.0 Domain-Specific Agents
-**Version:** v0.3.0 – 2025-07-04  
-**Purpose:** Domain-specific agents for parallel workstream development  
-**Base Schema:** Compatible with `toka-kernel` AgentSpec and TaskSpec
-
----
+# Toka Agent Configuration Guide
 
 ## Overview
+This guide covers the configuration and deployment of Toka agents in the v0.3.0 orchestration system.
 
-This directory contains versioned agent configurations for the v0.3.0 enhancement roadmap workstreams. Each agent is designed to operate within a specific domain, maintaining clear boundaries while enabling orchestration by a main coordinating agent.
+## Agent Specifications
+Agent configurations are defined in YAML files located in `agents-specs/v0.3/workstreams/`:
 
-## Architecture
+- `build-system-stabilization.yaml` - Dependency management and build validation
+- `testing-infrastructure.yaml` - Automated testing and quality assurance
+- `kernel-events-enhancement.yaml` - Kernel event system improvements
+- `storage-advancement.yaml` - Storage layer enhancements
+- `security-extension.yaml` - Security hardening and compliance
+- `performance-observability.yaml` - Performance monitoring and optimization
+- `github-cicd-issues-resolution.yaml` - CI/CD pipeline improvements
+- `document-organization.yaml` - Documentation management
+- `llm-credentials-setup.yaml` - LLM provider configuration
 
-### Agent Configuration Schema
-
-Each agent configuration follows this structure:
-
+## Configuration Format
 ```yaml
 metadata:
   name: "agent-name"
   version: "v0.3.0"
-  created: "2025-07-04"
   workstream: "workstream-name"
-  branch: "feature/branch-name"
+  branch: "feature/workstream-name"
   
 spec:
   name: "Human-readable agent name"
-  domain: "domain-name"
+  domain: "infrastructure|development|security"
   priority: "critical|high|medium|low"
   
 capabilities:
-  primary:
-    - "primary capability 1"
-    - "primary capability 2"
-  secondary:
-    - "secondary capability 1"
-    
+  primary: ["capability1", "capability2"]
+  secondary: ["capability3", "capability4"]
+  
 objectives:
   - description: "Objective description"
     deliverable: "Expected deliverable"
-    validation: "How to validate completion"
+    validation: "Validation criteria"
     
 tasks:
   default:
-    - description: "Default task description"
+    - description: "Task description"
       priority: "high|medium|low"
-    - description: "Another task"
-      priority: "medium"
       
-dependencies:
-  required:
-    - "agent-name": "reason for dependency"
-  optional:
-    - "agent-name": "reason for optional dependency"
-    
-reporting:
-  frequency: "daily|weekly|on-milestone"
-  channels:
-    - "main-agent"
-    - "kernel-events"
-  metrics:
-    - "metric-name": "description"
-    
 security:
-  sandbox: true|false
-  capabilities_required:
-    - "capability-name"
+  sandbox: true
+  capabilities_required: ["filesystem-read", "filesystem-write"]
   resource_limits:
-    max_memory: "100MB"
-    max_cpu: "50%"
-    timeout: "1h"
+    max_memory: "512MB"
+    max_cpu: "75%"
+    timeout: "2h"
 ```
 
-## Usage with toka-config-cli
+## Deployment
 
-### Creating an Agent Configuration
-
+### Start Orchestration Service
 ```bash
-# Create a new agent config from template
-toka-config create \
-  --file agents/v0.3.0/workstreams/new-agent.yaml \
-  --format yaml \
-  --content '{...}'
+# Start the orchestration service
+cargo run --bin toka-orchestration-service
 
-# Update specific configurations
-toka-config update \
-  --file agents/v0.3.0/workstreams/agent.yaml \
-  --key capabilities.primary \
-  --value '["new-capability"]'
+# Start with specific configuration
+cargo run --bin toka-orchestration-service -- --config config/agents.toml
 ```
 
-### Validating Agent Configurations
-
+### Deploy Specific Workstream
 ```bash
-# Validate syntax
-toka-config validate --file agents/v0.3.0/workstreams/agent.yaml
+# Deploy single workstream
+cargo run --bin toka-orchestration-service -- --workstream build-system-stabilization
 
-# List all agent configs
-toka-config list --directory agents/v0.3.0/workstreams
+# Deploy multiple workstreams
+cargo run --bin toka-orchestration-service -- --workstream build-system-stabilization,testing-infrastructure
 ```
 
-## Agent Orchestration
-
-### Spawning Workstream Agents
-
-The main orchestrating agent can spawn workstream agents using the toka-kernel API:
-
-```rust
-let spec = AgentSpec::new(config.spec.name.clone())?;
-let spawn_op = Operation::SpawnSubAgent { 
-    parent: main_agent_id, 
-    spec 
-};
-```
-
-### Task Assignment
-
-Tasks can be scheduled to agents based on their capabilities:
-
-```rust
-let task = TaskSpec::new(format!(
-    "Execute {} for workstream {}", 
-    objective.description, 
-    config.metadata.workstream
-))?;
-let schedule_op = Operation::ScheduleAgentTask { 
-    agent: workstream_agent_id, 
-    task 
-};
-```
-
-## Security Considerations
-
-All agents follow the security framework defined in `.cursor/rules/11_security-hardening-agents.mdc`:
-
-- **Capability-based execution**: Agents declare required capabilities explicitly
-- **Sandboxed execution**: Resource and permission isolation
-- **Audit logging**: All actions logged with intent and outcome
-- **Fail-safe defaults**: Agents fail closed on ambiguous operations
-
-## Workstream Agents
-
-### Available Agents
-
-- **[build-system-stabilization](workstreams/build-system-stabilization.yaml)**: Critical path infrastructure fixes
-- **[testing-infrastructure](workstreams/testing-infrastructure.yaml)**: Comprehensive testing expansion
-- **[kernel-events-enhancement](workstreams/kernel-events-enhancement.yaml)**: Kernel event model improvements
-- **[storage-advancement](workstreams/storage-advancement.yaml)**: Storage layer enhancements
-- **[security-extension](workstreams/security-extension.yaml)**: Security framework improvements
-- **[performance-observability](workstreams/performance-observability.yaml)**: Performance and monitoring foundation
-
-### Agent Dependencies
-
-```mermaid
-graph TD
-    A[Main Agent] --> B[Build System Agent]
-    A --> C[Testing Agent]
-    A --> D[Kernel Events Agent]
-    A --> E[Storage Agent]
-    A --> F[Security Agent]
-    A --> G[Performance Agent]
-    
-    C --> B[Build System Agent]
-    D --> B[Build System Agent]
-    E --> B[Build System Agent]
-    F --> B[Build System Agent]
-    G --> B[Build System Agent]
-    
-    G --> C[Testing Agent]
-    F --> E[Storage Agent]
-```
-
-## Integration Testing
-
-Each agent configuration includes validation tests:
-
+### Monitor Agent Status
 ```bash
-# Test agent spawning
-cargo test --bin toka-cli -- spawn_agent_test
+# Check agent status
+cargo run --bin toka-orchestration-service -- --status
 
-# Test task scheduling
-cargo test --bin toka-cli -- schedule_task_test
-
-# Validate all configs
-find agents/v0.3.0/workstreams -name "*.yaml" -exec toka-config validate --file {} \;
+# View agent logs
+tail -f logs/agents/build-system-stabilization.log
 ```
 
----
+## Agent Development
 
-**Next Steps:**
-1. Review and approve agent configurations
-2. Test agent spawning and orchestration
-3. Implement workstream coordination logic
-4. Establish reporting and monitoring 
+### Creating New Agents
+1. Create agent specification YAML file
+2. Define capabilities and objectives
+3. Set security constraints
+4. Configure resource limits
+5. Test agent configuration
+
+### Testing Agents
+```bash
+# Test agent configuration
+cargo test --package toka-orchestration test_agent_config
+
+# Test agent execution
+cargo run --example agent_test -- --agent build-system-stabilization
+```
+
+## Troubleshooting
+- Check agent logs in `logs/agents/`
+- Verify configuration syntax
+- Validate capability permissions
+- Monitor resource usage
+- Review dependency resolution

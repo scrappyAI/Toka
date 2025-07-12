@@ -434,14 +434,14 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let test_file = temp_dir.path().join("test.md");
         
-        let content = format!("# Test File\n\nGenerated on: {}\n", "2030-01-01");
+        let content = format!("# Test File\n\nGenerated on: {}\n", "2025-07-11");
         fs::write(&test_file, content).await.unwrap();
         
         let result = validator.validate_path(&test_file, false).await.unwrap();
         
         assert_eq!(result.files_checked, 1);
         assert!(!result.violations.is_empty());
-        assert_eq!(result.violations[0].date_text, "2030-01-01");
+        assert_eq!(result.violations[0].date_text, "2025-07-11");
     }
     
     #[tokio::test]
@@ -452,7 +452,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let test_file = temp_dir.path().join("test.md");
         
-        let content = "# Test File\n\nGenerated on: 2030-01-01\n";
+        let content = "# Test File\n\nGenerated on: 2025-07-11\n";
         fs::write(&test_file, content).await.unwrap();
         
         let result = validator.validate_path(&test_file, true).await.unwrap();
@@ -461,7 +461,7 @@ mod tests {
         
         // Check that the file was actually fixed
         let fixed_content = fs::read_to_string(&test_file).await.unwrap();
-        assert!(!fixed_content.contains("2030-01-01"));
+        assert!(!fixed_content.contains("2025-07-11"));
     }
     
     #[tokio::test]

@@ -428,3 +428,17 @@ The foundation is solid. The vision is clear. The next step is execution.
 **Review Status**: Ready for Implementation  
 **Implementation Lead**: Development Team  
 **Target Timeline**: 2-6 weeks for operational agents
+
+## 🔗 Related Documentation
+
+- **Implementation Guide**: [AGENT_RUNTIME_IMPLEMENTATION_GUIDE.md](../guides/AGENT_RUNTIME_IMPLEMENTATION_GUIDE.md)
+- **Quick Start**: [QUICK_START_TESTING.md](../guides/QUICK_START_TESTING.md)
+- **Testing Guide**: [TOKA_TESTING_SETUP_GUIDE.md](../guides/TOKA_TESTING_SETUP_GUIDE.md)
+- **Main Documentation**: [Documentation Index](../README.md)
+
+## 📚 See Also
+
+- **Production Readiness**: [Production Readiness Report](20250127_toka_production_readiness_report.md)
+- **Implementation Roadmap**: [Implementation Roadmap](../reports/IMPLEMENTATION_ROADMAP.md)
+- **Deep Dive Analysis**: [Toka Crates Deep Dive](20250127_toka_crates_deep_dive_analysis.md)
+- **Architecture**: [Architecture Overview](../architecture/README.md)

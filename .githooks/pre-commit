@@ -1,0 +1,33 @@
+#!/bin/bash
+# Pre-commit hook for Toka workspace
+# Automatically validates dates before allowing commits
+
+set -e
+
+echo "🔍 Running pre-commit validations..."
+
+# Check if we're in a git repository
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo "❌ Not in a git repository"
+    exit 1
+fi
+
+# Run date validation
+echo "📅 Validating dates..."
+if ! python3 scripts/validate_dates.py; then
+    echo ""
+    echo "❌ Date validation failed!"
+    echo "💡 To fix automatically: python3 scripts/validate_dates.py --fix"
+    echo "💡 To exempt historical dates: add <!-- DATE:EXEMPT source=\"reference\" -->"
+    exit 1
+fi
+
+# Check if Rust code compiles
+echo "🦀 Checking Rust compilation..."
+if ! cargo check --workspace --quiet; then
+    echo "❌ Rust compilation failed!"
+    exit 1
+fi
+
+echo "✅ All pre-commit validations passed!"
+exit 0 

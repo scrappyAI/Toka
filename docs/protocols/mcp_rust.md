@@ -29,7 +29,7 @@ spot divergence, open a *Docs Update* PR _first_.
 | MCP Spec | Status in Toka | Notes |
 |----------|----------------|-------|
 | 2025-03-26 | **current** | Default target for new work |
-| <2025-01-10 | deprecated  | Submit a *spec bump* PR to remove |
+| <2025-07-11 | deprecated  | Submit a *spec bump* PR to remove |
 
 ## Code Patterns
 
@@ -50,7 +50,7 @@ async fn echo(req: Request<Value>) -> anyhow::Result<Value> {
 
 * Authenticate using OAuth2 **Bearer** tokens (as per § 8 of the spec).
 * Reject any request lacking `Authorization` unless the tool is explicitly
-  marked **public** in its [`ToolManifest`](../../crates/toka-toolkit-core/src/manifest.rs).
+  marked **public** in its [`ToolManifest`](../../crates/toka-tools/src/manifest.rs).
 
 ## Testing
 
@@ -64,7 +64,7 @@ cargo test -p my_crate --features "mcp_conformance"
 
 Below is a minimal set of **draft-07** JSON Schemas you can copy-paste when
 authoring a simple *echo* style tool.  They pass the new deep-validation logic
-introduced in `toka-toolkit-core` v0.1.1 and illustrate common best practices:
+introduced in `toka-tools` v0.1.1 and illustrate common best practices:
 
 ```jsonc
 "input_schema": {

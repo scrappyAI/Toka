@@ -11,6 +11,7 @@ members = [
     "crates/toka-agent-runtime",   # TODO: Remove after migration
     "crates/toka-orchestration",   # TODO: Simplify after migration
     "crates/toka-store-core",
+    "crates/toka-collaborative-auth",
 ]
 
 [workspace.dependencies]

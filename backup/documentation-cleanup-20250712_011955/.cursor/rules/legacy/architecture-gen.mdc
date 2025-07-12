@@ -1,0 +1,120 @@
+---
+description: Architecture Diagram Generation
+globs: 
+alwaysApply: false
+---
+<ProjectRule name="GenerateArchitectureDiagrams">
+
+<Description>
+Automated workflow for producing **code-accurate architectural diagrams**—never
+speculative—covering crate topology, module graphs, data / execution flows, and build
+pipelines.  
+Every run emits versioned artifacts into `docs/architecture/`, with
+`architecture.md` as the baseline overview and timestamped sub-docs for deeper views.
+</Description>
+
+<Goals>
+- Reflect the **current** codebase (HEAD of working branch) in every diagram.
+- Store artifacts with deterministic filenames:
+  `docs/architecture/YYYY-MM-DD_<view>.mmd` (Mermaid) or `.svg` / `.png`.
+- Keep `docs/architecture/architecture.md` up-to-date, embedding or linking the latest
+  diagrams and recording the Git commit SHA + generation timestamp.
+- Provide extension hooks for domain-specific diagrams (e.g., “payment_flow”, “agent_lifecycle”).
+</Goals>
+
+<!--────────── TOOLCHAIN ──────────-->
+<Tools>
+- `cargo metadata --format-version=1` → full dependency JSON
+- `cargo deps --filter '*' --dot-output target/arch/deps.dot`
+- `cargo mod graph` (or `cargo-depgraph`) → module-level DOT
+- Custom script: `scripts/gen_mermaid.rs`
+- `dot` (Graphviz) for SVG fallback
+- `git rev-parse HEAD` for commit hash
+</Tools>
+
+<!--────────── WORKFLOW ──────────-->
+<Instructions>
+
+1. <Prep>
+   - Ensure build is clean: `cargo check --workspace --all-features`.
+   - Create temp dir: `target/arch/<timestamp>/`.
+   - Capture commit hash: `export GIT_SHA=$(git rev-parse --short HEAD)`.
+</Prep>
+
+2. <CrateTopology>
+   - Run:  
+     ```bash
+     cargo deps --no-deps --dot-output target/arch/dep_graph.dot
+     dot -Tsvg target/arch/dep_graph.dot -o target/arch/{{timestamp}}_crate_topology.svg
+     scripts/gen_mermaid.rs target/arch/dep_graph.dot \
+       > docs/architecture/{{timestamp}}_crate_topology.mmd
+     ```
+   - The conversion script must **preserve node names** exactly as they appear in
+     `Cargo.toml` to avoid mis-labeling.
+</CrateTopology>
+
+3. <ModuleGraphs>
+   - For each crate with `LOC > 1k` or `pub` API surface > 20:
+     ```bash
+     cargo mod graph -p crate_name -o target/arch/{{timestamp}}_crate_name.dot
+     dot -Tsvg ... -o docs/architecture/{{timestamp}}_crate_name.svg
+     ```
+   - Optionally convert to Mermaid if file size < 5 k lines.
+</ModuleGraphs>
+
+4. <DataAndFlowDiagrams>
+   - Trace critical flows via integration tests or `--example` binaries:
+     ```bash
+     RUST_LOG=trace APP_TRACE=mermaid cargo test -p core --test flow_trace \
+       > docs/architecture/{{timestamp}}_data_flow.mmd
+     ```
+   - Traces **must** come from instrumentation hooks (e.g., `tracing`), not hand-drawn
+     guesses. Document instrumentation in code comments.
+</DataAndFlowDiagrams>
+
+5. <BaselineDocUpdate>
+   - Regenerate `docs/architecture/architecture.md` via templating script:
+     1. Insert header:
+        ```
+        # Workspace Architecture  
+        _Generated: {{timestamp}}_  
+        Commit: `{{GIT_SHA}}`
+        ```
+     2. Embed latest SVG or Mermaid using Markdown links:
+        ```markdown
+        ## Crate Topology  
+        ```mermaid  
+        %% include {{timestamp}}_crate_topology.mmd  
+        ```
+        ```
+     3. Append “Change Log” section summarizing diff vs previous run (git diff of DOT).
+</BaselineDocUpdate>
+
+6. <Commit>
+   - Prefix: `arch:`  
+     - `arch: regen diagrams @ abc1234 (2025-06-28)`  
+   - Commit includes:
+     - Updated `architecture.md`
+     - New timestamped diagram files
+     - Scripts or instrumentation tweaks
+</Commit>
+
+7. <CI Gate>
+   - GitHub Action `architecture.yml`:
+     ```yaml
+     - run: ./scripts/generate_arch.sh
+     - run: git diff --exit-code docs/architecture || \
+             (echo "::error::Architecture docs out of date"; exit 1)
+     ```
+   - Prevent merges if diagrams lag behind code.
+</CI Gate>
+
+<!--────────── EXTENSIONS ──────────-->
+<Extensions>
+  <!-- Place additional domain-specific diagram rules here, e.g.:
+       <View name="payment_flow" trigger="crate:toka_payments"/>
+       <View name="agent_lifecycle" trigger="crate:toka_agents"/>
+  -->
+</Extensions>
+
+</ProjectRule>

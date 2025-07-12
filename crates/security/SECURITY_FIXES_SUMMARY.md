@@ -155,3 +155,16 @@ The security framework is now **production-ready** with:
 **Implementation Completed**: 2025-07-11  
 **All Critical Issues Resolved**: ✅  
 **Ready for Production**: ✅
+
+## 🔗 Related Documentation
+
+- **Critical Issues**: [CRITICAL_ISSUES.md](CRITICAL_ISSUES.md)
+- **Security Research**: [SECURITY_RESEARCH_REPORT.md](SECURITY_RESEARCH_REPORT.md)
+- **Architecture**: [Architecture Overview](../../docs/architecture/README.md)
+- **Main Documentation**: [Documentation Index](../../docs/README.md)
+
+## 📚 See Also
+
+- **Operations Guide**: [Operations Documentation](../../docs/operations/README.md)
+- **Security Hardening**: [Security Hardening Summary](../../docs/operations/SECURITY_HARDENING_SUMMARY.md)
+- **Implementation Guide**: [Agent Runtime Implementation](../../docs/guides/AGENT_RUNTIME_IMPLEMENTATION_GUIDE.md)

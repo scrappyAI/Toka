@@ -108,8 +108,8 @@ pub enum KernelError {
 
 | Version | Theme | ETA |
 |---------|-------|-----|
-| **0.2.1** | Scheduler trait (async) | 2025-07-15 |
-| **0.3.0** | Storage adapters & driver API | 2025-07-30 |
+| **0.2.1** | Scheduler trait (async) | 2025-07-11 |
+| **0.3.0** | Storage adapters & driver API | 2025-07-11 |
 
 ---
 

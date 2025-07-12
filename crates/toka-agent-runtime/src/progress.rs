@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, info, instrument};
 
 use toka_runtime::RuntimeManager;
-use toka_types::{Message, Operation, EntityId};
+use toka_types::{Message, Operation};
 
 use crate::{AgentContext, AgentMetrics};
 
@@ -329,7 +329,7 @@ mod tests {
     use super::*;
     use crate::{AgentExecutionState, EntityId};
     use toka_types::{
-        AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority, TaskPriority
+        AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority
     };
     use std::collections::HashMap;
 
@@ -428,13 +428,7 @@ mod tests {
         let expected = vec![0.0, 0.0, 0.5, 1.0, 1.0];
         
         for (input, expected) in test_values.iter().zip(expected.iter()) {
-            let clamped = if *input < 0.0 {
-                0.0
-            } else if *input > 1.0 {
-                1.0
-            } else {
-                *input
-            };
+            let clamped = input.max(0.0).min(1.0);
             assert_eq!(clamped, *expected);
         }
     }

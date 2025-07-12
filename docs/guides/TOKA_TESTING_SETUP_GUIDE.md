@@ -343,4 +343,19 @@ Your Toka OS has **exceptional infrastructure** and is 90% complete! The missing
 
 ---
 
+## 🔗 Related Documentation
+
+- **Implementation Guide**: [AGENT_RUNTIME_IMPLEMENTATION_GUIDE.md](AGENT_RUNTIME_IMPLEMENTATION_GUIDE.md)
+- **Quick Start**: [QUICK_START_TESTING.md](QUICK_START_TESTING.md)
+- **Architecture**: [Architecture Overview](../architecture/README.md)
+- **Main Documentation**: [Documentation Index](../README.md)
+
+## 📚 See Also
+
+- **Agent Research**: [Agent Implementation Research](../research/toka_agent_implementation_research_and_proposal.md)
+- **Production Readiness**: [Production Readiness Report](../research/20250127_toka_production_readiness_report.md)
+- **Development Guide**: [Development Documentation](../development/README.md)
+
+---
+
 **Next Action**: Implement the agent execution runtime to complete the system. The infrastructure is waiting! 🚀

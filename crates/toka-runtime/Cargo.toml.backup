@@ -1,0 +1,62 @@
+[package]
+name = "toka-runtime"
+version = "0.2.1"
+edition = "2021"
+description = "Dynamic code execution runtime with kernel enforcement"
+documentation = "https://docs.rs/toka-runtime"
+repository = "https://github.com/user/Toka"
+license = "MIT OR Apache-2.0"
+keywords = ["runtime", "execution", "dynamic", "sandbox"]
+categories = ["development-tools", "os"]
+
+[dependencies]
+repository = "https://github.com/scrappyAI/Toka"
+
+# Kernel enforcement
+toka-kernel = { path = "../toka-kernel" }
+toka-types = { path = "../toka-types" }
+toka-bus-core = { path = "../toka-bus-core" }
+
+# Date/time handling
+chrono = { workspace = true, features = ["serde"] }
+
+# Core async runtime and utilities
+tokio = { version = "1.0", features = ["full"] }
+anyhow = "1.0"
+thiserror = "1.0"
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Cryptography for code hashing
+sha2 = "0.10"
+
+# Logging
+tracing = "0.1"
+
+# WebAssembly execution (optional)
+wasmtime = { version = "20.0", optional = true }
+wasmtime-wasi = { version = "20.0", optional = true }
+
+# Python execution (optional)
+pyo3 = { version = "0.21", features = ["auto-initialize"], optional = true }
+
+# Process execution
+tokio-process = "0.2"
+
+# Templating for code generation
+tera = { version = "1.19", optional = true }
+
+[dev-dependencies]
+tempfile = "3.0"
+tokio-test = "0.4"
+
+[features]
+default = []
+python = ["pyo3"]
+wasm = ["wasmtime", "wasmtime-wasi"]
+codegen = ["tera"]
+all-engines = ["python", "wasm", "codegen"]
+
