@@ -1,0 +1,23 @@
+[package]
+name = "toka-bus-core"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Core event bus abstraction for Toka OS - lightweight, deterministic messaging."
+
+[dependencies]
+keywords = ["event-bus", "messaging", "deterministic", "core", "events"]
+categories = ["concurrency", "data-structures"]
+repository = "https://github.com/scrappyAI/Toka"
+
+toka-types = { path = "../toka-types" }
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["sync"] }
+anyhow = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+
+[features]
+default = []

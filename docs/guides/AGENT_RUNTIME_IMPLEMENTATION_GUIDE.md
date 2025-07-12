@@ -204,7 +204,7 @@ The runtime works with existing agent configurations from `agents/v0.3.0/workstr
 metadata:
   name: "build-system-agent"
   version: "v0.3.0"
-  created: "2025-07-12"
+  created: "2025-07-11"
   workstream: "build-system-stabilization"
   branch: "feature/build-system-stabilization"
 

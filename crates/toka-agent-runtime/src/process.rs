@@ -4,7 +4,7 @@
 //! processes, handles their lifecycles, and coordinates with the orchestration
 //! system.
 
-use std::collections::HashMap;
+// use std::collections::HashMap;  // Currently unused
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -340,7 +340,7 @@ impl AgentProcessManager {
         debug!("Monitoring {} agents", self.agents.len());
 
         let mut completed_agents: Vec<EntityId> = Vec::new();
-        let mut failed_agents: Vec<EntityId> = Vec::new();
+        let _failed_agents: Vec<EntityId> = Vec::new();
 
         // Check each agent's status
         for entry in self.agents.iter() {

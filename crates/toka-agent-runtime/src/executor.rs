@@ -10,19 +10,18 @@ use std::time::{Duration, Instant};
 use anyhow::Result;
 use chrono::Utc;
 use tokio::sync::RwLock;
-use tracing::{debug, error, info, instrument, warn};
+use tracing::{debug, error, info, warn, instrument};
 
 use toka_llm_gateway::LlmGateway;
-use toka_types::{AgentConfig, TaskConfig};
 use toka_runtime::RuntimeManager;
-use toka_types::EntityId;
+use toka_types::{AgentConfig, EntityId, TaskConfig};
 
 use crate::{
-    AgentContext, AgentExecutionState, AgentMetrics, ExecutionConfig, TaskExecutor,
-    ProgressReporter, TaskResult, AgentRuntimeError, AgentRuntimeResult,
+    AgentContext, AgentExecutionState, AgentMetrics, 
+    ProgressReporter, TaskResult, TaskExecutor,
+    ExecutionConfig,
 };
 use crate::task::LlmTask;
-use crate::AgentTask;
 
 /// Core agent execution engine that interprets and executes agent configurations
 pub struct AgentExecutor {

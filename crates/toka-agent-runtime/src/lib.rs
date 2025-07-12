@@ -111,23 +111,15 @@
 //! - **Message Authentication**: All runtime submissions include capability tokens
 
 use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{mpsc, RwLock};
-use tracing::{debug, error, info, warn, instrument};
-use uuid::Uuid;
+use tracing::error;
 
-use toka_bus_core::KernelEvent;
-use toka_llm_gateway::{LlmGateway, LlmRequest, LlmResponse};
-use toka_types::{AgentConfig, TaskConfig, SecurityConfig, ResourceLimits};
-use toka_runtime::RuntimeManager;
-use toka_types::{EntityId, Message, Operation, TaskSpec};
+use toka_types::{AgentConfig, EntityId};
 
 pub mod executor;
 pub mod process;
@@ -135,7 +127,8 @@ pub mod task;
 pub mod capability;
 pub mod resource;
 pub mod progress;
-pub mod orchestration_integration;
+// TODO: Re-enable when toka_orchestration circular dependency is resolved
+// pub mod orchestration_integration;
 
 pub use executor::AgentExecutor;
 pub use process::AgentProcessManager;
@@ -143,10 +136,11 @@ pub use task::TaskExecutor;
 pub use capability::CapabilityValidator;
 pub use resource::ResourceManager;
 pub use progress::{ProgressReporter, AgentProgress, TaskResult};
-pub use orchestration_integration::{
-    OrchestrationIntegration, OrchestrationEngineExt, ProgressUpdate, 
-    ActiveAgentInfo, IntegrationMetrics
-};
+// TODO: Re-enable when toka_orchestration circular dependency is resolved
+// pub use orchestration_integration::{
+//     OrchestrationIntegration, OrchestrationEngineExt, ProgressUpdate, 
+//     ActiveAgentInfo, IntegrationMetrics
+// };
 
 /// Maximum time to wait for agent startup
 pub const AGENT_STARTUP_TIMEOUT: Duration = Duration::from_secs(30);
@@ -157,6 +151,8 @@ pub const DEFAULT_TASK_TIMEOUT: Duration = Duration::from_secs(300); // 5 minute
 /// Current execution state of an agent
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum AgentExecutionState {
+    /// Agent is being spawned
+    Spawning,
     /// Agent is initializing
     Initializing,
     /// Agent is ready to execute tasks

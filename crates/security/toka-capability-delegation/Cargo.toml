@@ -6,6 +6,10 @@ license = "Apache-2.0"
 description = "Hierarchical capability delegation primitives for Toka security framework"
 
 [dependencies]
+keywords = ["capabilities", "delegation", "hierarchy", "security", "tokens"]
+categories = ["security", "data-structures"]
+repository = "https://github.com/scrappyAI/Toka"
+
 serde = { workspace = true, features = ["derive"] }
 async-trait = { workspace = true }
 tokio = { workspace = true, features = ["time", "sync"] }

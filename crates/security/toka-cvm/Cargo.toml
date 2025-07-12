@@ -6,6 +6,10 @@ license = "Apache-2.0"
 description = "Capability Validation Module – host wrapper for verifying capabilities inside WASM guest modules."
 
 [dependencies]
+keywords = ["cvm", "capability-validation", "wasm", "security", "module"]
+categories = ["security", "wasm"]
+repository = "https://github.com/scrappyAI/Toka"
+
 anyhow = { workspace = true }
 wasmtime = { version = "15", optional = true }
 

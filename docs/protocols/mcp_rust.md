@@ -29,7 +29,7 @@ spot divergence, open a *Docs Update* PR _first_.
 | MCP Spec | Status in Toka | Notes |
 |----------|----------------|-------|
 | 2025-03-26 | **current** | Default target for new work |
-| <2025-01-10 | deprecated  | Submit a *spec bump* PR to remove |
+| <2025-07-11 | deprecated  | Submit a *spec bump* PR to remove |
 
 ## Code Patterns
 

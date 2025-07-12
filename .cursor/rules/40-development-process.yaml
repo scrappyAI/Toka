@@ -1,117 +1,124 @@
-name: "DevelopmentProcess"
+---
+name: "development-process"
 version: "1.0.0"
-description: "Development workflow including refactoring, proposals, and date enforcement"
-category: "process"
-priority: 60
+description: "Development process guidelines including change proposals and automated date enforcement"
+category: "development"
+priority: 40
 always_apply: true
-
-extends: ["CoreBaseline"]
+extends: []
 
 objectives:
-  - "Ensure systematic and productive refactoring"
-  - "Maintain verifiable date accuracy"
-  - "Provide structured change proposals"
+  - "Standardize change proposal process for complex modifications"
+  - "Ensure date accuracy across all generated content"
+  - "Automate date validation and enforcement"
+  - "Provide clear development workflow guidelines"
 
-refactoring_guidelines:
-  scope:
-    - "Identify target crate(s) or modules within workspace"
-    - "Define clear goals (separation of concerns, improved API, etc.)"
-    - "Work within crate boundaries"
-  
-  execution:
-    principles:
-      - "Work in small, isolated slices"
-      - "Ensure each slice compiles and passes tests"
-      - "Respect existing public APIs or provide migration"
-      - "Use --workspace only for integration checks"
+guidelines:
+  change_proposals:
+    when_required:
+      - "Changes spanning multiple crates"
+      - "Public API alterations"
+      - "New optional subsystems (feature flags)"
     
-    commands:
-      - "cargo check -p <crate>"
-      - "cargo test -p <crate>"
-      - "cargo test --workspace" # final check
-  
-  commit_strategy:
-    format: "refactor(<scope>): <description>"
-    requirements:
-      - "Descriptive, atomic commits"
-      - "One logical step per commit"
-      - "Include brief rationale if non-obvious"
+    template_structure:
+      required_sections:
+        - "Context: current behavior, pain points, metrics"
+        - "Goals: numbered objectives"
+        - "Proposed Changes: API diffs, feature flags"
+        - "Compatibility: breaking changes and migration"
+        - "Implementation Plan: task breakdown"
+      
+      format: "Markdown with Mermaid diagrams for complex flows"
+      location: "/docs/proposals/YYYY-MM-DD_<slug>.md"
+    
+    workflow:
+      - "Draft proposal with template"
+      - "Review cycle with GitHub comments"
+      - "Update status: DRAFT → REVIEW → APPROVED"
+      - "Convert implementation plan to GitHub issues"
+
+  date_enforcement:
+    # AUTOMATIC APPLICATION - No manual declaration required
+    always_apply: true
+    auto_validate: true
+    
+    objectives:
+      - "Eliminate hallucinated or stale dates in all generated content"
+      - "Provide canonical source of 'now' for all date references"
+      - "Ensure tag dates match git commit timestamps"
+      - "Prevent future-dated content from being committed"
+    
+    toolchain:
+      date_injection: "TODAY=$(date -u +%Y-%m-%d)"
+      commit_date: "git log -1 --format=%cd --date=format:%Y-%m-%d"
+      template_replacement: "./scripts/insert_date.sh"
+      validation_script: "./scripts/validate_dates.py"
+    
+    automatic_validation:
+      triggers:
+        - "Before every commit (pre-commit hook)"
+        - "On CI/CD pipeline execution"
+        - "When generating any documentation"
+        - "During agent task execution"
+      
+      patterns: "Scans for \\d{4}-\\d{2}-\\d{2} date patterns"
+      rules:
+        - "Must match TODAY ±0 days OR"
+        - "Equal COMMIT_DATE for release docs OR"
+        - "Preceded by DATE:EXEMPT comment"
+    
+    exemptions:
+      format: "<!-- DATE:EXEMPT source=\"reference\" -->"
+      example: '<!-- DATE:EXEMPT source="RFC 2119, published 1997-03-01" -->'
+      usage: "For historical references only"
+    
+    ci_integration:
+      pre_commit_hook: |
+        #!/bin/bash
+        # Run date validation before commit
+        ./scripts/validate_dates.py
+        if [ $? -ne 0 ]; then
+          echo "❌ Date validation failed. Fix violations or add DATE:EXEMPT comments."
+          exit 1
+        fi
+      
+      github_actions: |
+        - name: Validate Dates
+          run: |
+            python3 scripts/validate_dates.py
+            if [ $? -ne 0 ]; then
+              echo "Date validation failed in CI"
+              exit 1
+            fi
+      
+      enforcement: "Block PRs with future dates or mismatches"
+    
+    agent_integration:
+      # Agents should automatically apply date enforcement
+      auto_apply_rules:
+        - "Always use {{today}} placeholder in templates"
+        - "Never hardcode dates in generated content"
+        - "Run date validation before completing tasks"
+        - "Apply date fixes automatically when safe"
+      
+      validation_commands:
+        - "scripts/validate_dates.py --fix --dry-run"
+        - "scripts/insert_date.sh --all"
+      
+      error_handling:
+        - "If date violations found, attempt automatic fix"
+        - "If fix not possible, report to user with exemption instructions"
+        - "Never proceed with invalid dates"
+
+  commit_conventions:
+    format: "type(scope): description"
+    types: ["feat", "fix", "docs", "style", "refactor", "test", "chore"]
     examples:
-      - "refactor(auth): extract token verification into submodule"
-      - "refactor(config): simplify TOML parsing logic"
+      - "feat(kernel): add capability token validation"
+      - "fix(storage): resolve memory leak in sled backend"
+      - "docs(api): update authentication guide"
 
-change_proposals:
-  when_required:
-    - "Changes spanning multiple crates"
-    - "Public API alterations"
-    - "New optional subsystems (feature flags)"
-  
-  template_structure:
-    required_sections:
-      - "Context: current behavior, pain points, metrics"
-      - "Goals: numbered objectives"
-      - "Proposed Changes: API diffs, feature flags"
-      - "Compatibility: breaking changes and migration"
-      - "Implementation Plan: task breakdown"
-    
-    format: "Markdown with Mermaid diagrams for complex flows"
-    location: "/docs/proposals/YYYY-MM-DD_<slug>.md"
-  
-  workflow:
-    - "Draft proposal with template"
-    - "Review cycle with GitHub comments"
-    - "Update status: DRAFT → REVIEW → APPROVED"
-    - "Convert implementation plan to GitHub issues"
-
-date_enforcement:
-  objectives:
-    - "Eliminate hallucinated or stale dates"
-    - "Provide canonical source of 'now'"
-    - "Ensure tag dates match git commit timestamps"
-  
-  toolchain:
-    date_injection: "TODAY=$(date -u +%Y-%m-%d)"
-    commit_date: "git log -1 --format=%cd --date=format:%Y-%m-%d"
-    template_replacement: "./scripts/insert_date.sh"
-  
-  validation:
-    script: "./scripts/validate_dates.py"
-    patterns: "Scans for \\d{4}-\\d{2}-\\d{2} date patterns"
-    rules:
-      - "Must match TODAY ±0 days OR"
-      - "Equal COMMIT_DATE for release docs OR"
-      - "Preceded by DATE:EXEMPT comment"
-  
-  exemptions:
-    format: "<!-- DATE:EXEMPT source=\"reference\" -->"
-    example: '<!-- DATE:EXEMPT source="RFC 2119, published 1997-03-01" -->'
-    usage: "For historical references only"
-  
-  ci_integration:
-    commands:
-      - "pip install -r scripts/requirements.txt"
-      - "./scripts/validate_dates.py"
-    enforcement: "Block PRs with future dates or mismatches"
-
-versioning_requirements:
-  per_crate:
-    patch: "Internal refactors, no API changes"
-    minor: "Additive changes, backward compatible"
-    major: "Breaking changes, architectural shifts"
-  
-  workspace_coordination:
-    - "Update version fields in affected Cargo.toml"
-    - "Propagate through workspace dependencies"
-    - "Tag versions appropriately (e.g., v0.5.0)"
-
-quality_gates:
-  before_merge:
-    - "All crates compile cleanly"
-    - "All tests pass workspace-wide"
-    - "Documentation updated appropriately"
-    - "Version numbers aligned with changes"
-  
-  commit_hygiene:
-    - "Squash trivial commits preserving intent"
-    - "Maintain clear history"
-    - "Include rationale for significant changes"
+  versioning:
+    strategy: "Semantic versioning (semver)"
+    automation: "Automated via CI/CD pipeline"
+    release_notes: "Generated from conventional commits"

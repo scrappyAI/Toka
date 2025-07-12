@@ -6,6 +6,10 @@ license = "Apache-2.0"
 description = "Authentication rate limiting middleware for Toka security framework"
 
 [dependencies]
+keywords = ["rate-limiting", "security", "middleware", "algorithms", "policies"]
+categories = ["security", "algorithms"]
+repository = "https://github.com/scrappyAI/Toka"
+
 serde = { workspace = true, features = ["derive"] }
 async-trait = { workspace = true }
 tokio = { workspace = true, features = ["time", "sync"] }

@@ -42,7 +42,7 @@ pub struct OrchestrationIntegration {
 }
 
 /// Information about an active agent in the runtime
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ActiveAgentInfo {
     /// Agent configuration
     pub config: AgentConfig,

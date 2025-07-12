@@ -6,6 +6,10 @@ license = "Apache-2.0"
 description = "Automatic JWT key rotation and management for Toka capability tokens"
 
 [dependencies]
+keywords = ["key-rotation", "security", "cryptography", "management", "events"]
+categories = ["security", "cryptography"]
+repository = "https://github.com/scrappyAI/Toka"
+
 serde = { workspace = true, features = ["derive"] }
 async-trait = { workspace = true }
 tokio = { workspace = true, features = ["time", "sync"] }

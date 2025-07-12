@@ -10,6 +10,8 @@ keywords = ["jwt", "security", "capabilities", "tokens"]
 categories = ["authentication", "cryptography"]
 
 [dependencies]
+repository = "https://github.com/scrappyAI/Toka"
+
 toka-capability-core = { path = "../toka-capability-core" }
 
 # Core dependencies

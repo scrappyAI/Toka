@@ -6,6 +6,10 @@ license = "Apache-2.0"
 description = "Core, no-std capability token primitives – Claims struct and capability traits shared by all implementation crates."
 
 [dependencies]
+keywords = ["capabilities", "security", "tokens", "no-std", "core"]
+categories = ["security", "no-std"]
+repository = "https://github.com/scrappyAI/Toka"
+
 serde = { workspace = true, features = ["derive"] }
 async-trait = { workspace = true }
 
