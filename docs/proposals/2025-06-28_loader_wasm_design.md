@@ -6,7 +6,7 @@
 
 ## Context
 
-`Transport::Wasm` in `toka-toolkit-core::loader` is currently a stub that carries a `path` string which is **never read**.  The original intention was to allow loading pre-compiled `.wasm` binaries or sources compiled on the fly (via `wasmtime`). With the recent refactor we removed the unused field but kept the variant – now is the right moment to formalise its semantics.
+`Transport::Wasm` in `toka-tools::loader` is currently a stub that carries a `path` string which is **never read**.  The original intention was to allow loading pre-compiled `.wasm` binaries or sources compiled on the fly (via `wasmtime`). With the recent refactor we removed the unused field but kept the variant – now is the right moment to formalise its semantics.
 
 ### Goals
 
@@ -18,7 +18,7 @@
 ## Proposed API Changes
 
 ```rust
-//! crates/toka-toolkit-core/src/loader.rs
+//! crates/toka-tools/src/loader.rs
 
 /// How a tool implementation is delivered and executed.
 #[non_exhaustive]

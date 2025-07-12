@@ -18,7 +18,7 @@ This directory contains agent configurations, orchestration guides, and workstre
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [README-Orchestration.md](../../README-Orchestration.md) | Orchestration system overview | Stable |
+| [README-Orchestration.md](README-Orchestration.md) | Orchestration system overview | Stable |
 | [agents/v0.3.0/README.md](../../agents/v0.3.0/README.md) | Agent configuration guide | Stable |
 
 ### Agent Types

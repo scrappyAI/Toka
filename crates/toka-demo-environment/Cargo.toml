@@ -1,0 +1,50 @@
+[package]
+name = "toka-demo-environment"
+version = "0.1.0"
+edition = "2021"
+description = "Multi-agent demo environment for Toka with token limit testing"
+authors = ["Toka Team <team@toka.dev>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/scrappyAI/Toka"
+
+[dependencies]
+# Core dependencies
+anyhow = "1.0"
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+# Date/time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+futures = "0.3"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# CLI support
+clap = { version = "4.0", features = ["derive"] }
+
+# Metrics and monitoring
+prometheus = "0.13"
+dashmap = "5.5"
+
+# Toka dependencies
+toka-types = { path = "../toka-types" }
+toka-agent-runtime = { path = "../toka-agent-runtime" }
+toka-orchestration = { path = "../toka-orchestration" }
+toka-llm-gateway = { path = "../toka-llm-gateway" }
+toka-runtime = { path = "../toka-runtime" }
+toka-rule-metadata = { path = "../toka-rule-metadata" }
+
+[dev-dependencies]
+tempfile = "3.0"
+tokio-test = "0.4"
+
+[[bin]]
+name = "toka-demo"
+path = "src/main.rs" 
