@@ -127,6 +127,8 @@ pub mod task;
 pub mod capability;
 pub mod resource;
 pub mod progress;
+// NOTE: orchestration_integration removed to break circular dependency
+// Integration will be handled at the orchestration layer
 // TODO: Re-enable when toka_orchestration circular dependency is resolved
 // pub mod orchestration_integration;
 

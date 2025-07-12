@@ -7,8 +7,9 @@ members = [
     "crates/toka-kernel",
     "crates/toka-runtime",
     "crates/toka-tools",
-    "crates/toka-agent-runtime",
-    "crates/toka-orchestration",
+    "crates/toka-agents",          # NEW: Canonical agent system
+    "crates/toka-agent-runtime",   # TODO: Remove after migration
+    "crates/toka-orchestration",   # TODO: Simplify after migration
     "crates/toka-store-core",
     "crates/toka-collaborative-auth",
 ]

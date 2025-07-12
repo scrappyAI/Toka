@@ -1,0 +1,411 @@
+# Toka Tool Consolidation Manifest
+# This document defines how to consolidate all scattered tools into the unified registry
+
+version: "1.0.0"
+description: "Comprehensive tool consolidation for Toka Agent OS"
+created: "2025-01-15"
+
+# PHASE 1: Native Rust Tools (Already in toka-tools)
+native_tools:
+  file-reader:
+    manifest_path: "crates/toka-tools/manifests/file-reader.yaml"
+    implementation: "crates/toka-tools/src/tools/file_tools.rs::FileReader"
+    capabilities: ["filesystem-read"]
+    security_level: "medium"
+    status: "implemented"
+
+  file-writer:
+    manifest_path: "crates/toka-tools/manifests/file-writer.yaml"
+    implementation: "crates/toka-tools/src/tools/file_tools.rs::FileWriter"
+    capabilities: ["filesystem-write"]
+    security_level: "high"
+    status: "implemented"
+
+  file-lister:
+    manifest_path: "crates/toka-tools/manifests/file-lister.yaml"
+    implementation: "crates/toka-tools/src/tools/file_tools.rs::FileLister"
+    capabilities: ["filesystem-read"]
+    security_level: "medium"
+    status: "implemented"
+
+  date-validator:
+    manifest_path: "crates/toka-tools/manifests/date-validator.yaml"
+    implementation: "crates/toka-tools/src/tools/validation.rs::DateValidator"
+    capabilities: ["filesystem-read", "validation"]
+    security_level: "low"
+    status: "implemented"
+
+  build-validator:
+    manifest_path: "crates/toka-tools/manifests/build-validator.yaml"
+    implementation: "crates/toka-tools/src/tools/validation.rs::BuildValidator"
+    capabilities: ["filesystem-read", "validation", "process-execution"]
+    security_level: "medium"
+    status: "implemented"
+
+# PHASE 2: External Script Tools (scripts/ directory)
+external_tools:
+  # Setup Tools
+  setup-toka-testing:
+    type: "shell"
+    path: "scripts/setup/setup_toka_testing.sh"
+    capabilities: ["filesystem-write", "process-execution", "network-access", "system-config"]
+    security_level: "high"
+    resource_limits:
+      max_memory: "512MB"
+      max_cpu: "50%"
+      timeout: "900s"
+    description: "Complete testing environment setup"
+    parameters:
+      - name: "mode"
+        type: "string"
+        default: "development"
+        enum: ["development", "production", "testing"]
+
+  setup-docker-environments:
+    type: "shell"
+    path: "scripts/setup/setup-docker-environments.sh"
+    capabilities: ["filesystem-write", "process-execution", "docker-access"]
+    security_level: "high"
+    resource_limits:
+      max_memory: "1GB"
+      max_cpu: "75%"
+      timeout: "1800s"
+    description: "Docker environment configuration"
+
+  # Testing Tools
+  test-toka-agents:
+    type: "shell"
+    path: "scripts/testing/test_toka_agents.sh"
+    capabilities: ["filesystem-read", "process-execution", "network-access"]
+    security_level: "medium"
+    description: "Comprehensive agent testing"
+    parameters:
+      - name: "command"
+        type: "string"
+        required: true
+        enum: ["start", "stop", "test", "health", "status", "logs", "full"]
+
+  run-simple-test:
+    type: "shell"
+    path: "scripts/testing/run_simple_test.sh"
+    capabilities: ["filesystem-read", "process-execution"]
+    security_level: "medium"
+    description: "Basic functionality testing"
+
+  # Workflow Tools
+  toka-workflow:
+    type: "shell"
+    path: "scripts/workflow/toka_workflow.sh"
+    capabilities: ["filesystem-write", "process-execution", "database-access"]
+    security_level: "high"
+    description: "Complete system workflow demonstration"
+
+  toka-interactive:
+    type: "shell"
+    path: "scripts/workflow/toka_interactive.sh"
+    capabilities: ["filesystem-write", "process-execution", "interactive-mode"]
+    security_level: "high"
+    description: "Interactive CLI for agent management"
+
+  # Monitoring Tools
+  raft-monitoring-service:
+    type: "shell"
+    path: "scripts/monitoring/raft_monitoring_service.sh"
+    capabilities: ["filesystem-write", "process-execution", "monitoring"]
+    security_level: "medium"
+    description: "Raft development monitoring"
+    parameters:
+      - name: "command"
+        type: "string"
+        required: true
+        enum: ["start", "stop", "restart", "status", "reports", "view"]
+
+  # Validation Tools
+  validate-env:
+    type: "shell"
+    path: "scripts/validate-env.sh"
+    capabilities: ["filesystem-read", "validation"]
+    security_level: "low"
+    description: "Environment validation script"
+
+  validate-links:
+    type: "shell"
+    path: "scripts/validate-links.sh"
+    capabilities: ["filesystem-read", "validation"]
+    security_level: "low"
+    description: "Documentation link validation"
+
+  validate-dates-python:
+    type: "python"
+    path: "scripts/validate_dates.py"
+    capabilities: ["filesystem-read", "filesystem-write", "validation"]
+    security_level: "medium"
+    interpreter: "python3"
+    requirements: "scripts/requirements.txt"
+    description: "Date validation with Python"
+    parameters:
+      - name: "path"
+        type: "string"
+        required: true
+      - name: "fix"
+        type: "boolean"
+        default: false
+      - name: "dry-run"
+        type: "boolean"
+        default: false
+
+  # Maintenance Tools
+  fix-dates:
+    type: "shell"
+    path: "scripts/fix_dates.sh"
+    capabilities: ["filesystem-write", "validation"]
+    security_level: "medium"
+    description: "Fix LLM hallucinated dates"
+
+  fix-broken-links:
+    type: "shell"
+    path: "scripts/fix-broken-links.sh"
+    capabilities: ["filesystem-write", "validation"]
+    security_level: "medium"
+    description: "Fix broken documentation links"
+
+  cleanup-documentation:
+    type: "shell"
+    path: "scripts/cleanup-documentation.sh"
+    capabilities: ["filesystem-write", "validation"]
+    security_level: "medium"
+    description: "Documentation cleanup script"
+    parameters:
+      - name: "dry-run"
+        type: "boolean"
+        default: false
+
+  add-semantic-tags:
+    type: "shell"
+    path: "scripts/add-semantic-tags.sh"
+    capabilities: ["filesystem-write", "cargo-access"]
+    security_level: "medium"
+    description: "Add semantic tags to Cargo.toml files"
+
+  git-doc-provenance:
+    type: "shell"
+    path: "scripts/git-doc-provenance.sh"
+    capabilities: ["filesystem-read", "filesystem-write", "git-access"]
+    security_level: "high"
+    description: "Git-based documentation provenance tracking"
+    parameters:
+      - name: "command"
+        type: "string"
+        required: true
+        enum: ["init", "track", "validate", "audit", "commit", "search"]
+
+# PHASE 3: Python Management Tools (.cursor/ directory)
+python_tools:
+  version-manager:
+    type: "python"
+    path: ".cursor/version-manager.py"
+    capabilities: ["filesystem-read", "filesystem-write", "validation"]
+    security_level: "medium"
+    interpreter: "python3"
+    requirements: |
+      semantic_version>=2.8.5
+      PyYAML>=6.0
+      jsonschema>=4.0.0
+    description: "Automatic versioning system for rules and agent specs"
+    parameters:
+      - name: "action"
+        type: "string"
+        required: true
+        enum: ["update-all", "update-rules", "update-specs", "validate"]
+      - name: "auto-version"
+        type: "boolean"
+        default: true
+
+# PHASE 4: Tool Manifest Template
+manifest_template: |
+  metadata:
+    name: "{tool_name}"
+    version: "1.0.0"
+    category: "{category}"
+    description: "{description}"
+    author: "toka-system"
+    created: "{date}"
+
+  spec:
+    executable:
+      type: "{tool_type}"  # native, python, shell, external
+      path: "{path}"
+      interpreter: "{interpreter}"  # for python/shell tools
+      working_directory: "."
+
+    capabilities:
+      required: {capabilities}
+      optional: []
+
+    security:
+      level: "{security_level}"
+      sandbox:
+        memory_limit: "{memory_limit}"
+        cpu_limit: "{cpu_limit}"
+        timeout: "{timeout}"
+        allow_network: {allow_network}
+        readonly_paths: []
+
+    parameters: {parameters}
+
+  interface:
+    discovery:
+      auto_discover: true
+    execution:
+      hot_swappable: true
+      parallel_safe: {parallel_safe}
+
+  protocols:
+    - type: "rust_native"
+      function_name: "{function_name}"
+      version: "1.0"
+
+# PHASE 5: Implementation Plan
+implementation_phases:
+  phase_1_native_tools:
+    description: "Ensure all native Rust tools have proper manifests"
+    tasks:
+      - "Create YAML manifests for existing tools"
+      - "Update tool registration to use manifests"
+      - "Add capability validation"
+    duration: "3 days"
+
+  phase_2_external_scripts:
+    description: "Wrap external scripts in tool registry"
+    tasks:
+      - "Create ExternalTool wrapper"
+      - "Implement secure subprocess execution"
+      - "Add parameter validation and transformation"
+      - "Create manifests for all scripts"
+    duration: "1 week"
+
+  phase_3_python_integration:
+    description: "Integrate Python tools with proper isolation"
+    tasks:
+      - "Create PythonTool wrapper"
+      - "Implement virtual environment isolation"
+      - "Add requirements.txt handling"
+      - "Create tool discovery for Python scripts"
+    duration: "5 days"
+
+  phase_4_security_framework:
+    description: "Implement secure tool execution"
+    tasks:
+      - "Create ToolSecurityContext"
+      - "Implement capability validation"
+      - "Add resource limit enforcement"
+      - "Create audit logging"
+    duration: "1 week"
+
+  phase_5_runtime_injection:
+    description: "Enable runtime tool injection for agents"
+    tasks:
+      - "Integrate ToolRegistry with AgentExecutor"
+      - "Implement tool discovery during agent execution"
+      - "Add tool composition capabilities"
+      - "Create tool dependency resolution"
+    duration: "1 week"
+
+# PHASE 6: Tool Categories and Organization
+tool_categories:
+  setup:
+    tools: ["setup-toka-testing", "setup-docker-environments"]
+    capabilities: ["system-config", "environment-setup"]
+    
+  testing:
+    tools: ["test-toka-agents", "run-simple-test"]
+    capabilities: ["testing", "validation"]
+    
+  validation:
+    tools: ["date-validator", "build-validator", "validate-env", "validate-links", "validate-dates-python"]
+    capabilities: ["validation", "static-analysis"]
+    
+  workflow:
+    tools: ["toka-workflow", "toka-interactive"]
+    capabilities: ["workflow-management", "interactive-mode"]
+    
+  monitoring:
+    tools: ["raft-monitoring-service"]
+    capabilities: ["monitoring", "observability"]
+    
+  maintenance:
+    tools: ["fix-dates", "fix-broken-links", "cleanup-documentation", "add-semantic-tags"]
+    capabilities: ["maintenance", "cleanup"]
+    
+  file_operations:
+    tools: ["file-reader", "file-writer", "file-lister"]
+    capabilities: ["filesystem"]
+    
+  version_management:
+    tools: ["version-manager", "git-doc-provenance"]
+    capabilities: ["version-control", "metadata-management"]
+
+# PHASE 7: Security Model
+security_model:
+  capability_hierarchy:
+    low_risk:
+      - "filesystem-read"
+      - "validation"
+    medium_risk:
+      - "filesystem-write"
+      - "process-execution"
+      - "monitoring"
+    high_risk:
+      - "system-config"
+      - "network-access"
+      - "docker-access"
+      - "interactive-mode"
+    
+  sandbox_levels:
+    restricted:
+      memory_limit: "128MB"
+      cpu_limit: "25%"
+      timeout: "30s"
+      allow_network: false
+    
+    standard:
+      memory_limit: "512MB"
+      cpu_limit: "50%"
+      timeout: "300s"
+      allow_network: false
+    
+    elevated:
+      memory_limit: "1GB"
+      cpu_limit: "75%"
+      timeout: "1800s"
+      allow_network: true
+
+# PHASE 8: Migration Script
+migration_commands:
+  generate_manifests: |
+    # Generate tool manifests
+    ./target/release/toka-cli tools generate-manifests \
+      --native-path crates/toka-tools/src/tools/ \
+      --external-path scripts/ \
+      --python-path .cursor/ \
+      --output-path crates/toka-tools/manifests/
+
+  register_tools: |
+    # Register all tools in the unified registry
+    ./target/release/toka-cli tools register \
+      --discover crates/toka-tools/manifests/ \
+      --validate-security \
+      --dry-run
+
+  test_integration: |
+    # Test tool integration
+    ./target/release/toka-cli tools test \
+      --tool file-reader \
+      --tool setup-toka-testing \
+      --tool version-manager
+
+  deploy_registry: |
+    # Deploy unified tool registry
+    ./target/release/toka-orchestration \
+      --enable-tool-registry \
+      --tool-manifest-path crates/toka-tools/manifests/

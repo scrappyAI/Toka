@@ -1,0 +1,55 @@
+[package]
+name = "toka-agents"
+version = "0.2.1"
+edition = "2021"
+description = "Canonical agent system for Toka OS - unified agent execution, orchestration, and coordination"
+documentation = "https://docs.rs/toka-agents"
+repository = "https://github.com/ScrappyAI/toka"
+license = "Apache-2.0"
+keywords = ["agents", "orchestration", "execution", "coordination", "toka"]
+categories = ["development-tools", "os"]
+
+[dependencies]
+# Core Toka dependencies
+toka-types = { path = "../toka-types" }
+toka-kernel = { path = "../toka-kernel" }
+toka-runtime = { path = "../toka-runtime" }
+toka-bus-core = { path = "../toka-bus-core" }
+toka-llm-gateway = { path = "../toka-llm-gateway" }
+
+# Async runtime and utilities
+tokio = { workspace = true, features = ["full"] }
+futures = { workspace = true }
+async-trait = { workspace = true }
+
+# Serialization and configuration
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_yaml = "0.9"
+
+# Error handling and logging
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+# Time and concurrency
+chrono = { workspace = true, features = ["serde"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+# Collections and utilities
+dashmap = "5.5"
+indexmap = "2.0"
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+proptest = { workspace = true }
+tempfile = "3.8"
+tracing-subscriber = { workspace = true }
+toka-auth = { path = "../toka-auth" }
+
+[features]
+default = ["orchestration", "llm-integration"]
+orchestration = []
+llm-integration = []
+performance-monitoring = []
+testing = []

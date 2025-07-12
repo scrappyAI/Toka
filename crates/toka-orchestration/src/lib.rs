@@ -629,9 +629,10 @@ impl Default for SessionState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use toka_runtime::RuntimeConfig;
+    use toka_runtime::{RuntimeManager, ToolKernel};
+    use toka_kernel::{Kernel, WorldState};
     use toka_auth::{TokenValidator, Claims};
-    use anyhow::Result;
+    use toka_bus_core::EventBus;
     use std::future::Future;
     use std::pin::Pin;
 
@@ -661,6 +662,21 @@ mod tests {
         }
     }
 
+    struct MockEventBus;
+
+    impl EventBus for MockEventBus {
+        fn publish(&self, _event: &toka_bus_core::KernelEvent) -> Result<()> {
+            Ok(())
+        }
+
+        fn subscribe(&self) -> tokio::sync::broadcast::Receiver<toka_bus_core::KernelEvent> {
+            // Create a dummy channel that won't receive any events
+            let (tx, rx) = tokio::sync::broadcast::channel(1);
+            drop(tx); // Close the sender so the receiver knows it's done
+            rx
+        }
+    }
+
     #[tokio::test]
     async fn test_orchestration_engine_creation() {
         let config = OrchestrationConfig {
@@ -669,10 +685,16 @@ mod tests {
             max_concurrent_agents: 5,
         };
 
+        // Create unified runtime manager with proper kernel initialization
+        let world_state = WorldState::default();
+        let auth = Arc::new(MockTokenValidator);
+        let bus = Arc::new(MockEventBus);
+        let kernel = Kernel::new(world_state, auth, bus);
+        let tool_kernel = ToolKernel::new(kernel);
         let runtime = Arc::new(
-            Runtime::new(RuntimeConfig::default(), Arc::new(MockTokenValidator))
+            RuntimeManager::new(tool_kernel)
                 .await
-                .expect("Failed to create runtime")
+                .expect("Failed to create runtime manager")
         );
 
         let engine = OrchestrationEngine::new(config, runtime).await;
