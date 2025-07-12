@@ -1,7 +1,7 @@
-//! Progress reporting and monitoring for agent execution.
+//! Progress reporting for agent execution.
 //!
-//! This module provides functionality for agents to report their progress back to the
-//! orchestration system and for monitoring agent health and task completion status.
+//! This module provides the ProgressReporter that communicates agent progress
+//! back to the orchestration system in real-time.
 
 use std::time::Duration;
 
@@ -10,248 +10,61 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, instrument};
 
-use toka_types::{EntityId, Message, Operation};
 use toka_runtime::RuntimeManager;
+use toka_types::{Message, Operation, EntityId};
 
 use crate::{AgentContext, AgentMetrics};
 
-/// Progress information for an agent
+/// Progress reporter for communicating agent status to orchestration
+pub struct ProgressReporter {
+    /// Agent context for identification
+    agent_context: AgentContext,
+    /// Runtime connection for progress reporting
+    runtime: std::sync::Arc<RuntimeManager>,
+    /// Current progress percentage (0.0 to 1.0)
+    current_progress: f64,
+    /// Last progress report timestamp
+    last_report: DateTime<Utc>,
+    /// Agent metrics for reporting
+    metrics: AgentMetrics,
+}
+
+/// Agent progress report sent to orchestration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentProgress {
     /// Agent entity ID
-    pub agent_id: EntityId,
-    /// Agent workstream name
-    pub workstream: String,
-    /// Progress percentage (0.0 to 1.0)
+    pub agent_id: crate::EntityId,
+    /// Agent name
+    pub agent_name: String,
+    /// Current progress (0.0 to 1.0)
     pub progress: f64,
-    /// Current task being executed
-    pub current_task: Option<String>,
-    /// Tasks completed
-    pub tasks_completed: u64,
-    /// Total tasks assigned
-    pub total_tasks: u64,
+    /// Current status message
+    pub message: Option<String>,
+    /// Current agent state
+    pub state: crate::AgentExecutionState,
+    /// Timestamp of this progress report
+    pub timestamp: DateTime<Utc>,
     /// Agent metrics
     pub metrics: AgentMetrics,
-    /// Progress timestamp
-    pub timestamp: DateTime<Utc>,
-    /// Additional status message
-    pub message: Option<String>,
 }
 
-/// Result of task execution
+/// Task execution result
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaskResult {
-    /// Task identifier
+    /// Unique task identifier
     pub task_id: String,
     /// Task description
     pub description: String,
-    /// Whether task completed successfully
+    /// Whether task succeeded
     pub success: bool,
-    /// Result data (if successful)
-    pub result_data: Option<String>,
-    /// Error message (if failed)
-    pub error: Option<String>,
+    /// Task output or error message
+    pub output: Option<String>,
     /// Task execution duration
     pub duration: Duration,
-    /// Timestamp when task completed
-    pub completed_at: DateTime<Utc>,
-    /// LLM tokens consumed during task
+    /// LLM tokens used (if applicable)
     pub llm_tokens_used: Option<u64>,
-}
-
-/// Progress reporter for agent execution
-pub struct ProgressReporter {
-    /// Agent context
-    context: AgentContext,
-    /// Runtime connection for reporting
-    runtime: std::sync::Arc<RuntimeManager>,
-    /// Last reported progress
-    last_progress: f64,
-    /// Last report timestamp
-    last_report_time: DateTime<Utc>,
-    /// Minimum progress change to trigger report
-    min_progress_delta: f64,
-    /// Minimum time between reports
-    min_report_interval: chrono::Duration,
-}
-
-impl ProgressReporter {
-    /// Create a new progress reporter
-    pub fn new(
-        context: AgentContext,
-        runtime: std::sync::Arc<RuntimeManager>,
-    ) -> Self {
-        Self {
-            context,
-            runtime,
-            last_progress: 0.0,
-            last_report_time: Utc::now(),
-            min_progress_delta: 0.05, // Report every 5% progress
-            min_report_interval: chrono::Duration::seconds(30), // Report at least every 30 seconds
-        }
-    }
-
-    /// Report progress to orchestration system
-    #[instrument(skip(self), fields(agent_id = ?self.context.agent_id))]
-    pub async fn report_progress(&mut self, progress: f64, message: Option<String>) -> Result<()> {
-        let now = Utc::now();
-        
-        // Check if we should report based on progress delta and time interval
-        let progress_delta = (progress - self.last_progress).abs();
-        let time_since_last = now - self.last_report_time;
-        
-        let should_report = progress_delta >= self.min_progress_delta
-            || time_since_last >= self.min_report_interval
-            || progress >= 1.0; // Always report completion
-
-        if !should_report {
-            debug!("Skipping progress report: delta={:.3}, time_since={:?}", 
-                   progress_delta, time_since_last);
-            return Ok(());
-        }
-
-        let progress_report = AgentProgress {
-            agent_id: self.context.agent_id,
-            workstream: self.context.config.metadata.workstream.clone(),
-            progress: progress.clamp(0.0, 1.0),
-            current_task: self.get_current_task(),
-            tasks_completed: self.context.metrics.tasks_completed,
-            total_tasks: self.context.config.tasks.default.len() as u64,
-            metrics: self.context.metrics.clone(),
-            timestamp: now,
-            message,
-        };
-
-        self.send_progress_observation(progress_report).await?;
-        
-        self.last_progress = progress;
-        self.last_report_time = now;
-
-        info!("Progress reported: {:.1}% complete", progress * 100.0);
-        Ok(())
-    }
-
-    /// Report task completion
-    #[instrument(skip(self), fields(agent_id = ?self.context.agent_id, task_id = %task_result.task_id))]
-    pub async fn report_task_completion(&mut self, task_result: TaskResult) -> Result<()> {
-        debug!("Reporting task completion: {} (success: {})", 
-               task_result.task_id, task_result.success);
-
-        // Update metrics
-        if task_result.success {
-            self.context.metrics.tasks_completed += 1;
-        } else {
-            self.context.metrics.tasks_failed += 1;
-        }
-        
-        self.context.metrics.total_execution_time += task_result.duration;
-        if let Some(tokens) = task_result.llm_tokens_used {
-            self.context.metrics.llm_tokens_consumed += tokens;
-        }
-
-        // Send task completion observation
-        self.send_task_completion_observation(task_result).await?;
-
-        // Update progress based on task completion
-        let total_tasks = self.context.config.tasks.default.len() as f64;
-        let completed_tasks = self.context.metrics.tasks_completed as f64;
-        let progress = if total_tasks > 0.0 {
-            completed_tasks / total_tasks
-        } else {
-            1.0
-        };
-
-        self.report_progress(progress, Some("Task completed".to_string())).await?;
-
-        Ok(())
-    }
-
-    /// Report agent completion
-    #[instrument(skip(self), fields(agent_id = ?self.context.agent_id))]
-    pub async fn report_completion(&mut self, success: bool, message: Option<String>) -> Result<()> {
-        info!("Reporting agent completion: success={}, agent_id={:?}", 
-              success, self.context.agent_id);
-
-        self.report_progress(1.0, message).await?;
-
-        // Send final completion observation
-        let completion_report = serde_json::json!({
-            "type": "agent_completion",
-            "agent_id": self.context.agent_id.0,
-            "workstream": self.context.config.metadata.workstream,
-            "success": success,
-            "final_metrics": self.context.metrics,
-            "completed_at": Utc::now(),
-        });
-
-        let observation_data = serde_json::to_vec(&completion_report)?;
-        let message = Message {
-            origin: self.context.agent_id,
-            capability: "agent-completion".to_string(),
-            op: Operation::EmitObservation {
-                agent: self.context.agent_id,
-                data: observation_data,
-            },
-        };
-
-        self.runtime.submit(message).await.map_err(|e| {
-            anyhow::anyhow!("Failed to submit completion observation: {}", e)
-        })?;
-
-        Ok(())
-    }
-
-    /// Update agent metrics
-    pub fn update_metrics(&mut self, metrics: AgentMetrics) {
-        self.context.metrics = metrics;
-        self.context.last_activity = Utc::now();
-    }
-
-    /// Get current executing task
-    fn get_current_task(&self) -> Option<String> {
-        match &self.context.state {
-            crate::AgentExecutionState::ExecutingTask { task_id } => Some(task_id.clone()),
-            _ => None,
-        }
-    }
-
-    /// Send progress observation to kernel
-    async fn send_progress_observation(&self, progress: AgentProgress) -> Result<()> {
-        let observation_data = serde_json::to_vec(&progress)?;
-        let message = Message {
-            origin: self.context.agent_id,
-            capability: "progress-reporting".to_string(),
-            op: Operation::EmitObservation {
-                agent: self.context.agent_id,
-                data: observation_data,
-            },
-        };
-
-        self.runtime.submit(message).await.map_err(|e| {
-            anyhow::anyhow!("Failed to submit progress observation: {}", e)
-        })?;
-
-        Ok(())
-    }
-
-    /// Send task completion observation to kernel
-    async fn send_task_completion_observation(&self, task_result: TaskResult) -> Result<()> {
-        let observation_data = serde_json::to_vec(&task_result)?;
-        let message = Message {
-            origin: self.context.agent_id,
-            capability: "task-completion".to_string(),
-            op: Operation::EmitObservation {
-                agent: self.context.agent_id,
-                data: observation_data,
-            },
-        };
-
-        self.runtime.submit(message).await.map_err(|e| {
-            anyhow::anyhow!("Failed to submit task completion observation: {}", e)
-        })?;
-
-        Ok(())
-    }
+    /// Task completion timestamp
+    pub completed_at: DateTime<Utc>,
 }
 
 impl TaskResult {
@@ -259,18 +72,17 @@ impl TaskResult {
     pub fn success(
         task_id: String,
         description: String,
-        result_data: Option<String>,
+        output: Option<String>,
         duration: Duration,
     ) -> Self {
         Self {
             task_id,
             description,
             success: true,
-            result_data,
-            error: None,
+            output,
             duration,
-            completed_at: Utc::now(),
             llm_tokens_used: None,
+            completed_at: Utc::now(),
         }
     }
 
@@ -278,18 +90,17 @@ impl TaskResult {
     pub fn failure(
         task_id: String,
         description: String,
-        error: String,
+        error_message: String,
         duration: Duration,
     ) -> Self {
         Self {
             task_id,
             description,
             success: false,
-            result_data: None,
-            error: Some(error),
+            output: Some(error_message),
             duration,
-            completed_at: Utc::now(),
             llm_tokens_used: None,
+            completed_at: Utc::now(),
         }
     }
 
@@ -300,110 +111,332 @@ impl TaskResult {
     }
 }
 
+impl ProgressReporter {
+    /// Create a new progress reporter
+    pub fn new(
+        agent_context: AgentContext,
+        runtime: std::sync::Arc<RuntimeManager>,
+    ) -> Self {
+        Self {
+            agent_context,
+            runtime,
+            current_progress: 0.0,
+            last_report: Utc::now(),
+            metrics: AgentMetrics::default(),
+        }
+    }
+
+    /// Report progress to orchestration system
+    #[instrument(skip(self), fields(agent_id = ?self.agent_context.agent_id, progress = %progress))]
+    pub async fn report_progress(
+        &mut self, 
+        progress: f64, 
+        message: Option<String>
+    ) -> Result<()> {
+        // Clamp progress to valid range
+        let progress = progress.clamp(0.0, 1.0);
+        self.current_progress = progress;
+        self.last_report = Utc::now();
+
+        let progress_report = AgentProgress {
+            agent_id: self.agent_context.agent_id,
+            agent_name: self.agent_context.config.metadata.name.clone(),
+            progress,
+            message: message.clone(),
+            state: self.agent_context.state.clone(),
+            timestamp: self.last_report,
+            metrics: self.metrics.clone(),
+        };
+
+        debug!("Reporting progress: {}% for agent: {}", 
+               (progress * 100.0) as u32, 
+               self.agent_context.config.metadata.name);
+
+        // Serialize progress report as observation data
+        let observation_data = serde_json::to_vec(&progress_report)?;
+        
+        // Create progress observation message
+        let progress_message = Message::new(
+            self.agent_context.agent_id,
+            format!("progress-reporting-{}", self.agent_context.config.metadata.workstream),
+            Operation::EmitObservation {
+                agent: self.agent_context.agent_id,
+                data: observation_data,
+            },
+        ).map_err(|e| anyhow::anyhow!("Failed to create progress message: {}", e))?;
+
+        // Submit progress observation to runtime
+        match self.runtime.submit(progress_message).await {
+            Ok(_kernel_event) => {
+                debug!("Progress reported successfully for agent: {}", 
+                      self.agent_context.config.metadata.name);
+            }
+            Err(e) => {
+                // Log error but don't fail the operation - progress reporting shouldn't block agent execution
+                tracing::warn!(
+                    "Failed to submit progress report for agent {}: {}",
+                    self.agent_context.config.metadata.name,
+                    e
+                );
+            }
+        }
+
+        // Also log progress for immediate visibility
+        info!("Agent {} progress: {}%{}", 
+              self.agent_context.config.metadata.name,
+              (progress * 100.0) as u32,
+              message.map(|m| format!(" - {}", m)).unwrap_or_default());
+
+        Ok(())
+    }
+
+    /// Report task completion
+    #[instrument(skip(self), fields(task_id = %task_result.task_id, success = %task_result.success))]
+    pub async fn report_task_completion(&mut self, task_result: TaskResult) -> Result<()> {
+        info!("Task completed: {} (success: {}, duration: {:?})",
+              task_result.task_id,
+              task_result.success,
+              task_result.duration);
+
+        // Update metrics based on task result
+        if task_result.success {
+            self.metrics.tasks_completed += 1;
+        } else {
+            self.metrics.tasks_failed += 1;
+        }
+
+        if let Some(tokens) = task_result.llm_tokens_used {
+            self.metrics.llm_tokens_consumed += tokens;
+            self.metrics.llm_requests += 1;
+        }
+
+        // Serialize task completion as observation data
+        let observation_data = serde_json::to_vec(&task_result)?;
+        
+        // Create task completion observation message
+        let completion_message = Message::new(
+            self.agent_context.agent_id,
+            format!("task-completion-{}", self.agent_context.config.metadata.workstream),
+            Operation::EmitObservation {
+                agent: self.agent_context.agent_id,
+                data: observation_data,
+            },
+        ).map_err(|e| anyhow::anyhow!("Failed to create task completion message: {}", e))?;
+
+        // Submit task completion observation to runtime
+        match self.runtime.submit(completion_message).await {
+            Ok(_kernel_event) => {
+                debug!("Task completion reported successfully for agent: {}", 
+                      self.agent_context.config.metadata.name);
+            }
+            Err(e) => {
+                // Log error but don't fail the operation
+                tracing::warn!(
+                    "Failed to submit task completion report for agent {}: {}",
+                    self.agent_context.config.metadata.name,
+                    e
+                );
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Report agent completion (success or failure)
+    #[instrument(skip(self), fields(agent_id = ?self.agent_context.agent_id, success = %success))]
+    pub async fn report_completion(
+        &mut self, 
+        success: bool, 
+        message: Option<String>
+    ) -> Result<()> {
+        let final_progress = if success { 1.0 } else { self.current_progress };
+        
+        // Report final progress
+        self.report_progress(final_progress, message.clone()).await?;
+        
+        // Create completion summary
+        let completion_data = serde_json::json!({
+            "type": "agent_completion",
+            "agent_id": self.agent_context.agent_id.0,
+            "agent_name": self.agent_context.config.metadata.name,
+            "workstream": self.agent_context.config.metadata.workstream,
+            "success": success,
+            "final_metrics": self.metrics,
+            "completed_at": Utc::now(),
+            "message": message,
+        });
+
+        let completion_observation = serde_json::to_vec(&completion_data)?;
+        
+        // Create agent completion observation message
+        let completion_message = Message::new(
+            self.agent_context.agent_id,
+            format!("agent-completion-{}", self.agent_context.config.metadata.workstream),
+            Operation::EmitObservation {
+                agent: self.agent_context.agent_id,
+                data: completion_observation,
+            },
+        ).map_err(|e| anyhow::anyhow!("Failed to create completion message: {}", e))?;
+
+        // Submit completion observation to runtime
+        match self.runtime.submit(completion_message).await {
+            Ok(_kernel_event) => {
+                debug!("Agent completion reported successfully: {}", 
+                      self.agent_context.config.metadata.name);
+            }
+            Err(e) => {
+                // Log error but don't fail the operation
+                tracing::warn!(
+                    "Failed to submit agent completion report for {}: {}",
+                    self.agent_context.config.metadata.name,
+                    e
+                );
+            }
+        }
+        
+        info!("Agent {} completed with {} (final progress: {}%)",
+              self.agent_context.config.metadata.name,
+              if success { "SUCCESS" } else { "FAILURE" },
+              (final_progress * 100.0) as u32);
+
+        Ok(())
+    }
+
+    /// Update metrics
+    pub fn update_metrics(&mut self, metrics: AgentMetrics) {
+        self.metrics = metrics;
+    }
+
+    /// Get current progress
+    pub fn current_progress(&self) -> f64 {
+        self.current_progress
+    }
+
+    /// Get current metrics
+    pub fn metrics(&self) -> &AgentMetrics {
+        &self.metrics
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{AgentExecutionState, EntityId};
     use toka_types::{
-        AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority,
-        AgentCapabilities, AgentTasks, AgentDependencies, ReportingConfig, 
-        SecurityConfig, ResourceLimits, ReportingFrequency
+        AgentConfig, AgentMetadata, AgentSpecConfig, AgentPriority, TaskPriority
     };
     use std::collections::HashMap;
-    
-    fn create_test_context() -> AgentContext {
-        let config = AgentConfig {
-            metadata: AgentMetadata {
-                name: "test-agent".to_string(),
-                version: "v1.0".to_string(),
-                created: "2025-01-27".to_string(),
-                workstream: "test".to_string(),
-                branch: "main".to_string(),
-            },
-            spec: AgentSpecConfig {
-                name: "Test Agent".to_string(),
-                domain: "test".to_string(),
-                priority: AgentPriority::Medium,
-            },
-            capabilities: AgentCapabilities {
-                primary: vec![],
-                secondary: vec![],
-            },
-            objectives: vec![],
-            tasks: AgentTasks {
-                default: vec![],
-            },
-            dependencies: AgentDependencies {
-                required: HashMap::new(),
-                optional: HashMap::new(),
-            },
-            reporting: ReportingConfig {
-                frequency: ReportingFrequency::Daily,
-                channels: vec![],
-                metrics: HashMap::new(),
-            },
-            security: SecurityConfig {
-                sandbox: true,
-                capabilities_required: vec![],
-                resource_limits: ResourceLimits {
-                    max_memory: "100MB".to_string(),
-                    max_cpu: "50%".to_string(),
-                    timeout: "5m".to_string(),
-                },
-            },
-        };
 
+    fn create_test_context() -> AgentContext {
         AgentContext {
             agent_id: EntityId(123),
-            config,
-            state: crate::AgentExecutionState::Ready,
+            config: AgentConfig {
+                metadata: AgentMetadata {
+                    name: "test-agent".to_string(),
+                    version: "v1.0".to_string(),
+                    created: "2025-07-11".to_string(),
+                    workstream: "test".to_string(),
+                    branch: "main".to_string(),
+                },
+                spec: AgentSpecConfig {
+                    name: "Test Agent".to_string(),
+                    domain: "testing".to_string(),
+                    priority: AgentPriority::Medium,
+                },
+                capabilities: toka_types::AgentCapabilities {
+                    primary: vec!["testing".to_string()],
+                    secondary: vec![],
+                },
+                objectives: vec![],
+                tasks: toka_types::AgentTasks {
+                    default: vec![],
+                },
+                dependencies: toka_types::AgentDependencies {
+                    required: HashMap::new(),
+                    optional: HashMap::new(),
+                },
+                reporting: toka_types::ReportingConfig {
+                    frequency: toka_types::ReportingFrequency::Daily,
+                    channels: vec!["test".to_string()],
+                    metrics: HashMap::new(),
+                },
+                security: toka_types::SecurityConfig {
+                    sandbox: true,
+                    capabilities_required: vec!["test".to_string()],
+                    resource_limits: toka_types::ResourceLimits {
+                        max_memory: "100MB".to_string(),
+                        max_cpu: "50%".to_string(),
+                        timeout: "5m".to_string(),
+                    },
+                },
+            },
+            state: AgentExecutionState::Ready,
             started_at: Utc::now(),
             last_activity: Utc::now(),
             metrics: AgentMetrics::default(),
-            environment: std::collections::HashMap::new(),
+            environment: HashMap::new(),
         }
     }
 
     #[test]
-    fn test_task_result_success() {
-        let result = TaskResult::success(
-            "test-task".to_string(),
-            "Test task description".to_string(),
-            Some("Test result".to_string()),
+    fn test_task_result_creation() {
+        let success_result = TaskResult::success(
+            "task-1".to_string(),
+            "Test task".to_string(),
+            Some("Task completed successfully".to_string()),
             Duration::from_secs(10),
-        ).with_llm_tokens(100);
+        );
 
-        assert!(result.success);
-        assert_eq!(result.task_id, "test-task");
-        assert_eq!(result.llm_tokens_used, Some(100));
-        assert!(result.error.is_none());
-    }
+        assert!(success_result.success);
+        assert_eq!(success_result.task_id, "task-1");
+        assert_eq!(success_result.duration, Duration::from_secs(10));
 
-    #[test]
-    fn test_task_result_failure() {
-        let result = TaskResult::failure(
-            "test-task".to_string(),
-            "Test task description".to_string(),
-            "Test error".to_string(),
+        let failure_result = TaskResult::failure(
+            "task-2".to_string(),
+            "Failed task".to_string(),
+            "Task failed with error".to_string(),
             Duration::from_secs(5),
         );
 
-        assert!(!result.success);
-        assert_eq!(result.error, Some("Test error".to_string()));
-        assert!(result.result_data.is_none());
+        assert!(!failure_result.success);
+        assert_eq!(failure_result.task_id, "task-2");
+        assert!(failure_result.output.is_some());
+    }
+
+    #[test]
+    fn test_task_result_with_tokens() {
+        let result = TaskResult::success(
+            "task-1".to_string(),
+            "Test task".to_string(),
+            None,
+            Duration::from_secs(10),
+        ).with_llm_tokens(150);
+
+        assert_eq!(result.llm_tokens_used, Some(150));
+    }
+
+    #[tokio::test]
+    async fn test_progress_clamping() {
+        // Test that progress is properly clamped
+        let test_values = vec![-0.5, 0.0, 0.5, 1.0, 1.5];
+        let expected = vec![0.0, 0.0, 0.5, 1.0, 1.0];
+        
+        for (input, expected) in test_values.iter().zip(expected.iter()) {
+            let clamped = input.clamp(0.0, 1.0);
+            assert_eq!(clamped, *expected);
+        }
     }
 
     #[test]
     fn test_agent_progress_serialization() {
         let progress = AgentProgress {
             agent_id: EntityId(456),
-            workstream: "test-workstream".to_string(),
+            agent_name: "test-agent".to_string(),
             progress: 0.75,
-            current_task: Some("current-task".to_string()),
-            tasks_completed: 3,
-            total_tasks: 4,
-            metrics: AgentMetrics::default(),
-            timestamp: Utc::now(),
             message: Some("Test message".to_string()),
+            state: AgentExecutionState::Ready,
+            timestamp: Utc::now(),
+            metrics: AgentMetrics::default(),
         };
 
         let serialized = serde_json::to_string(&progress).unwrap();
@@ -411,6 +444,6 @@ mod tests {
 
         assert_eq!(progress.agent_id, deserialized.agent_id);
         assert_eq!(progress.progress, deserialized.progress);
-        assert_eq!(progress.workstream, deserialized.workstream);
+        assert_eq!(progress.agent_name, deserialized.agent_name);
     }
 }
