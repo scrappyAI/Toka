@@ -33,7 +33,6 @@
 Create a `.env` file in the Toka root directory:
 
 ```bash
-# In the /Users/sebastianteacutter/toka-lean/Toka directory
 cat > .env << 'EOF'
 GITHUB_CLIENT_ID=your_client_id_here
 GITHUB_CLIENT_SECRET=your_client_secret_here
