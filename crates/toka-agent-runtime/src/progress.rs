@@ -428,7 +428,13 @@ mod tests {
         let expected = vec![0.0, 0.0, 0.5, 1.0, 1.0];
         
         for (input, expected) in test_values.iter().zip(expected.iter()) {
-            let clamped = input.max(0.0).min(1.0);
+            let clamped = if *input < 0.0 {
+                0.0
+            } else if *input > 1.0 {
+                1.0
+            } else {
+                *input
+            };
             assert_eq!(clamped, *expected);
         }
     }
