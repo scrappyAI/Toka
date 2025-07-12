@@ -1,3 +1,49 @@
 {
-  "agentCanUpdateSnapshot": true
+  "build": {
+    "context": ".",
+    "dockerfile": "Dockerfile"
+  },
+  "install": "/usr/local/bin/cursor-scripts/auto-setup.sh",
+  "start": "/usr/local/bin/cursor-scripts/cursor-agent-init.sh",
+  "user": "vscode",
+  "terminals": [
+    {
+      "name": "Toka CLI",
+      "description": "Interactive Toka CLI for project management",
+      "command": "cd /home/vscode && if [ -f 'Cargo.toml' ]; then cargo run --bin toka-cli -- interactive; else echo 'Waiting for project clone...'; bash; fi"
+    },
+    {
+      "name": "Development",
+      "description": "Main development terminal with auto-setup",
+      "command": "cd /home/vscode && /usr/local/bin/cursor-scripts/dev-setup.sh && bash"
+    },
+    {
+      "name": "Testing", 
+      "description": "Automated testing and validation",
+      "command": "cd /home/vscode && if [ -f 'Cargo.toml' ]; then cargo nextest run --workspace; else echo 'Project not ready for testing'; bash; fi"
+    },
+    {
+      "name": "Monitoring",
+      "description": "Performance monitoring and metrics",
+      "command": "cd /home/vscode && htop"
+    }
+  ],
+  "ports": [
+    {
+      "name": "Web Server",
+      "port": 8080
+    },
+    {
+      "name": "API Server", 
+      "port": 9000
+    },
+    {
+      "name": "Metrics",
+      "port": 9001
+    },
+    {
+      "name": "Development",
+      "port": 3000
+    }
+  ]
 }

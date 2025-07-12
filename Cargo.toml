@@ -10,6 +10,7 @@ members = [
     "crates/toka-agent-runtime",
     "crates/toka-orchestration",
     "crates/toka-store-core",
+    "crates/toka-collaborative-auth",
 ]
 
 [workspace.dependencies]
