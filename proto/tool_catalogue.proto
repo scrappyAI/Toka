@@ -1,0 +1,527 @@
+// Tool Catalogue Protocol Buffers Schema v1.0.0
+// 
+// This schema defines the unified tool catalogue system for Toka,
+// supporting multiple formats (JSON, YAML, MD, MDC) with .proto compatibility.
+// Designed for LLM-to-LLM and human UI consumption.
+//
+// Generated on: 2025-07-12
+// Schema Version: 1.0.0
+
+syntax = "proto3";
+
+package toka.tool_catalogue.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/scrappyAI/Toka/proto/tool_catalogue/v1";
+option java_package = "com.toka.tool_catalogue.v1";
+option java_multiple_files = true;
+
+// Service for tool catalogue operations
+service ToolCatalogueService {
+  // Get all tools in the catalogue
+  rpc ListTools(ListToolsRequest) returns (ListToolsResponse);
+  
+  // Get a specific tool by ID
+  rpc GetTool(GetToolRequest) returns (GetToolResponse);
+  
+  // Filter tools based on criteria
+  rpc FilterTools(FilterToolsRequest) returns (FilterToolsResponse);
+  
+  // Get catalogue statistics
+  rpc GetStatistics(GetStatisticsRequest) returns (GetStatisticsResponse);
+  
+  // Export catalogue in various formats
+  rpc ExportCatalogue(ExportCatalogueRequest) returns (ExportCatalogueResponse);
+  
+  // Register a new tool
+  rpc RegisterTool(RegisterToolRequest) returns (RegisterToolResponse);
+  
+  // Update an existing tool
+  rpc UpdateTool(UpdateToolRequest) returns (UpdateToolResponse);
+  
+  // Unregister a tool
+  rpc UnregisterTool(UnregisterToolRequest) returns (UnregisterToolResponse);
+}
+
+// Tool metadata structure
+message ToolMetadata {
+  // Unique tool identifier
+  string id = 1;
+  
+  // Human-readable name
+  string name = 2;
+  
+  // Semantic version
+  string version = 3;
+  
+  // Tool description
+  string description = 4;
+  
+  // Tool category
+  ToolCategory category = 5;
+  
+  // Required capabilities for execution
+  repeated string required_capabilities = 6;
+  
+  // Optional capabilities
+  repeated string optional_capabilities = 7;
+  
+  // Security classification
+  SecurityLevel security_level = 8;
+  
+  // Resource limits for execution
+  ResourceLimits resource_limits = 9;
+  
+  // Sandbox configuration
+  SandboxConfig sandbox_config = 10;
+  
+  // Side effects classification
+  SideEffect side_effects = 11;
+  
+  // Transport options
+  repeated Transport transports = 12;
+  
+  // Protocol mappings for external integration
+  repeated ProtocolMapping protocol_mappings = 13;
+  
+  // Input parameters schema (JSON Schema)
+  optional string input_schema = 14;
+  
+  // Output schema (JSON Schema)
+  optional string output_schema = 15;
+  
+  // Execution metadata
+  ExecutionMetadata execution_metadata = 16;
+  
+  // Discovery metadata
+  DiscoveryMetadata discovery_metadata = 17;
+  
+  // Arbitrary extension metadata
+  map<string, google.protobuf.Value> extensions = 18;
+  
+  // Last modification timestamp
+  google.protobuf.Timestamp last_modified = 19;
+  
+  // File path relative to workspace
+  string file_path = 20;
+  
+  // Content checksum for change detection
+  string checksum = 21;
+}
+
+// Tool categories for classification
+enum ToolCategory {
+  TOOL_CATEGORY_UNSPECIFIED = 0;
+  TOOL_CATEGORY_FILE_SYSTEM = 1;
+  TOOL_CATEGORY_VALIDATION = 2;
+  TOOL_CATEGORY_BUILD = 3;
+  TOOL_CATEGORY_SECURITY = 4;
+  TOOL_CATEGORY_NETWORK = 5;
+  TOOL_CATEGORY_DATABASE = 6;
+  TOOL_CATEGORY_ANALYSIS = 7;
+  TOOL_CATEGORY_SYSTEM = 8;
+  TOOL_CATEGORY_DEVELOPMENT = 9;
+  TOOL_CATEGORY_MONITORING = 10;
+  TOOL_CATEGORY_DOCUMENTATION = 11;
+  TOOL_CATEGORY_WORKFLOW = 12;
+  TOOL_CATEGORY_INTEGRATION = 13;
+  TOOL_CATEGORY_OTHER = 14;
+}
+
+// Security levels
+enum SecurityLevel {
+  SECURITY_LEVEL_UNSPECIFIED = 0;
+  SECURITY_LEVEL_BASIC = 1;
+  SECURITY_LEVEL_MEDIUM = 2;
+  SECURITY_LEVEL_HIGH = 3;
+}
+
+// Side effects classification
+enum SideEffect {
+  SIDE_EFFECT_UNSPECIFIED = 0;
+  SIDE_EFFECT_NONE = 1;
+  SIDE_EFFECT_READ_ONLY = 2;
+  SIDE_EFFECT_IDEMPOTENT = 3;
+  SIDE_EFFECT_EXTERNAL = 4;
+  SIDE_EFFECT_PRIVILEGED = 5;
+}
+
+// Resource limits for tool execution
+message ResourceLimits {
+  // Memory limit (e.g., "128MB", "1GB")
+  string memory_limit = 1;
+  
+  // CPU limit (e.g., "25%", "50%")
+  string cpu_limit = 2;
+  
+  // Timeout (e.g., "30s", "5m")
+  string timeout = 3;
+}
+
+// Sandbox configuration
+message SandboxConfig {
+  // Whether network access is allowed
+  bool allow_network = 1;
+  
+  // Read-only paths
+  repeated string readonly_paths = 2;
+  
+  // Writable paths
+  repeated string writable_paths = 3;
+  
+  // Network restrictions
+  repeated string network_restrictions = 4;
+}
+
+// Transport options
+message Transport {
+  oneof transport_type {
+    // JSON-RPC over HTTP
+    JsonRpcHttp json_rpc_http = 1;
+    
+    // JSON-RPC over stdio
+    JsonRpcStdio json_rpc_stdio = 2;
+    
+    // In-process Rust struct
+    InProcess in_process = 3;
+    
+    // WebAssembly module
+    Wasm wasm = 4;
+  }
+}
+
+// JSON-RPC over HTTP transport
+message JsonRpcHttp {
+  // HTTP endpoint URL
+  string endpoint = 1;
+}
+
+// JSON-RPC over stdio transport
+message JsonRpcStdio {
+  // Command-line executable path
+  string exec = 1;
+}
+
+// In-process transport
+message InProcess {
+  // No additional fields needed
+}
+
+// WebAssembly transport
+message Wasm {
+  // Path to the WASM module file
+  string path = 1;
+}
+
+// Protocol mapping for external integration
+message ProtocolMapping {
+  oneof protocol_type {
+    // Model Context Protocol mapping
+    McpMapping mcp = 1;
+    
+    // Google Agent-to-Agent protocol mapping
+    A2aMapping a2a = 2;
+  }
+}
+
+// MCP (Model Context Protocol) mapping
+message McpMapping {
+  // JSON-RPC method name
+  string function_name = 1;
+  
+  // Target MCP version
+  string version = 2;
+}
+
+// A2A (Agent-to-Agent) mapping
+message A2aMapping {
+  // Action identifier
+  string action = 1;
+  
+  // Optional A2A spec version
+  optional string version = 2;
+}
+
+// Execution metadata
+message ExecutionMetadata {
+  // Whether tool is hot-swappable
+  bool hot_swappable = 1;
+  
+  // Whether tool can run in parallel
+  bool parallel_safe = 2;
+  
+  // Whether tool is resource intensive
+  bool resource_intensive = 3;
+  
+  // Average execution time in milliseconds
+  optional uint64 avg_execution_time_ms = 4;
+  
+  // Success rate percentage
+  optional double success_rate = 5;
+  
+  // Last execution timestamp
+  optional google.protobuf.Timestamp last_executed = 6;
+  
+  // Execution count
+  uint64 execution_count = 7;
+}
+
+// Discovery metadata
+message DiscoveryMetadata {
+  // Whether tool is auto-discovered
+  bool auto_discover = 1;
+  
+  // Discovery patterns for file matching
+  repeated string discovery_patterns = 2;
+  
+  // Discovery priority (higher = discovered first)
+  uint32 discovery_priority = 3;
+  
+  // Whether tool is deprecated
+  bool deprecated = 4;
+  
+  // Replacement tool ID if deprecated
+  optional string replacement_tool = 5;
+  
+  // Tags for categorization
+  repeated string tags = 6;
+}
+
+// Tool filter for querying
+message ToolFilter {
+  // Filter by tool categories
+  repeated ToolCategory categories = 1;
+  
+  // Filter by required capabilities
+  repeated string required_capabilities = 2;
+  
+  // Filter by security levels
+  repeated SecurityLevel security_levels = 3;
+  
+  // Filter by transport types
+  repeated string transport_types = 4;
+  
+  // Filter by tags
+  repeated string tags = 5;
+  
+  // Filter by execution metadata
+  optional ExecutionFilter execution_metadata = 6;
+  
+  // Search in name and description
+  optional string search_query = 7;
+  
+  // Maximum number of results
+  optional uint32 limit = 8;
+  
+  // Whether to include deprecated tools
+  bool include_deprecated = 9;
+}
+
+// Execution-specific filter criteria
+message ExecutionFilter {
+  // Filter by hot-swappable tools
+  optional bool hot_swappable = 1;
+  
+  // Filter by parallel-safe tools
+  optional bool parallel_safe = 2;
+  
+  // Filter by resource-intensive tools
+  optional bool resource_intensive = 3;
+  
+  // Maximum execution time in milliseconds
+  optional uint64 max_execution_time_ms = 4;
+  
+  // Minimum success rate
+  optional double min_success_rate = 5;
+}
+
+// Request messages
+
+message ListToolsRequest {
+  // Optional pagination
+  optional Pagination pagination = 1;
+}
+
+message GetToolRequest {
+  // Tool ID
+  string tool_id = 1;
+}
+
+message FilterToolsRequest {
+  // Filter criteria
+  ToolFilter filter = 1;
+  
+  // Optional pagination
+  optional Pagination pagination = 2;
+}
+
+message GetStatisticsRequest {
+  // No additional fields needed
+}
+
+message ExportCatalogueRequest {
+  // Export format
+  ExportFormat format = 1;
+  
+  // Optional filter for export
+  optional ToolFilter filter = 2;
+}
+
+message RegisterToolRequest {
+  // Tool metadata
+  ToolMetadata tool = 1;
+}
+
+message UpdateToolRequest {
+  // Tool ID
+  string tool_id = 1;
+  
+  // Updated tool metadata
+  ToolMetadata tool = 2;
+}
+
+message UnregisterToolRequest {
+  // Tool ID
+  string tool_id = 1;
+}
+
+// Response messages
+
+message ListToolsResponse {
+  // List of tools
+  repeated ToolMetadata tools = 1;
+  
+  // Pagination info
+  optional PaginationInfo pagination_info = 2;
+}
+
+message GetToolResponse {
+  // Tool metadata
+  optional ToolMetadata tool = 1;
+}
+
+message FilterToolsResponse {
+  // Filtered tools
+  repeated ToolMetadata tools = 1;
+  
+  // Total count before pagination
+  uint32 total_count = 2;
+  
+  // Pagination info
+  optional PaginationInfo pagination_info = 3;
+}
+
+message GetStatisticsResponse {
+  // Catalogue statistics
+  CatalogueStatistics statistics = 1;
+}
+
+message ExportCatalogueResponse {
+  // Export format
+  ExportFormat format = 1;
+  
+  // Exported data
+  bytes data = 2;
+  
+  // Content type for HTTP responses
+  string content_type = 3;
+}
+
+message RegisterToolResponse {
+  // Success status
+  bool success = 1;
+  
+  // Error message if failed
+  optional string error_message = 2;
+}
+
+message UpdateToolResponse {
+  // Success status
+  bool success = 1;
+  
+  // Error message if failed
+  optional string error_message = 2;
+}
+
+message UnregisterToolResponse {
+  // Success status
+  bool success = 1;
+  
+  // Error message if failed
+  optional string error_message = 2;
+}
+
+// Supporting messages
+
+message Pagination {
+  // Page number (1-based)
+  uint32 page = 1;
+  
+  // Page size
+  uint32 page_size = 2;
+}
+
+message PaginationInfo {
+  // Current page
+  uint32 current_page = 1;
+  
+  // Page size
+  uint32 page_size = 2;
+  
+  // Total pages
+  uint32 total_pages = 3;
+  
+  // Total items
+  uint32 total_items = 4;
+}
+
+message CatalogueStatistics {
+  // Total number of tools
+  uint32 total_tools = 1;
+  
+  // Distribution by category
+  map<string, uint32> category_distribution = 2;
+  
+  // Distribution by capability
+  map<string, uint32> capability_distribution = 3;
+  
+  // Distribution by tag
+  map<string, uint32> tag_distribution = 4;
+  
+  // Last scan timestamp
+  optional google.protobuf.Timestamp last_scan = 5;
+}
+
+// Export formats
+enum ExportFormat {
+  EXPORT_FORMAT_UNSPECIFIED = 0;
+  EXPORT_FORMAT_JSON = 1;
+  EXPORT_FORMAT_YAML = 2;
+  EXPORT_FORMAT_PROTO = 3;
+  EXPORT_FORMAT_MARKDOWN = 4;
+}
+
+// Error codes
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_TOOL_NOT_FOUND = 1;
+  ERROR_CODE_INVALID_FILTER = 2;
+  ERROR_CODE_DUPLICATE_TOOL = 3;
+  ERROR_CODE_INVALID_METADATA = 4;
+  ERROR_CODE_PERMISSION_DENIED = 5;
+  ERROR_CODE_INTERNAL_ERROR = 6;
+}
+
+// Error details
+message ErrorDetails {
+  // Error code
+  ErrorCode code = 1;
+  
+  // Error message
+  string message = 2;
+  
+  // Additional error details
+  map<string, string> details = 3;
+} 

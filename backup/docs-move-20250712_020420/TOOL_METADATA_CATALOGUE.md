@@ -1,6 +1,6 @@
 # Toka Tool Metadata Catalogue
 
-**Date**: 2025-01-27  
+**Date**: 2025-07-12  
 **Version**: 1.0.0  
 **Purpose**: Comprehensive catalogue of all available tools, scripts, and capabilities for agent discovery and usage
 

@@ -66,6 +66,7 @@ pub mod errors;
 pub mod tools;
 pub mod wrappers;
 pub mod runtime_integration;
+pub mod catalogue;
 
 // Re-export all public types from underlying crates
 pub use toka_kernel::{Kernel, KernelError};
@@ -77,6 +78,11 @@ pub use toka_runtime::{
 
 // Re-export core types
 pub use crate::core::{Tool, ToolRegistry, ToolParams, ToolResult, ToolMetadata};
+
+// Re-export catalogue types
+pub use crate::catalogue::{ToolCatalogue, ToolFilter, ToolCategory};
+pub use crate::wrappers::SecurityLevel;
+pub use crate::manifest::SideEffect;
 
 // Re-export error types
 pub use crate::errors::{ToolError, RegistryError, ValidationError, SecurityError};
