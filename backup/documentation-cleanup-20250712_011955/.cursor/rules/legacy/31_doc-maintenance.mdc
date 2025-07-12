@@ -1,0 +1,80 @@
+<ProjectRule name="MaintainDocs">
+<Extends>Baseline</Extends>
+
+<Description>
+Systematic process for auditing, updating, and extending documentation across a Rust workspace. Emphasizes clearing all `missing_docs` warnings, keeping crate-level and public API docs fresh, and leveraging Mermaid diagrams to illustrate architecture when prose alone is insufficient.
+</Description>
+
+<Goals>
+- Achieve **zero** `missing_docs` warnings (or `#![deny(missing_docs)]` clean build) in every crate.
+- Keep crate-level, module, and item docs aligned with current code and API behavior.
+- Provide high-signal architectural docs using Mermaid for components, flows, and interactions.
+- Ensure docs build reliably (`cargo doc --workspace --all-features --no-deps`) and render clearly on GitHub, docs.rs, and internal tooling.
+</Goals>
+
+<Instructions>
+
+1. <Audit>
+   - Run `cargo doc --workspace --no-deps` (or with `--all-features`) to surface warnings.
+   - For CI, enforce:  
+     `RUSTDOCFLAGS="-Dwarnings" cargo doc --workspace --no-deps`
+   - Record missing or outdated sections in a **Docs TODO** list (e.g., `/docs/todo.md`).
+
+</Audit>
+
+2. <AddDocs>
+   - **Crate roots**: start each `lib.rs` / `main.rs` with `//!` describing purpose, high-level API, and example usage.
+   - **Public items**: document every `pub` struct, enum, trait, function, and macro with `///`.
+   - **Modules**: add `//!` module headers explaining scope and relationships.
+   - Prefer **concise, example-driven** docs—show the "happy path" first; advanced details later.
+   - Use `#[doc(hidden)]` for intentionally undocumented internals that must remain public.
+
+</AddDocs>
+
+3. <MermaidDiagrams>
+   - When prose becomes complex, embed a diagram in Markdown docs or rustdoc examples:
+     ```
+     ```mermaid
+     graph TD
+       A[crate] -->|uses| B[module]
+       B --> C{Trait}
+       C -->|impl| D[Struct]
+     ```
+     ```
+   - Typical diagrams:
+     - **Component / package graphs** (high-level crates and external deps)
+     - **Sequence diagrams** for async workflows or event pipelines
+     - **State machines** for finite-state core logic
+   - Store large diagrams in `/docs/architecture/*.md`; link from crate README or root docs.
+
+</MermaidDiagrams>
+
+4. <QualityChecks>
+   - Enable at crate root for new code:  
+     `#![deny(missing_docs)]`
+   - Run `cargo clippy --workspace --all-targets -- -D warnings` to catch docstyle issues.
+   - Verify examples compile: `cargo test --doc --workspace`.
+   - Generate and inspect docs locally (`cargo doc --open`) before PR.
+
+</QualityChecks>
+
+5. <Commits>
+   - Use **atomic, descriptive commits** for doc work:
+     - `docs(core): add crate-level overview and usage example`
+     - `docs(auth): fix missing_docs warnings on token structs`
+     - `docs(architecture): add mermaid component diagram`
+   - Keep refactors and doc changes separate unless tightly coupled.
+
+</Commits>
+
+6. <Review & Merge>
+   - CI must pass `cargo doc` and doc tests.
+   - Confirm Mermaid diagrams render correctly on GitHub preview.
+   - Once all goals are met, squash trivial fix-up commits; merge to `main`.
+   - Optionally tag a patch version (e.g., `v0.3.1`) if docs surface new public examples.
+
+</Review>
+
+</Instructions>
+
+</ProjectRule>
